@@ -485,7 +485,7 @@ footer p{font-size:.76rem;color:rgba(255,255,255,.2);}
 /* V12: conversion-first landing-page order */
 html{scroll-behavior:smooth;}
 #book-wall{scroll-margin-top:82px;}
-#services,#reviews,#about,#faq,#contact,#how{scroll-margin-top:82px;}
+#services,#reviews,#about,#faq,#contact,#how,#price-calculator{scroll-margin-top:82px;}
 @media(min-width:901px){#book-wall{padding-top:72px;}#services{padding-top:72px;}#reviews{padding-top:72px;}#about{padding-top:72px;}}
 </style></head>
 <body id="top">
@@ -496,7 +496,7 @@ html{scroll-behavior:smooth;}
 <span class="nav-brand-text">Kitab Guru</span>
 </a>
 <div class="nav-links">
-<a href="#book-wall">Explore</a><a href="#services">Services</a><a href="#reviews">Reviews</a><a href="#about">About Us</a><a href="#faq">FAQ</a><a href="#contact">Contact</a></div>
+<a href="#book-wall">Explore</a><a href="#price-calculator">Price Calculator</a><a href="#services">Services</a><a href="#reviews">Reviews</a><a href="#about">About Us</a><a href="#faq">FAQ</a><a href="#contact">Contact</a></div>
 <a class="nav-cta" href="#contact">Order Ebook →</a>
 <button aria-label="Toggle menu" class="hamburger" id="hamburger">
 <span></span><span></span><span></span>
@@ -504,7 +504,7 @@ html{scroll-behavior:smooth;}
 </nav>
 <div class="mobile-menu" id="mobileMenu">
 <a class="mob-cta" href="#contact" onclick="closeMob()">Order Ebook →</a>
-<a href="#book-wall" onclick="closeMob()">Explore</a><a href="#services" onclick="closeMob()">Services</a><a href="#reviews" onclick="closeMob()">Reviews</a><a href="#about" onclick="closeMob()">About Us</a><a href="#faq" onclick="closeMob()">FAQ</a><a href="#contact" onclick="closeMob()">Contact</a></div>
+<a href="#book-wall" onclick="closeMob()">Explore</a><a href="#price-calculator" onclick="closeMob()">Price Calculator</a><a href="#services" onclick="closeMob()">Services</a><a href="#reviews" onclick="closeMob()">Reviews</a><a href="#about" onclick="closeMob()">About Us</a><a href="#faq" onclick="closeMob()">FAQ</a><a href="#contact" onclick="closeMob()">Contact</a></div>
 <!-- HERO -->
 <section class="hero" id="home">
 <div class="hero-bg-grid"></div>
@@ -745,7 +745,109 @@ html{scroll-behavior:smooth;}
 <a class="genre-card genre-hidden" data-genre="Young Adult" href="#contact"><div class="genre-cover-wrap"><img alt="The Hunger Games cover — Young Adult" class="genre-cover" data-isbn="9780439023481" decoding="async" src="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22600%22 height=%22900%22 viewBox=%220 0 600 900%22%3E%3Crect width=%22600%22 height=%22900%22 fill=%22%23171717%22/%3E%3Crect x=%22220%22 y=%22240%22 width=%22160%22 height=%22280%22 rx=%228%22 fill=%22%23FFD93D%22 opacity=%22.12%22/%3E%3Cpath d=%22M250 300h100M250 330h100M250 360h70%22 stroke=%22%23FFD93D%22 opacity=%22.5%22 stroke-width=%2210%22 stroke-linecap=%22round%22/%3E%3C/svg%3E"/><img alt="The Fault in Our Stars cover — Young Adult" class="genre-cover" data-isbn="9780525478812" decoding="async" src="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22600%22 height=%22900%22 viewBox=%220 0 600 900%22%3E%3Crect width=%22600%22 height=%22900%22 fill=%22%23171717%22/%3E%3Crect x=%22220%22 y=%22240%22 width=%22160%22 height=%22280%22 rx=%228%22 fill=%22%23FFD93D%22 opacity=%22.12%22/%3E%3Cpath d=%22M250 300h100M250 330h100M250 360h70%22 stroke=%22%23FFD93D%22 opacity=%22.5%22 stroke-width=%2210%22 stroke-linecap=%22round%22/%3E%3C/svg%3E"/><img alt="Divergent cover — Young Adult" class="genre-cover" data-isbn="9780062024039" decoding="async" src="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22600%22 height=%22900%22 viewBox=%220 0 600 900%22%3E%3Crect width=%22600%22 height=%22900%22 fill=%22%23171717%22/%3E%3Crect x=%22220%22 y=%22240%22 width=%22160%22 height=%22280%22 rx=%228%22 fill=%22%23FFD93D%22 opacity=%22.12%22/%3E%3Cpath d=%22M250 300h100M250 330h100M250 360h70%22 stroke=%22%23FFD93D%22 opacity=%22.5%22 stroke-width=%2210%22 stroke-linecap=%22round%22/%3E%3C/svg%3E"/><img alt="The Perks of Being a Wallflower cover — Young Adult" class="genre-cover" data-isbn="9781451696196" decoding="async" src="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22600%22 height=%22900%22 viewBox=%220 0 600 900%22%3E%3Crect width=%22600%22 height=%22900%22 fill=%22%23171717%22/%3E%3Crect x=%22220%22 y=%22240%22 width=%22160%22 height=%22280%22 rx=%228%22 fill=%22%23FFD93D%22 opacity=%22.12%22/%3E%3Cpath d=%22M250 300h100M250 330h100M250 360h70%22 stroke=%22%23FFD93D%22 opacity=%22.5%22 stroke-width=%2210%22 stroke-linecap=%22round%22/%3E%3C/svg%3E"/><img alt="Looking for Alaska cover — Young Adult" class="genre-cover" data-isbn="9780756967260" decoding="async" src="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22600%22 height=%22900%22 viewBox=%220 0 600 900%22%3E%3Crect width=%22600%22 height=%22900%22 fill=%22%23171717%22/%3E%3Crect x=%22220%22 y=%22240%22 width=%22160%22 height=%22280%22 rx=%228%22 fill=%22%23FFD93D%22 opacity=%22.12%22/%3E%3Cpath d=%22M250 300h100M250 330h100M250 360h70%22 stroke=%22%23FFD93D%22 opacity=%22.5%22 stroke-width=%2210%22 stroke-linecap=%22round%22/%3E%3C/svg%3E"/><img alt="The Maze Runner cover — Young Adult" class="genre-cover" data-isbn="9780385737951" decoding="async" src="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22600%22 height=%22900%22 viewBox=%220 0 600 900%22%3E%3Crect width=%22600%22 height=%22900%22 fill=%22%23171717%22/%3E%3Crect x=%22220%22 y=%22240%22 width=%22160%22 height=%22280%22 rx=%228%22 fill=%22%23FFD93D%22 opacity=%22.12%22/%3E%3Cpath d=%22M250 300h100M250 330h100M250 360h70%22 stroke=%22%23FFD93D%22 opacity=%22.5%22 stroke-width=%2210%22 stroke-linecap=%22round%22/%3E%3C/svg%3E"/></div><div class="genre-card-body"><span>Young Adult</span><small>Ask us for titles →</small></div></a>
 </div>
 <div class="genre-expand-wrap reveal"><button class="btn-gold-sm genre-expand-btn" id="genreExpandBtn" type="button">Click here to see other genres we serve</button></div>
-</section><section class="section reviews-section" id="reviews">
+</section>
+<style id="kgcalc-styles">
+.kgcalc-section{max-width:1180px;margin:0 auto;padding:80px 5vw;}
+.kgcalc-head{max-width:640px;}
+.kgcalc-card{max-width:640px;margin-top:44px;background:#151515;border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:32px;box-shadow:0 10px 28px rgba(0,0,0,.25);}
+.kgcalc-field{margin-bottom:22px;}
+.kgcalc-field:last-of-type{margin-bottom:0;}
+.kgcalc-hidden{display:none!important;}
+.kgcalc-label{display:block;font-size:.78rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--gold);margin-bottom:10px;}
+.kgcalc-select,.kgcalc-input{width:100%;background:#0d0d0d;border:1px solid rgba(255,255,255,.14);border-radius:12px;padding:13px 16px;font-size:.95rem;color:var(--wh);font-family:'Inter',sans-serif;transition:border-color .2s;}
+.kgcalc-select:focus,.kgcalc-input:focus{outline:none;border-color:var(--gold);}
+select.kgcalc-select{appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='9'%3E%3Cpath d='M1 1l6 6 6-6' stroke='%23FFD93D' stroke-width='2' fill='none' fill-rule='evenodd'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 16px center;padding-right:40px;cursor:pointer;}
+.kgcalc-search-row{display:flex;gap:10px;}
+.kgcalc-search-row .kgcalc-input{flex:1;}
+.kgcalc-search-row .btn-gold-sm{border:0;cursor:pointer;flex-shrink:0;}
+.kgcalc-results{list-style:none;margin:14px 0 0;padding:0;display:flex;flex-direction:column;gap:8px;max-height:340px;overflow-y:auto;}
+.kgcalc-result{display:flex;align-items:center;gap:12px;padding:10px 12px;border:1px solid rgba(255,255,255,.08);border-radius:12px;background:rgba(255,255,255,.02);cursor:pointer;transition:border-color .2s,background .2s;text-align:left;width:100%;}
+.kgcalc-result:hover,.kgcalc-result:focus-visible{border-color:rgba(255,217,61,.4);background:rgba(255,217,61,.05);}
+.kgcalc-result-cover{width:32px;height:46px;object-fit:cover;border-radius:3px;background:#222;flex-shrink:0;}
+.kgcalc-result-text{min-width:0;}
+.kgcalc-result-title{font-size:.88rem;font-weight:600;color:var(--wh);line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.kgcalc-result-author{font-size:.78rem;color:rgba(255,255,255,.55);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.kgcalc-status{font-size:.88rem;color:rgba(255,255,255,.6);margin:18px 0 0;min-height:0;}
+.kgcalc-status.kgcalc-status-error{color:#ff8a80;}
+.kgcalc-status:empty{display:none;}
+.kgcalc-disclaimer{font-size:.72rem;color:rgba(255,255,255,.4);line-height:1.6;margin:22px 0 0;padding-top:18px;border-top:1px solid rgba(255,255,255,.07);}
+
+.kgcalc-price-card{margin-top:8px;}
+.kgcalc-book-row{display:flex;gap:16px;align-items:flex-start;margin-bottom:22px;}
+.kgcalc-book-cover{width:64px;height:96px;object-fit:cover;border-radius:6px;background:#222;flex-shrink:0;box-shadow:0 6px 16px rgba(0,0,0,.35);}
+.kgcalc-book-title{font-family:'Playfair Display',serif;font-size:1.2rem;font-weight:700;color:var(--wh);line-height:1.3;}
+.kgcalc-book-author{font-size:.85rem;color:rgba(255,255,255,.6);margin-top:4px;}
+.kgcalc-book-meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;}
+.kgcalc-pill{display:inline-flex;align-items:center;font-size:.72rem;font-weight:600;letter-spacing:.02em;color:rgba(255,255,255,.7);background:rgba(255,255,255,.06);border-radius:50px;padding:4px 11px;}
+.kgcalc-price-grid{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:rgba(255,255,255,.08);border-radius:14px;overflow:hidden;border:1px solid rgba(255,255,255,.08);}
+.kgcalc-price-box{background:#0d0d0d;padding:18px 16px;text-align:center;}
+.kgcalc-price-box.kgcalc-kg{background:rgba(255,217,61,.06);}
+.kgcalc-price-box-label{font-size:.7rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:rgba(255,255,255,.45);margin-bottom:6px;}
+.kgcalc-price-box-value{font-family:'Playfair Display',serif;font-size:1.5rem;font-weight:700;color:var(--wh);}
+.kgcalc-price-box.kgcalc-kg .kgcalc-price-box-value{color:var(--gold);}
+.kgcalc-price-box-strike{text-decoration:line-through;opacity:.5;font-size:.95rem;}
+.kgcalc-savings{text-align:center;margin-top:14px;font-size:.9rem;color:rgba(255,255,255,.75);}
+.kgcalc-savings b{color:var(--gold);}
+.kgcalc-source-note{text-align:center;font-size:.72rem;color:rgba(255,255,255,.4);margin-top:8px;}
+
+.kgcalc-quote-btn-row{margin-top:22px;display:flex;justify-content:center;}
+.kgcalc-search-again{background:none;border:0;color:rgba(255,255,255,.5);font-size:.82rem;text-decoration:underline;cursor:pointer;margin-top:16px;display:block;text-align:center;width:100%;font-family:'Inter',sans-serif;}
+.kgcalc-search-again:hover{color:var(--wh);}
+
+.kgcalc-quote-box{margin-top:24px;padding-top:22px;border-top:1px solid rgba(255,255,255,.08);text-align:center;}
+.kgcalc-quote-id{font-family:'Playfair Display',serif;font-size:1.15rem;font-weight:700;color:var(--gold);margin-bottom:6px;letter-spacing:.02em;}
+.kgcalc-quote-hint{font-size:.78rem;color:rgba(255,255,255,.5);margin-bottom:20px;}
+.kgcalc-contact-title{font-size:.95rem;font-weight:600;color:var(--wh);margin-bottom:14px;}
+.kgcalc-contact-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;}
+.kgcalc-contact-btn{display:flex;align-items:center;justify-content:center;gap:8px;padding:12px 14px;border-radius:12px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.03);color:var(--wh);font-size:.85rem;font-weight:600;text-decoration:none;cursor:pointer;transition:border-color .2s,transform .2s;font-family:'Inter',sans-serif;}
+.kgcalc-contact-btn:hover{border-color:rgba(255,217,61,.4);transform:translateY(-2px);}
+.kgcalc-toast{margin-top:14px;font-size:.8rem;color:var(--gold);min-height:0;}
+.kgcalc-toast:empty{display:none;}
+
+@media(max-width:600px){
+.kgcalc-section{padding:60px 5vw;}
+.kgcalc-card{padding:24px 20px;}
+.kgcalc-price-grid{grid-template-columns:1fr;}
+.kgcalc-contact-grid{grid-template-columns:1fr;}
+.kgcalc-book-row{gap:12px;}
+.kgcalc-book-cover{width:52px;height:78px;}
+.kgcalc-book-title{font-size:1.05rem;}
+}
+</style>
+<!-- BOOK PRICE CALCULATOR -->
+<section class="section kgcalc-section" id="price-calculator" style="background:#0d0d0d;">
+<div class="reveal kgcalc-head">
+<span class="section-tag">Instant Estimate</span>
+<h2 class="section-title">Know Your Book Price.</h2>
+<p class="section-sub">Pick your country, search for the book you want, and see today's market price next to the Kitab Guru price — before you message us.</p>
+</div>
+
+<div class="kgcalc-card reveal">
+
+<div class="kgcalc-field">
+<label class="kgcalc-label" for="kgcalc-country">1. Your country</label>
+<select class="kgcalc-select" id="kgcalc-country">
+<option value="">Select country…</option>
+</select>
+</div>
+
+<div class="kgcalc-field kgcalc-hidden" id="kgcalc-search-wrap">
+<label class="kgcalc-label" for="kgcalc-search">2. Search for a book</label>
+<div class="kgcalc-search-row">
+<input autocomplete="off" class="kgcalc-select kgcalc-input" id="kgcalc-search" placeholder="Title, author, or ISBN" type="text"/>
+<button class="btn-gold-sm" id="kgcalc-search-btn" type="button">Search</button>
+</div>
+<ul class="kgcalc-results" id="kgcalc-results"></ul>
+</div>
+
+<div class="kgcalc-hidden" id="kgcalc-price-wrap"></div>
+
+<p aria-live="polite" class="kgcalc-status" id="kgcalc-status" role="status"></p>
+
+<p class="kgcalc-disclaimer">Kitab Guru pricing shown here is an estimated quote based on the selected market price and may require final confirmation with our team.</p>
+</div>
+</section>
+<section class="section reviews-section" id="reviews">
 <div class="reveal">
 <span class="section-tag">Social Proof</span>
 <h2 class="section-title">What Our Global<br/>Readers Say</h2>
@@ -1790,6 +1892,422 @@ function toggleFaq(el){
     this.textContent=expanded?'Click here to see other genres we serve':'Show fewer genres';
     if(expanded){document.getElementById('book-wall').scrollIntoView({behavior:'smooth',block:'start'});}
   });
+})();
+</script>
+<script id="kgcalc-script">
+(function(){
+  // ── Configuration ──────────────────────────────────────────────────────
+  // Paste your deployed Google Apps Script Web App URL here (see
+  // google-apps-script/SETUP.md). Until then, the calculator still works
+  // for browsing/testing — it just skips saving the quote to Google Sheets.
+  const QUOTE_API_URL = 'PASTE_YOUR_APPS_SCRIPT_WEB_APP_URL_HERE';
+
+  const WHATSAPP_NUMBER = '917301914787';
+  const FACEBOOK_URL = 'https://www.facebook.com/kitabguru0067';
+  const INSTAGRAM_URL = 'https://instagram.com/kitabguru0067';
+  const LINKEDIN_URL = 'https://linkedin.com/company/kitabguru0067';
+  const CONTACT_EMAIL = 'ebooks@kitabguru.com';
+
+  // ── Country / currency data — add more entries here to support more
+  // countries. "code" is the ISO 3166-1 alpha-2 code Google Books uses for
+  // its per-country pricing.
+  const COUNTRIES = [
+    { name: 'India', code: 'IN', currency: 'INR', symbol: '₹' },
+    { name: 'United States', code: 'US', currency: 'USD', symbol: '$' },
+    { name: 'United Kingdom', code: 'GB', currency: 'GBP', symbol: '£' },
+    { name: 'Canada', code: 'CA', currency: 'CAD', symbol: 'CA$' },
+    { name: 'Australia', code: 'AU', currency: 'AUD', symbol: 'A$' },
+    { name: 'Germany', code: 'DE', currency: 'EUR', symbol: '€' },
+    { name: 'France', code: 'FR', currency: 'EUR', symbol: '€' },
+    { name: 'Italy', code: 'IT', currency: 'EUR', symbol: '€' },
+    { name: 'Spain', code: 'ES', currency: 'EUR', symbol: '€' },
+    { name: 'Netherlands', code: 'NL', currency: 'EUR', symbol: '€' },
+    { name: 'Ireland', code: 'IE', currency: 'EUR', symbol: '€' },
+    { name: 'New Zealand', code: 'NZ', currency: 'NZD', symbol: 'NZ$' },
+    { name: 'United Arab Emirates', code: 'AE', currency: 'AED', symbol: 'AED ' },
+    { name: 'Saudi Arabia', code: 'SA', currency: 'SAR', symbol: 'SAR ' },
+    { name: 'Egypt', code: 'EG', currency: 'EGP', symbol: 'EGP ' }
+  ];
+
+  // ── Modular retail-price sources ────────────────────────────────────────
+  // Each source is tried in order until one returns a price. To add Amazon
+  // (or another paid data source) once you have credentials: write a new
+  // async function with the same shape — {ok, retailPrice, currency, format,
+  // sourceLabel, marketplace} or {ok:false} — and add it to PRICE_SOURCES
+  // ahead of googleBooksSource.
+  //
+  // NOTE: Google Books' pricing reflects its own Play Books store listing,
+  // not a specific paperback/hardcover retail price — it is used here as
+  // the closest legitimate, keyless, no-scraping price signal available.
+  async function googleBooksSource(book, country) {
+    const isbn = book.isbn;
+    const queries = [];
+    if (isbn) queries.push('isbn:' + isbn);
+    queries.push('intitle:' + book.title + (book.author ? ' inauthor:' + book.author : ''));
+
+    for (const q of queries) {
+      try {
+        const url = 'https://www.googleapis.com/books/v1/volumes?q=' +
+          encodeURIComponent(q) + '&country=' + encodeURIComponent(country.code) + '&maxResults=1';
+        const res = await fetch(url);
+        if (!res.ok) continue;
+        const data = await res.json();
+        const item = data.items && data.items[0];
+        if (!item) continue;
+        const sale = item.saleInfo;
+        if (sale && sale.saleability === 'FOR_SALE' && sale.listPrice && sale.listPrice.amount) {
+          return {
+            ok: true,
+            retailPrice: sale.listPrice.amount,
+            currency: sale.listPrice.currencyCode || country.currency,
+            format: 'eBook (Google Play)',
+            sourceLabel: 'Google Books',
+            marketplace: 'Google Play Books — ' + country.name,
+            cover: item.volumeInfo && item.volumeInfo.imageLinks && (item.volumeInfo.imageLinks.thumbnail || item.volumeInfo.imageLinks.smallThumbnail)
+          };
+        }
+      } catch (e) { /* try next query */ }
+    }
+    return { ok: false };
+  }
+
+  const PRICE_SOURCES = [googleBooksSource];
+
+  // ── DOM refs ─────────────────────────────────────────────────────────
+  const el = {
+    country: document.getElementById('kgcalc-country'),
+    searchWrap: document.getElementById('kgcalc-search-wrap'),
+    search: document.getElementById('kgcalc-search'),
+    searchBtn: document.getElementById('kgcalc-search-btn'),
+    results: document.getElementById('kgcalc-results'),
+    priceWrap: document.getElementById('kgcalc-price-wrap'),
+    status: document.getElementById('kgcalc-status')
+  };
+  if (!el.country) return; // calculator not on this page
+
+  let selectedCountry = null;
+  let searchDebounce = null;
+
+  // ── Populate country dropdown ───────────────────────────────────────
+  COUNTRIES.forEach(function(c){
+    const opt = document.createElement('option');
+    opt.value = c.code;
+    opt.textContent = c.name + ' (' + c.currency + ')';
+    el.country.appendChild(opt);
+  });
+
+  el.country.addEventListener('change', function(){
+    selectedCountry = COUNTRIES.find(function(c){ return c.code === el.country.value; }) || null;
+    el.priceWrap.classList.add('kgcalc-hidden');
+    el.priceWrap.innerHTML = '';
+    setStatus('');
+    if (selectedCountry) {
+      el.searchWrap.classList.remove('kgcalc-hidden');
+    } else {
+      el.searchWrap.classList.add('kgcalc-hidden');
+    }
+  });
+
+  // ── Search (Open Library — free, keyless, used for search only) ────
+  function setStatus(msg, isError){
+    el.status.textContent = msg || '';
+    el.status.classList.toggle('kgcalc-status-error', !!isError);
+  }
+
+  async function runSearch(){
+    const q = el.search.value.trim();
+    el.results.innerHTML = '';
+    if (!q) return;
+    setStatus('Searching…');
+
+    try {
+      const url = 'https://openlibrary.org/search.json?q=' + encodeURIComponent(q) +
+        '&fields=title,author_name,isbn,cover_i&limit=8';
+      const res = await fetch(url);
+      if (!res.ok) throw new Error('search failed');
+      const data = await res.json();
+      const docs = (data.docs || []).filter(function(d){ return d.title; });
+
+      if (!docs.length) {
+        setStatus("No books found. Try a different title, author, or ISBN.", true);
+        return;
+      }
+      setStatus('');
+      docs.forEach(function(doc){ el.results.appendChild(renderResult(doc)); });
+    } catch (e) {
+      setStatus('Something went wrong searching. Please try again.', true);
+    }
+  }
+
+  function renderResult(doc){
+    const li = document.createElement('li');
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'kgcalc-result';
+
+    const cover = document.createElement('img');
+    cover.className = 'kgcalc-result-cover';
+    cover.loading = 'lazy';
+    cover.alt = '';
+    cover.src = doc.cover_i
+      ? 'https://covers.openlibrary.org/b/id/' + doc.cover_i + '-S.jpg'
+      : 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="32" height="46"%3E%3Crect width="32" height="46" fill="%23222"/%3E%3C/svg%3E';
+
+    const text = document.createElement('div');
+    text.className = 'kgcalc-result-text';
+    const title = document.createElement('div');
+    title.className = 'kgcalc-result-title';
+    title.textContent = doc.title;
+    const author = document.createElement('div');
+    author.className = 'kgcalc-result-author';
+    author.textContent = (doc.author_name && doc.author_name[0]) || 'Unknown author';
+    text.appendChild(title);
+    text.appendChild(author);
+
+    btn.appendChild(cover);
+    btn.appendChild(text);
+    btn.addEventListener('click', function(){
+      selectBook({
+        title: doc.title,
+        author: (doc.author_name && doc.author_name[0]) || '',
+        isbn: pickIsbn(doc.isbn),
+        cover: doc.cover_i ? 'https://covers.openlibrary.org/b/id/' + doc.cover_i + '-M.jpg' : ''
+      });
+    });
+
+    li.appendChild(btn);
+    return li;
+  }
+
+  function pickIsbn(isbns){
+    if (!isbns || !isbns.length) return '';
+    const isbn13 = isbns.find(function(i){ return i.length === 13; });
+    return isbn13 || isbns[0];
+  }
+
+  el.searchBtn.addEventListener('click', runSearch);
+  el.search.addEventListener('keydown', function(e){ if (e.key === 'Enter') { e.preventDefault(); runSearch(); } });
+  el.search.addEventListener('input', function(){
+    clearTimeout(searchDebounce);
+    searchDebounce = setTimeout(runSearch, 500);
+  });
+
+  // ── Book selected → fetch price ─────────────────────────────────────
+  async function selectBook(book){
+    el.results.innerHTML = '';
+    el.search.value = book.title;
+    setStatus('Checking the current price…');
+    el.priceWrap.classList.add('kgcalc-hidden');
+
+    let priceResult = { ok: false };
+    for (const source of PRICE_SOURCES) {
+      priceResult = await source(book, selectedCountry);
+      if (priceResult.ok) break;
+    }
+
+    if (!priceResult.ok) {
+      setStatus("We couldn't find a reliable current price for this book. Please try another title or ISBN.", true);
+      return;
+    }
+
+    setStatus('');
+    renderPriceCard(book, priceResult);
+  }
+
+  const CURRENCY_SYMBOLS = COUNTRIES.reduce(function(map, c){
+    map[c.currency] = c.symbol;
+    return map;
+  }, {});
+
+  function formatMoney(amount, currencyCode){
+    const code = currencyCode || (selectedCountry && selectedCountry.currency);
+    const symbol = CURRENCY_SYMBOLS[code] || (code ? code + ' ' : '');
+    return symbol + Number(amount).toFixed(2);
+  }
+
+  function renderPriceCard(book, priceResult){
+    const retail = priceResult.retailPrice;
+    const kgPrice = +(retail * 0.20).toFixed(2);
+    const savings = +(retail * 0.80).toFixed(2);
+    const discountPct = 80;
+
+    const wrap = el.priceWrap;
+    wrap.innerHTML = '';
+    wrap.classList.remove('kgcalc-hidden');
+
+    const card = document.createElement('div');
+    card.className = 'kgcalc-price-card';
+    card.innerHTML =
+      '<div class="kgcalc-book-row">' +
+        (book.cover || priceResult.cover
+          ? '<img class="kgcalc-book-cover" src="' + (book.cover || priceResult.cover) + '" alt="' + escapeHtml(book.title) + ' cover"/>'
+          : '') +
+        '<div>' +
+          '<div class="kgcalc-book-title">' + escapeHtml(book.title) + '</div>' +
+          (book.author ? '<div class="kgcalc-book-author">' + escapeHtml(book.author) + '</div>' : '') +
+          '<div class="kgcalc-book-meta">' +
+            '<span class="kgcalc-pill">' + escapeHtml(priceResult.format) + '</span>' +
+            '<span class="kgcalc-pill">' + escapeHtml(selectedCountry.name) + '</span>' +
+          '</div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="kgcalc-price-grid">' +
+        '<div class="kgcalc-price-box">' +
+          '<div class="kgcalc-price-box-label">Retail Price</div>' +
+          '<div class="kgcalc-price-box-value">' + formatMoney(retail, priceResult.currency) + '</div>' +
+        '</div>' +
+        '<div class="kgcalc-price-box kgcalc-kg">' +
+          '<div class="kgcalc-price-box-label">Kitab Guru Price</div>' +
+          '<div class="kgcalc-price-box-value">' + formatMoney(kgPrice, priceResult.currency) + '</div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="kgcalc-savings">You save <b>' + formatMoney(savings, priceResult.currency) + ' (' + discountPct + '%)</b></div>' +
+      '<div class="kgcalc-source-note">Price source: ' + escapeHtml(priceResult.sourceLabel) + '</div>' +
+      '<div class="kgcalc-quote-btn-row"><button class="btn-gold" id="kgcalc-quote-btn" type="button">Get My Quote</button></div>' +
+      '<button class="kgcalc-search-again" id="kgcalc-search-again" type="button">Search a different book</button>' +
+      '<div class="kgcalc-quote-box kgcalc-hidden" id="kgcalc-quote-box"></div>';
+
+    wrap.appendChild(card);
+
+    document.getElementById('kgcalc-search-again').addEventListener('click', function(){
+      wrap.classList.add('kgcalc-hidden');
+      wrap.innerHTML = '';
+      el.search.value = '';
+      el.search.focus();
+    });
+
+    document.getElementById('kgcalc-quote-btn').addEventListener('click', function(){
+      getQuote(book, priceResult, { retail: retail, kgPrice: kgPrice, savings: savings, discountPct: discountPct });
+    });
+  }
+
+  function escapeHtml(s){
+    return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  // ── Quote ID + save to Google Sheets ────────────────────────────────
+  function makeQuoteId(){
+    const d = new Date();
+    const y = d.getFullYear();
+    const m = String(d.getMonth()+1).padStart(2,'0');
+    const day = String(d.getDate()).padStart(2,'0');
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let rand = '';
+    for (let i=0;i<5;i++) rand += chars[Math.floor(Math.random()*chars.length)];
+    return 'KG-' + y + m + day + '-' + rand;
+  }
+
+  let currentQuote = null;
+
+  function getQuote(book, priceResult, prices){
+    const quoteId = makeQuoteId();
+    currentQuote = {
+      quoteId: quoteId,
+      country: selectedCountry.name,
+      currency: priceResult.currency,
+      bookTitle: book.title,
+      author: book.author,
+      isbn: book.isbn,
+      format: priceResult.format,
+      retailPrice: prices.retail,
+      kitabGuruPrice: prices.kgPrice,
+      discount: prices.discountPct + '%',
+      priceSource: priceResult.sourceLabel,
+      sourceMarketplace: priceResult.marketplace,
+      contactMethod: ''
+    };
+
+    saveQuote(currentQuote);
+
+    const box = document.getElementById('kgcalc-quote-box');
+    box.classList.remove('kgcalc-hidden');
+    box.innerHTML =
+      '<div class="kgcalc-quote-id">Your Quote ID: ' + quoteId + '</div>' +
+      '<div class="kgcalc-quote-hint">Save your Quote ID if you contact us through Instagram, Facebook Messenger, or LinkedIn.</div>' +
+      '<div class="kgcalc-contact-title">Ready to order?</div>' +
+      '<div class="kgcalc-contact-grid">' +
+        contactButtonHtml('whatsapp', 'WhatsApp') +
+        contactButtonHtml('facebook', 'Messenger') +
+        contactButtonHtml('instagram', 'Instagram') +
+        contactButtonHtml('linkedin', 'LinkedIn') +
+        contactButtonHtml('email', 'Email') +
+      '</div>' +
+      '<div class="kgcalc-toast" id="kgcalc-toast"></div>';
+
+    document.getElementById('kgcalc-quote-btn').closest('.kgcalc-price-card').querySelectorAll('[data-contact]').forEach(function(btn){
+      btn.addEventListener('click', function(){ handleContactClick(btn.dataset.contact, book); });
+    });
+
+    document.getElementById('kgcalc-quote-btn').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  function contactButtonHtml(key, label){
+    return '<button class="kgcalc-contact-btn" data-contact="' + key + '" type="button">' + label + '</button>';
+  }
+
+  function handleContactClick(method, book){
+    if (currentQuote) {
+      currentQuote.contactMethod = method;
+      updateContactMethod(currentQuote.quoteId, method);
+    }
+    const toast = document.getElementById('kgcalc-toast');
+
+    if (method === 'whatsapp') {
+      const msg = "Hi Kitab Guru, I'd like to order " + book.title + ". My Quote ID is " + currentQuote.quoteId + ".";
+      window.open('https://wa.me/' + WHATSAPP_NUMBER + '?text=' + encodeURIComponent(msg), '_blank', 'noopener');
+      return;
+    }
+    if (method === 'email') {
+      const subject = 'Order request — ' + book.title + ' (' + currentQuote.quoteId + ')';
+      const body = "Hi Kitab Guru,\n\nI'd like to order " + book.title + (book.author ? ' by ' + book.author : '') +
+        ".\nMy Quote ID is " + currentQuote.quoteId + ".\n\nThanks!";
+      window.location.href = 'mailto:' + CONTACT_EMAIL + '?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body);
+      return;
+    }
+
+    // Facebook / Instagram / LinkedIn: no reliable pre-filled-message
+    // mechanism exists on these platforms via a plain link, so we copy the
+    // Quote ID for the customer and open the existing social profile.
+    const url = method === 'facebook' ? FACEBOOK_URL : method === 'instagram' ? INSTAGRAM_URL : LINKEDIN_URL;
+    copyToClipboard(currentQuote.quoteId);
+    if (toast) toast.textContent = 'Please copy your Quote ID before continuing. (Copied: ' + currentQuote.quoteId + ')';
+    window.open(url, '_blank', 'noopener');
+  }
+
+  function copyToClipboard(text){
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).catch(function(){});
+    }
+  }
+
+  // ── Google Apps Script bridge ────────────────────────────────────────
+  function apiConfigured(){
+    return QUOTE_API_URL && QUOTE_API_URL.indexOf('PASTE_') !== 0;
+  }
+
+  function postToAppsScript(payload){
+    if (!apiConfigured()) {
+      console.info('[Kitab Guru calculator] QUOTE_API_URL not configured yet — skipping save. See google-apps-script/SETUP.md.');
+      return;
+    }
+    // Content-Type text/plain avoids a CORS preflight request, which Apps
+    // Script web apps do not handle. The body is still JSON.
+    fetch(QUOTE_API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(payload)
+    }).catch(function(err){
+      console.warn('[Kitab Guru calculator] Could not reach quote backend.', err);
+    });
+  }
+
+  function saveQuote(quote){
+    postToAppsScript(Object.assign({ action: 'saveQuote' }, quote));
+  }
+
+  function updateContactMethod(quoteId, method){
+    postToAppsScript({ action: 'updateContactMethod', quoteId: quoteId, contactMethod: method });
+  }
 })();
 </script>
 <script id="kitabguru-v14-cover-loader">
