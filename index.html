@@ -2245,6 +2245,34 @@ function toggleFaq(el){
     return c ? c.name : code;
   }
 
+  // PRIORITY 5 — absolute last resort. A small number of titles (seen in
+  // testing: "Rich Dad Poor Dad") simply aren't sold as an English ebook
+  // on Google Play in ANY market — only translated editions (Hindi,
+  // Gujarati, Telugu, etc.) are for sale, everywhere. Rather than the
+  // customer hitting a dead end for a book that Google Books does have
+  // real pricing for, re-run the same own-country + reference-market
+  // cascade one more time allowing a translated edition through — always
+  // clearly labeled as one (see languageName() above), never presented as
+  // if it were the English edition.
+  async function googleBooksTranslatedFallbackSource(book, country) {
+    const otherMarkets = REFERENCE_MARKETS.filter(function(m){ return m !== country.code; });
+    const markets = [country.code].concat(otherMarkets);
+    const queries = buildQueries(book, 2);
+
+    const attempts = markets.map(function(market, i){
+      return sleep(i * 150).then(function(){
+        return googleBooksLookup(queries, market, 'Google Books', country, true);
+      });
+    });
+    attempts.push(sleep(markets.length * 150).then(function(){
+      return googleBooksLookup(queries, null, 'Google Books', country, true);
+    }));
+
+    const results = await Promise.all(attempts);
+    const hit = results.find(function(r){ return r.ok; });
+    return hit || { ok: false };
+  }
+
   // Every ISBN edition Open Library found for this book (a work can have
   // many print/ebook editions with different price availability), plus a
   // plain title/author query as a final catch-all. Capped to keep the
@@ -2261,7 +2289,20 @@ function toggleFaq(el){
     return queries;
   }
 
-  async function googleBooksLookup(queries, countryCode, label, customerCountry) {
+  // A handful of common Google Books language codes, only used to label a
+  // last-resort translated-edition price honestly (e.g. "Hindi edition")
+  // instead of a bare code — falls back to the raw code for anything not
+  // listed here, which is still clearer than nothing.
+  const LANGUAGE_NAMES = {
+    hi: 'Hindi', gu: 'Gujarati', te: 'Telugu', ta: 'Tamil', kn: 'Kannada',
+    ml: 'Malayalam', mr: 'Marathi', bn: 'Bengali', pa: 'Punjabi', ur: 'Urdu',
+    es: 'Spanish', fr: 'French', de: 'German', it: 'Italian', pt: 'Portuguese',
+    ja: 'Japanese', zh: 'Chinese', ko: 'Korean', ru: 'Russian', ar: 'Arabic',
+    nl: 'Dutch', tr: 'Turkish', vi: 'Vietnamese', th: 'Thai', id: 'Indonesian', pl: 'Polish'
+  };
+  function languageName(code){ return LANGUAGE_NAMES[code] || code; }
+
+  async function googleBooksLookup(queries, countryCode, label, customerCountry, allowTranslation) {
     for (const q of queries) {
       try {
         // Ask for several editions, not just one — Google Books often lists
@@ -2277,9 +2318,19 @@ function toggleFaq(el){
         if (!res.ok) { logSourceIssue('Google Books', res.status); continue; }
         const data = await res.json();
         const items = data.items || [];
-        const item = items.find(function(it){
+        const forSale = items.filter(function(it){
           return it.saleInfo && it.saleInfo.saleability === 'FOR_SALE' && it.saleInfo.listPrice && it.saleInfo.listPrice.amount;
         });
+        // Prefer an English listing — some countries' Google Play stores
+        // only sell a Hindi/Gujarati/Telugu edition of a title with no
+        // English edition for sale at all. Silently pricing the
+        // customer's search against a translation, under the original
+        // English title, would be a wrong price shown as if it were
+        // correct — so a translation is only ever used when explicitly
+        // allowed (the very last, clearly-labeled fallback source), never
+        // as the everyday result.
+        const englishItem = forSale.find(function(it){ return it.volumeInfo && it.volumeInfo.language === 'en'; });
+        const item = englishItem || (allowTranslation ? forSale[0] : null);
         if (!item) continue;
         const sale = item.saleInfo;
         if (sale && sale.saleability === 'FOR_SALE' && sale.listPrice && sale.listPrice.amount) {
@@ -2287,14 +2338,17 @@ function toggleFaq(el){
           const sourceCurrency = sale.listPrice.currencyCode || countryCode;
           let amount = sale.listPrice.amount;
           let currency = sourceCurrency;
-          let finalLabel = label;
+          const itemLang = item.volumeInfo && item.volumeInfo.language;
+          const isTranslation = !englishItem && itemLang && itemLang !== 'en';
+          const langTag = isTranslation ? languageName(itemLang) + ' edition' : '';
+          let finalLabel = label + (langTag ? ' — ' + langTag + ' (no English edition found for sale)' : '');
 
           if (customerCountry && sourceCurrency && sourceCurrency !== customerCountry.currency) {
             const converted = await convertCurrency(amount, sourceCurrency, customerCountry.currency);
             if (converted != null) {
               amount = converted;
               currency = customerCountry.currency;
-              finalLabel = label + ', converted from ' + sourceCurrency;
+              finalLabel = label + ', converted from ' + sourceCurrency + (langTag ? ' — ' + langTag + ' (no English edition found for sale)' : '');
             }
           }
 
@@ -2302,7 +2356,7 @@ function toggleFaq(el){
             ok: true,
             retailPrice: +amount.toFixed(2),
             currency: currency,
-            format: 'eBook (Google Play)',
+            format: 'eBook (Google Play)' + (langTag ? ' — ' + langTag : ''),
             sourceLabel: finalLabel,
             marketplace: label + (countryCode ? ' — ' + countryCode : ''),
             referenceLink: link || '',
@@ -2352,7 +2406,7 @@ function toggleFaq(el){
     console.info('[Kitab Guru calculator] ' + name + ' unavailable, trying next source.', detail);
   }
 
-  const PRICE_SOURCES = [amazonSource, localRetailerSource, googleBooksSource, googleBooksReferenceSource];
+  const PRICE_SOURCES = [amazonSource, localRetailerSource, googleBooksSource, googleBooksReferenceSource, googleBooksTranslatedFallbackSource];
 
   async function fetchPrice(book, country){
     // Check the shared cache first (see google-apps-script/Code.gs) —
@@ -2574,6 +2628,27 @@ function toggleFaq(el){
   // actually the one for sale anywhere. If a work has more than one
   // edition with real edition data, let the customer pick the exact one
   // instead of guessing.
+  // Only a textbook-style title genuinely has multiple "editions" worth
+  // asking a customer to pick between (a specific "4th Edition", "Edition
+  // 3", etc.) — fiction and general non-fiction just has different print
+  // years/publishers of the same single book, which nobody searches for
+  // by edition. Gate the edition picker on a real numbered/ordinal edition
+  // marker, NOT just the bare word "edition" — Google Play routinely
+  // labels plain language/format variants "(English Edition)", "(Kindle
+  // Edition)", or anniversary reissues "20th Anniversary Edition", none of
+  // which are a textbook edition in the sense the customer means.
+  const ORDINAL_EDITION_WORDS = '(second|third|fourth|fifth|sixth|seventh|eighth|ninth|tenth|eleventh|twelfth)';
+  function isExplicitEditionText(text){
+    const s = String(text || '');
+    return new RegExp('\\b\\d+(st|nd|rd|th)\\s+edition\\b', 'i').test(s) ||
+      new RegExp('\\b' + ORDINAL_EDITION_WORDS + '\\s+edition\\b', 'i').test(s) ||
+      /\bedition\s+\d+\b/i.test(s);
+  }
+  function isExplicitEditionItem(item){
+    const vi = item.volumeInfo || {};
+    return isExplicitEditionText((vi.title || '') + ' ' + (vi.subtitle || ''));
+  }
+
   async function openEditionPicker(doc){
     setStatus('Loading editions…');
 
@@ -2588,9 +2663,30 @@ function toggleFaq(el){
     try { googleItems = await fetchGoogleBooksEditions(doc); }
     catch (e) { logSourceIssue('Google Books editions', e); }
 
-    if (googleItems.length >= 2) {
+    const googleEditionsWorthPicking = googleItems.filter(isExplicitEditionItem);
+    if (googleEditionsWorthPicking.length >= 2) {
       setStatus('');
-      renderGoogleEditionList(doc, googleItems);
+      renderGoogleEditionList(doc, googleEditionsWorthPicking);
+      return;
+    }
+
+    // Not a multi-edition textbook — skip the picker entirely and go
+    // straight to pricing. Reuse the best already-fetched Google item
+    // rather than a redundant lookup, but only an English one: some
+    // markets (India, for one) only sell a Hindi/Gujarati/Telugu
+    // translation of a title on Google Play with no English edition for
+    // sale at all — silently handing the customer that translation's
+    // price as if it were the English book they searched for would be
+    // exactly the "wrong price/source" the CTA below exists to catch. If
+    // there's no English for-sale item here, fall through to the normal
+    // fallback chain instead, which checks reference markets for a real
+    // price of the actual English edition.
+    const englishForSale = googleItems.find(function(it){
+      return it.volumeInfo.language === 'en' && it.saleInfo && it.saleInfo.saleability === 'FOR_SALE';
+    });
+    if (englishForSale) {
+      setStatus('');
+      await selectGoogleEdition(doc, englishForSale);
       return;
     }
 
@@ -2610,12 +2706,13 @@ function toggleFaq(el){
     } catch (e) { /* fall through to the plain work-level flow below */ }
     setStatus('');
 
-    if (editions.length < 2) {
+    const editionsWorthPicking = editions.filter(function(e){ return isExplicitEditionText(e.title); });
+    if (editionsWorthPicking.length < 2) {
       selectBook(bookFromDoc(doc, poolSiblingIsbns(doc)));
       return;
     }
 
-    renderEditionList(doc, editions);
+    renderEditionList(doc, editionsWorthPicking);
   }
 
   // Ask Google Books directly what it has for this title/author, in the
@@ -2646,12 +2743,19 @@ function toggleFaq(el){
       return true;
     });
 
-    // For-sale listings first, then by publish year, newest first — the
-    // options most likely to be useful float to the top of a long list.
+    // For-sale listings first, then original-language (English) editions
+    // ahead of translations — Google Books' own sort otherwise happily
+    // lets a "(Gujarati)"/"(Hindi)" translation with a newer publish date
+    // outrank the actual English original, which matters a lot now that
+    // non-textbook searches auto-pick the top item with no picker shown —
+    // then by publish year, newest first.
     unique.sort(function(a, b){
       const aSale = a.saleInfo && a.saleInfo.saleability === 'FOR_SALE' ? 1 : 0;
       const bSale = b.saleInfo && b.saleInfo.saleability === 'FOR_SALE' ? 1 : 0;
       if (aSale !== bSale) return bSale - aSale;
+      const aEn = a.volumeInfo.language === 'en' ? 1 : 0;
+      const bEn = b.volumeInfo.language === 'en' ? 1 : 0;
+      if (aEn !== bEn) return bEn - aEn;
       const aYear = parseInt((a.volumeInfo.publishedDate || '').slice(0, 4), 10) || 0;
       const bYear = parseInt((b.volumeInfo.publishedDate || '').slice(0, 4), 10) || 0;
       return bYear - aYear;
@@ -2972,10 +3076,9 @@ function toggleFaq(el){
           ? ' — <a class="kgcalc-source-link" href="' + escapeHtml(priceResult.referenceLink) + '" rel="noopener" target="_blank">view source</a>'
           : '') +
       '</div>' +
-      '<p class="kgcalc-mini-note">See a different price or listing at the source? <a href="#contact">Send us the correct retail price</a> and we\'ll double-check it.</p>' +
       '<div class="kgcalc-quote-btn-row"><button class="btn-gold" id="kgcalc-quote-btn" type="button">Get My Quote</button></div>' +
       '<button class="kgcalc-search-again" id="kgcalc-search-again" type="button">Search a different book</button>' +
-      '<p class="kgcalc-mini-note">Looking for a different edition, or can\'t find yours? <a href="#contact">Reach out to us</a> directly.</p>' +
+      '<p class="kgcalc-mini-note">Not the right edition, or does the price/source look off? <a href="#contact">Reach out to us</a> and we\'ll sort it out.</p>' +
       '<div class="kgcalc-quote-box kgcalc-hidden" id="kgcalc-quote-box"></div>';
 
     wrap.appendChild(card);
