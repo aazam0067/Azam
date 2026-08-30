@@ -17,7 +17,7 @@
 
 // 1. Paste your Google Sheet ID here (the long string in the sheet's URL
 //    between /d/ and /edit).
-const SPREADSHEET_ID = 'PASTE_YOUR_GOOGLE_SHEET_ID_HERE';
+const SPREADSHEET_ID = '1LfDwX3TpEjxzZ3euCWJkBFas0DELaPOLqdHysTM4hE0';
 
 // 2. The email address that receives a notification for every new quote.
 const NOTIFY_EMAIL = 'eBooksWorld3622@gmail.com';
