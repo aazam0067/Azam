@@ -520,6 +520,7 @@ html{scroll-behavior:smooth;}
   </p>
 <div class="hero-ctas">
 <a class="btn-gold" href="#contact">Get Your eBook →</a>
+<a class="btn-ghost" href="#price-calculator">Check Book Price →</a>
 <a class="btn-ghost" href="#book-wall">Explore Books →</a>
 </div>
 <div class="hero-trust">
@@ -799,9 +800,11 @@ select.kgcalc-select{appearance:none;-webkit-appearance:none;background-image:ur
 .kgcalc-mini-note{text-align:center;font-size:.78rem;color:rgba(255,255,255,.45);line-height:1.6;margin:10px 0 0;}
 .kgcalc-mini-note a{color:var(--gold);text-decoration:underline;}
 
-.kgcalc-quote-btn-row{margin-top:22px;display:flex;justify-content:center;}
+.kgcalc-quote-btn-row{margin-top:22px;display:flex;justify-content:center;gap:10px;flex-wrap:wrap;}
 .kgcalc-search-again{background:none;border:0;color:rgba(255,255,255,.5);font-size:.82rem;text-decoration:underline;cursor:pointer;margin-top:16px;display:block;text-align:center;width:100%;font-family:'Inter',sans-serif;}
 .kgcalc-search-again:hover{color:var(--wh);}
+.kgcalc-add-cart-btn{background:transparent;border:1.5px solid rgba(255,255,255,.2);color:var(--wh);border-radius:50px;padding:13px 24px;font-size:.85rem;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;transition:border-color .2s;}
+.kgcalc-add-cart-btn:hover{border-color:rgba(255,217,61,.4);}
 
 .kgcalc-quote-box{margin-top:24px;padding-top:22px;border-top:1px solid rgba(255,255,255,.08);text-align:center;}
 .kgcalc-quote-id{font-family:'Playfair Display',serif;font-size:1.15rem;font-weight:700;color:var(--gold);margin-bottom:6px;letter-spacing:.02em;}
@@ -813,6 +816,24 @@ select.kgcalc-select{appearance:none;-webkit-appearance:none;background-image:ur
 .kgcalc-toast{margin-top:14px;font-size:.8rem;color:var(--gold);min-height:0;}
 .kgcalc-toast:empty{display:none;}
 
+.kgcalc-cart{margin-top:26px;padding-top:24px;border-top:1px solid rgba(255,255,255,.08);}
+.kgcalc-cart-head{font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:700;color:var(--wh);margin-bottom:16px;}
+.kgcalc-cart-list{list-style:none;margin:0 0 18px;padding:0;display:flex;flex-direction:column;gap:10px;}
+.kgcalc-cart-item{display:flex;align-items:center;gap:10px;padding:11px 13px;border:1px solid rgba(255,255,255,.08);border-radius:12px;background:rgba(255,255,255,.02);}
+.kgcalc-cart-item-text{flex:1;min-width:0;}
+.kgcalc-cart-item-title{font-size:.88rem;font-weight:600;color:var(--wh);}
+.kgcalc-cart-item-author{font-size:.76rem;color:rgba(255,255,255,.5);margin-top:2px;}
+.kgcalc-cart-item-price{font-size:.85rem;font-weight:600;color:var(--gold);text-align:right;flex-shrink:0;}
+.kgcalc-cart-item-retail{font-weight:400;color:rgba(255,255,255,.4);font-size:.72rem;display:block;}
+.kgcalc-cart-item-unconfirmed{color:rgba(255,255,255,.55);font-weight:500;font-size:.76rem;font-style:italic;text-align:right;display:block;max-width:160px;}
+.kgcalc-cart-remove{background:none;border:0;color:rgba(255,255,255,.35);cursor:pointer;font-size:1rem;padding:2px 4px;flex-shrink:0;line-height:1;}
+.kgcalc-cart-remove:hover{color:#ff8a80;}
+.kgcalc-cart-totals{display:flex;justify-content:space-between;gap:16px;padding:16px;background:rgba(255,217,61,.06);border-radius:12px;margin-bottom:14px;}
+.kgcalc-cart-totals div{display:flex;flex-direction:column;gap:4px;font-size:.75rem;font-weight:600;letter-spacing:.03em;text-transform:uppercase;color:rgba(255,255,255,.5);}
+.kgcalc-cart-totals b{font-family:'Playfair Display',serif;font-size:1.2rem;font-weight:700;color:var(--gold);letter-spacing:0;text-transform:none;}
+.kgcalc-cart-note{font-size:.78rem;color:rgba(255,255,255,.5);line-height:1.6;margin:0 0 18px;}
+.kgcalc-cart-finish-btn{width:100%;border:0;cursor:pointer;}
+
 @media(max-width:600px){
 .kgcalc-section{padding:60px 5vw;}
 .kgcalc-card{padding:24px 20px;}
@@ -821,6 +842,8 @@ select.kgcalc-select{appearance:none;-webkit-appearance:none;background-image:ur
 .kgcalc-book-row{gap:12px;}
 .kgcalc-book-cover{width:52px;height:78px;}
 .kgcalc-book-title{font-size:1.05rem;}
+.kgcalc-cart-totals{flex-direction:column;gap:12px;}
+.kgcalc-cart-item{flex-wrap:wrap;}
 }
 </style>
 <!-- BOOK PRICE CALCULATOR -->
@@ -851,6 +874,8 @@ select.kgcalc-select{appearance:none;-webkit-appearance:none;background-image:ur
 </div>
 
 <div class="kgcalc-hidden" id="kgcalc-price-wrap"></div>
+
+<div class="kgcalc-hidden" id="kgcalc-cart"></div>
 
 <p aria-live="polite" class="kgcalc-status" id="kgcalc-status" role="status"></p>
 
@@ -2435,6 +2460,7 @@ function toggleFaq(el){
     searchBtn: document.getElementById('kgcalc-search-btn'),
     results: document.getElementById('kgcalc-results'),
     priceWrap: document.getElementById('kgcalc-price-wrap'),
+    cart: document.getElementById('kgcalc-cart'),
     status: document.getElementById('kgcalc-status')
   };
   if (!el.countryInput) return; // calculator not on this page
@@ -2442,6 +2468,11 @@ function toggleFaq(el){
   let selectedCountry = null;
   let searchDebounce = null;
   let countryDebounce = null;
+  // A customer buying more than one book adds each to this list instead of
+  // getting a separate quote per book; each entry is { book, priceResult,
+  // prices } where prices is null for a book whose price couldn't be
+  // confirmed (it still joins the order, counted as 0 toward the total).
+  let cart = [];
 
   // ── Country combobox ─────────────────────────────────────────────────
   function renderCountryResults(query){
@@ -3076,7 +3107,10 @@ function toggleFaq(el){
           ? ' — <a class="kgcalc-source-link" href="' + escapeHtml(priceResult.referenceLink) + '" rel="noopener" target="_blank">view source</a>'
           : '') +
       '</div>' +
-      '<div class="kgcalc-quote-btn-row"><button class="btn-gold" id="kgcalc-quote-btn" type="button">Get My Quote</button></div>' +
+      '<div class="kgcalc-quote-btn-row">' +
+        '<button class="btn-gold" id="kgcalc-quote-btn" type="button">Get My Quote' + (cart.length ? ' for ' + (cart.length + 1) + ' Books' : '') + '</button>' +
+        '<button class="kgcalc-add-cart-btn" id="kgcalc-add-cart-btn" type="button">+ Buying more than one? Add this book</button>' +
+      '</div>' +
       '<button class="kgcalc-search-again" id="kgcalc-search-again" type="button">Search a different book</button>' +
       '<p class="kgcalc-mini-note">Not the right edition, or does the price/source look off? <a href="#contact">Reach out to us</a> and we\'ll sort it out.</p>' +
       '<div class="kgcalc-quote-box kgcalc-hidden" id="kgcalc-quote-box"></div>';
@@ -3090,8 +3124,14 @@ function toggleFaq(el){
       el.search.focus();
     });
 
+    const prices = { retail: retail, kgPrice: kgPrice, savings: savings, discountPct: discountPct };
+
+    document.getElementById('kgcalc-add-cart-btn').addEventListener('click', function(){
+      addToCart(book, priceResult, prices);
+    });
+
     document.getElementById('kgcalc-quote-btn').addEventListener('click', function(){
-      getQuote(book, priceResult, { retail: retail, kgPrice: kgPrice, savings: savings, discountPct: discountPct });
+      finalizeOrder(cart.concat([{ book: book, priceResult: priceResult, prices: prices }]));
     });
   }
 
@@ -3127,6 +3167,9 @@ function toggleFaq(el){
         contactButtonHtml('email', 'Email') +
       '</div>' +
       '<div class="kgcalc-toast" id="kgcalc-toast"></div>' +
+      '<div class="kgcalc-quote-btn-row">' +
+        '<button class="kgcalc-add-cart-btn" id="kgcalc-add-cart-btn" type="button">Buying more than one? Add this one to your order</button>' +
+      '</div>' +
       '<button class="kgcalc-search-again" id="kgcalc-search-again" type="button">Search a different book</button>';
 
     wrap.appendChild(card);
@@ -3139,6 +3182,13 @@ function toggleFaq(el){
       wrap.innerHTML = '';
       el.search.value = '';
       el.search.focus();
+    });
+
+    // Still worth adding to a multi-book order even with no confirmed
+    // price — it joins the order counted as 0 toward the total (see
+    // addToCart/finalizeOrder), and the team follows up on it directly.
+    document.getElementById('kgcalc-add-cart-btn').addEventListener('click', function(){
+      addToCart(book, { ok: false }, null);
     });
 
     logInquiry(book);
@@ -3182,6 +3232,208 @@ function toggleFaq(el){
 
   function escapeHtml(s){
     return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  // ── Multi-book order cart ────────────────────────────────────────────
+  // A customer buying more than one book adds each to `cart` instead of
+  // getting a separate quote per book. A book with no confirmed price
+  // still joins the order — counted as 0 toward the total, with a note —
+  // rather than blocking the rest of the order.
+  function addToCart(book, priceResult, prices){
+    cart.push({ book: book, priceResult: priceResult, prices: prices });
+    el.priceWrap.classList.add('kgcalc-hidden');
+    el.priceWrap.innerHTML = '';
+    el.search.value = '';
+    renderCartSummary();
+    el.search.focus();
+  }
+
+  function cartTotals(items){
+    let retailTotal = 0, kgTotal = 0, unconfirmed = 0;
+    const priced = items.find(function(it){ return it.priceResult && it.priceResult.ok; });
+    const currency = priced ? priced.priceResult.currency : (selectedCountry && selectedCountry.currency);
+    items.forEach(function(it){
+      if (it.priceResult && it.priceResult.ok) {
+        retailTotal += it.prices.retail;
+        kgTotal += it.prices.kgPrice;
+      } else {
+        unconfirmed++;
+      }
+    });
+    return { retailTotal: retailTotal, kgTotal: kgTotal, unconfirmed: unconfirmed, currency: currency };
+  }
+
+  function cartUnconfirmedNoteHtml(items, totals){
+    if (!totals.unconfirmed) return '';
+    return '<p class="kgcalc-cart-note">' + totals.unconfirmed + ' of ' + items.length + ' book' + (items.length === 1 ? '' : 's') +
+      " couldn't be priced automatically — counted as " + formatMoney(0, totals.currency) + " for now. We'll confirm the exact price for " +
+      (totals.unconfirmed === 1 ? 'that one' : 'those') + ' directly.</p>';
+  }
+
+  function cartItemRowHtml(it, index, removable){
+    const ok = it.priceResult && it.priceResult.ok;
+    return '<li class="kgcalc-cart-item">' +
+      '<div class="kgcalc-cart-item-text">' +
+        '<div class="kgcalc-cart-item-title">' + escapeHtml(it.book.title) + '</div>' +
+        (it.book.author ? '<div class="kgcalc-cart-item-author">' + escapeHtml(it.book.author) + '</div>' : '') +
+      '</div>' +
+      '<div class="kgcalc-cart-item-price">' +
+        (ok
+          ? formatMoney(it.prices.kgPrice, it.priceResult.currency) + '<span class="kgcalc-cart-item-retail">retail ' + formatMoney(it.prices.retail, it.priceResult.currency) + '</span>'
+          : '<span class="kgcalc-cart-item-unconfirmed">Not confirmed — counted as 0, we\'ll follow up</span>') +
+      '</div>' +
+      (removable ? '<button type="button" class="kgcalc-cart-remove" data-cart-index="' + index + '" aria-label="Remove ' + escapeHtml(it.book.title) + '">✕</button>' : '') +
+    '</li>';
+  }
+
+  function renderCartSummary(){
+    if (!cart.length) {
+      el.cart.classList.add('kgcalc-hidden');
+      el.cart.innerHTML = '';
+      return;
+    }
+    const totals = cartTotals(cart);
+    el.cart.classList.remove('kgcalc-hidden');
+    el.cart.innerHTML =
+      '<div class="kgcalc-cart-head">Your Order So Far — ' + cart.length + (cart.length === 1 ? ' book' : ' books') + '</div>' +
+      '<ul class="kgcalc-cart-list">' + cart.map(function(it, i){ return cartItemRowHtml(it, i, true); }).join('') + '</ul>' +
+      '<div class="kgcalc-cart-totals">' +
+        '<div><span>Retail Total</span><b>' + formatMoney(totals.retailTotal, totals.currency) + '</b></div>' +
+        '<div><span>Kitab Guru Total</span><b>' + formatMoney(totals.kgTotal, totals.currency) + '</b></div>' +
+      '</div>' +
+      cartUnconfirmedNoteHtml(cart, totals) +
+      '<button class="btn-gold kgcalc-cart-finish-btn" id="kgcalc-cart-finish-btn" type="button">Get My Quote for ' + cart.length + (cart.length === 1 ? ' Book' : ' Books') + '</button>' +
+      '<button class="kgcalc-search-again" id="kgcalc-cart-search-more" type="button">Search another book</button>';
+
+    el.cart.querySelectorAll('[data-cart-index]').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        cart.splice(parseInt(btn.dataset.cartIndex, 10), 1);
+        renderCartSummary();
+      });
+    });
+    document.getElementById('kgcalc-cart-finish-btn').addEventListener('click', function(){
+      finalizeOrder(cart.slice());
+    });
+    document.getElementById('kgcalc-cart-search-more').addEventListener('click', function(){
+      el.search.focus();
+    });
+  }
+
+  // Finalizes whatever's in `items` as one order. A single-book order
+  // (the common case — nobody ever clicked "add another book") reuses the
+  // original single-book quote flow byte-for-byte, so nothing changes for
+  // most customers. Two or more books becomes one shared Quote ID, saved
+  // as one row per book (so every book still gets its own Reference Link/
+  // price-source columns in the Sheet), with one combined order summary
+  // and contact flow shown to the customer.
+  function finalizeOrder(items){
+    if (!items.length) return;
+
+    // The fast path only applies when that single book's own price/
+    // not-found card is still the one on screen (the normal "just buy one
+    // book" flow, clicking Get My Quote directly on it) — reusing the
+    // original single-book quote box byte-for-byte so nothing changes for
+    // the common case. If there's no such card on screen (e.g. exactly one
+    // book sitting in the cart, finalized from the cart panel's own
+    // button instead), fall through to the general order flow below,
+    // which handles any item count, including one, just fine.
+    if (items.length === 1 && document.getElementById('kgcalc-quote-btn')) {
+      const only = items[0];
+      cart = [];
+      el.cart.classList.add('kgcalc-hidden');
+      el.cart.innerHTML = '';
+      getQuote(only.book, only.priceResult, only.prices);
+      return;
+    }
+
+    const quoteId = makeQuoteId();
+    const totals = cartTotals(items);
+
+    items.forEach(function(it){
+      const ok = it.priceResult && it.priceResult.ok;
+      saveQuote({
+        quoteId: quoteId,
+        country: selectedCountry.name,
+        currency: ok ? it.priceResult.currency : totals.currency,
+        bookTitle: it.book.title,
+        author: it.book.author,
+        isbn: it.book.isbn,
+        format: ok ? it.priceResult.format : 'Not confirmed',
+        retailPrice: ok ? it.prices.retail : 0,
+        kitabGuruPrice: ok ? it.prices.kgPrice : 0,
+        discount: ok ? it.prices.discountPct + '%' : '',
+        priceSource: ok ? it.priceResult.sourceLabel : 'Not confirmed — needs manual follow-up',
+        sourceMarketplace: ok ? (it.priceResult.marketplace || '') : '',
+        referenceLink: ok ? (it.priceResult.referenceLink || '') : '',
+        contactMethod: ''
+      });
+    });
+
+    currentQuote = { quoteId: quoteId, contactMethod: '' };
+    cart = [];
+    el.priceWrap.classList.add('kgcalc-hidden');
+    el.priceWrap.innerHTML = '';
+    el.search.value = '';
+
+    el.cart.classList.remove('kgcalc-hidden');
+    el.cart.innerHTML =
+      '<div class="kgcalc-cart-head">Your Order — ' + items.length + (items.length === 1 ? ' Book' : ' Books') + '</div>' +
+      '<ul class="kgcalc-cart-list">' + items.map(function(it){ return cartItemRowHtml(it, null, false); }).join('') + '</ul>' +
+      '<div class="kgcalc-cart-totals">' +
+        '<div><span>Retail Total</span><b>' + formatMoney(totals.retailTotal, totals.currency) + '</b></div>' +
+        '<div><span>Kitab Guru Total</span><b>' + formatMoney(totals.kgTotal, totals.currency) + '</b></div>' +
+      '</div>' +
+      cartUnconfirmedNoteHtml(items, totals) +
+      '<div class="kgcalc-quote-id">Your Quote ID: ' + quoteId + '</div>' +
+      '<div class="kgcalc-quote-hint">Save your Quote ID if you contact us through Instagram, Facebook Messenger, or LinkedIn.</div>' +
+      '<div class="kgcalc-contact-title">Ready to order?</div>' +
+      '<div class="kgcalc-contact-grid">' +
+        contactButtonHtml('whatsapp', 'WhatsApp') +
+        contactButtonHtml('facebook', 'Messenger') +
+        contactButtonHtml('instagram', 'Instagram') +
+        contactButtonHtml('linkedin', 'LinkedIn') +
+        contactButtonHtml('email', 'Email') +
+      '</div>' +
+      '<div class="kgcalc-toast" id="kgcalc-toast"></div>' +
+      '<button class="kgcalc-search-again" id="kgcalc-cart-search-again" type="button">Start a new search</button>';
+
+    el.cart.querySelectorAll('[data-contact]').forEach(function(btn){
+      btn.addEventListener('click', function(){ handleOrderContactClick(btn.dataset.contact, items, quoteId); });
+    });
+    document.getElementById('kgcalc-cart-search-again').addEventListener('click', function(){
+      el.cart.classList.add('kgcalc-hidden');
+      el.cart.innerHTML = '';
+      el.search.value = '';
+      el.search.focus();
+    });
+
+    el.cart.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  function handleOrderContactClick(method, items, quoteId){
+    currentQuote = { quoteId: quoteId, contactMethod: method };
+    updateContactMethod(quoteId, method);
+    const toast = document.getElementById('kgcalc-toast');
+
+    if (method === 'whatsapp') {
+      const titles = items.map(function(it){ return it.book.title; }).join(', ');
+      const msg = "Hi Kitab Guru, I'd like to order " + items.length + " books: " + titles + ". My Quote ID is " + quoteId + ".";
+      window.open('https://wa.me/' + WHATSAPP_NUMBER + '?text=' + encodeURIComponent(msg), '_blank', 'noopener');
+      return;
+    }
+    if (method === 'email') {
+      const subject = 'Order request — ' + items.length + ' books (' + quoteId + ')';
+      const body = "Hi Kitab Guru,\n\nI'd like to order " + items.length + " books:\n- " +
+        items.map(function(it){ return it.book.title + (it.book.author ? ' by ' + it.book.author : ''); }).join('\n- ') +
+        "\n\nMy Quote ID is " + quoteId + ".\n\nThanks!";
+      window.location.href = 'mailto:' + CONTACT_EMAIL + '?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body);
+      return;
+    }
+
+    const url = method === 'facebook' ? FACEBOOK_URL : method === 'instagram' ? INSTAGRAM_URL : LINKEDIN_URL;
+    copyToClipboard(quoteId);
+    if (toast) toast.textContent = 'Please copy your Quote ID before continuing. (Copied: ' + quoteId + ')';
+    window.open(url, '_blank', 'noopener');
   }
 
   // ── Quote ID + save to Google Sheets ────────────────────────────────
