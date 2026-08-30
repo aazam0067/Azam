@@ -2244,14 +2244,22 @@ function toggleFaq(el){
   async function googleBooksLookup(queries, countryCode, label, customerCountry) {
     for (const q of queries) {
       try {
-        let url = 'https://www.googleapis.com/books/v1/volumes?q=' + encodeURIComponent(q) + '&maxResults=1';
+        // Ask for several editions, not just one — Google Books often lists
+        // the exact/classic edition as NOT_FOR_SALE while a different
+        // edition of the very same book (a reprint, an anniversary
+        // edition, etc.) genuinely is for sale. Checking only the first
+        // result was throwing those real prices away.
+        let url = 'https://www.googleapis.com/books/v1/volumes?q=' + encodeURIComponent(q) + '&maxResults=8';
         if (countryCode) url += '&country=' + encodeURIComponent(countryCode);
         if (GOOGLE_BOOKS_API_KEY) url += '&key=' + encodeURIComponent(GOOGLE_BOOKS_API_KEY);
 
         const res = await withTimeout(fetch(url), 6000);
         if (!res.ok) { logSourceIssue('Google Books', res.status); continue; }
         const data = await res.json();
-        const item = data.items && data.items[0];
+        const items = data.items || [];
+        const item = items.find(function(it){
+          return it.saleInfo && it.saleInfo.saleability === 'FOR_SALE' && it.saleInfo.listPrice && it.saleInfo.listPrice.amount;
+        });
         if (!item) continue;
         const sale = item.saleInfo;
         if (sale && sale.saleability === 'FOR_SALE' && sale.listPrice && sale.listPrice.amount) {
