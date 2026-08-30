@@ -2214,13 +2214,23 @@ function toggleFaq(el){
     const markets = REFERENCE_MARKETS.filter(function(m){ return m !== country.code; });
     const queries = buildQueries(book, 2); // fewer editions per market — breadth comes from the market count
 
-    const attempts = markets.map(function(market){
-      return googleBooksLookup(queries, market, 'Google Books (' + marketName_(market) + ' reference price)', country);
+    // Staggering the start of each request (rather than firing all of them
+    // in the same instant) noticeably cut down on 503 "temporarily
+    // overloaded" responses seen during testing — a burst of ~8
+    // simultaneous requests on one API key trips that more easily than
+    // the same requests spread over a few hundred milliseconds. Still
+    // effectively concurrent; total added latency is small.
+    const attempts = markets.map(function(market, i){
+      return sleep(i * 150).then(function(){
+        return googleBooksLookup(queries, market, 'Google Books (' + marketName_(market) + ' reference price)', country);
+      });
     });
     // Last resort: no country restriction at all — Google Books falls back
     // to its own default catalog, which sometimes surfaces a price none of
     // the explicit per-country attempts found.
-    attempts.push(googleBooksLookup(queries, null, 'Google Books (reference price)', country));
+    attempts.push(sleep(markets.length * 150).then(function(){
+      return googleBooksLookup(queries, null, 'Google Books (reference price)', country);
+    }));
 
     const results = await Promise.all(attempts);
     const hit = results.find(function(r){ return r.ok; });
@@ -2328,6 +2338,10 @@ function toggleFaq(el){
       promise,
       new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), ms))
     ]);
+  }
+
+  function sleep(ms){
+    return new Promise(function(resolve){ setTimeout(resolve, ms); });
   }
 
   function logSourceIssue(name, detail){
@@ -2447,6 +2461,8 @@ function toggleFaq(el){
     el.status.classList.toggle('kgcalc-status-error', !!isError);
   }
 
+  let lastSearchDocs = [];
+
   async function runSearch(){
     const q = el.search.value.trim();
     el.results.innerHTML = '';
@@ -2466,10 +2482,31 @@ function toggleFaq(el){
         return;
       }
       setStatus('');
+      lastSearchDocs = docs;
       docs.forEach(function(doc){ el.results.appendChild(renderResult(doc)); });
     } catch (e) {
       setStatus('Something went wrong searching. Please try again.', true);
     }
+  }
+
+  // Open Library sometimes splits the very same real book into several
+  // separate "work" records (same author, near-identical title, but each
+  // with only a few of its real editions attached) rather than one
+  // properly merged work. When the record the customer clicked turns out
+  // to be one of these thin fragments, pool in ISBNs from other results
+  // already on screen that are clearly the same book — so a fragmented
+  // catalog entry doesn't mean a thinner price search.
+  function poolSiblingIsbns(doc){
+    const pool = (doc.isbn || []).slice();
+    const authorA = (doc.author_name && doc.author_name[0] || '').toLowerCase();
+    lastSearchDocs.forEach(function(other){
+      if (other === doc) return;
+      const authorB = (other.author_name && other.author_name[0] || '').toLowerCase();
+      if (authorA && authorB && authorA !== authorB) return;
+      if (!isLikelySameBook(other.title, doc.title)) return;
+      (other.isbn || []).forEach(function(i){ if (pool.indexOf(i) === -1) pool.push(i); });
+    });
+    return pool;
   }
 
   function renderResult(doc){
@@ -2516,8 +2553,8 @@ function toggleFaq(el){
     return isbn13s.concat(rest).slice(0, 6);
   }
 
-  function bookFromDoc(doc){
-    const isbns = rankIsbns(doc.isbn);
+  function bookFromDoc(doc, isbnPool){
+    const isbns = rankIsbns(isbnPool || doc.isbn);
     return {
       title: doc.title,
       author: (doc.author_name && doc.author_name[0]) || '',
@@ -2536,7 +2573,7 @@ function toggleFaq(el){
   // instead of guessing.
   async function openEditionPicker(doc){
     if (!doc.key || !doc.edition_count || doc.edition_count < 2) {
-      selectBook(bookFromDoc(doc));
+      selectBook(bookFromDoc(doc, poolSiblingIsbns(doc)));
       return;
     }
 
@@ -2552,7 +2589,7 @@ function toggleFaq(el){
     setStatus('');
 
     if (editions.length < 2) {
-      selectBook(bookFromDoc(doc));
+      selectBook(bookFromDoc(doc, poolSiblingIsbns(doc)));
       return;
     }
 
