@@ -783,6 +783,7 @@ select.kgcalc-select{appearance:none;-webkit-appearance:none;background-image:ur
 .kgcalc-book-author{font-size:.85rem;color:rgba(255,255,255,.6);margin-top:4px;}
 .kgcalc-book-meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;}
 .kgcalc-pill{display:inline-flex;align-items:center;font-size:.72rem;font-weight:600;letter-spacing:.02em;color:rgba(255,255,255,.7);background:rgba(255,255,255,.06);border-radius:50px;padding:4px 11px;}
+.kgcalc-edition-price-pill{margin-left:auto;flex-shrink:0;color:var(--gold);background:rgba(255,217,61,.1);}
 .kgcalc-price-grid{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:rgba(255,255,255,.08);border-radius:14px;overflow:hidden;border:1px solid rgba(255,255,255,.08);}
 .kgcalc-price-box{background:#0d0d0d;padding:18px 16px;text-align:center;}
 .kgcalc-price-box.kgcalc-kg{background:rgba(255,217,61,.06);}
@@ -2572,18 +2573,37 @@ function toggleFaq(el){
   // edition with real edition data, let the customer pick the exact one
   // instead of guessing.
   async function openEditionPicker(doc){
-    if (!doc.key || !doc.edition_count || doc.edition_count < 2) {
-      selectBook(bookFromDoc(doc, poolSiblingIsbns(doc)));
+    setStatus('Loading editions…');
+
+    // Primary source: Google Books' own listings for this title/author,
+    // scoped to the customer's country. This is the actual retailer, so
+    // its titles are the real, exact edition names as sold (e.g. "Quantum
+    // Gravity: Fourth Edition, Edition 4") rather than a library
+    // catalog's generic entry — and each listing already carries its own
+    // price for the customer's country where available, so picking one
+    // can skip straight to a price with no further lookups.
+    let googleItems = [];
+    try { googleItems = await fetchGoogleBooksEditions(doc); }
+    catch (e) { logSourceIssue('Google Books editions', e); }
+
+    if (googleItems.length >= 2) {
+      setStatus('');
+      renderGoogleEditionList(doc, googleItems);
       return;
     }
 
-    setStatus('Loading editions…');
+    // Fallback: Open Library's own edition records, in case the Google
+    // Books key isn't configured yet, or it genuinely has only one
+    // listing for this title while Open Library still has real edition
+    // variety worth letting the customer choose between.
     let editions = [];
     try {
-      const res = await withTimeout(fetch('https://openlibrary.org' + doc.key + '/editions.json?limit=25'), 6000);
-      if (res.ok) {
-        const data = await res.json();
-        editions = dedupeEditions(data.entries || [], doc.title);
+      if (doc.key) {
+        const res = await withTimeout(fetch('https://openlibrary.org' + doc.key + '/editions.json?limit=25'), 6000);
+        if (res.ok) {
+          const data = await res.json();
+          editions = dedupeEditions(data.entries || [], doc.title);
+        }
       }
     } catch (e) { /* fall through to the plain work-level flow below */ }
     setStatus('');
@@ -2594,6 +2614,163 @@ function toggleFaq(el){
     }
 
     renderEditionList(doc, editions);
+  }
+
+  // Ask Google Books directly what it has for this title/author, in the
+  // customer's own country. Real edition/format variants (a specific
+  // "Fourth Edition", a specific translation) usually show up as
+  // distinct items here with their own real titles and their own price.
+  async function fetchGoogleBooksEditions(doc){
+    if (!GOOGLE_BOOKS_API_KEY || !selectedCountry) return [];
+    const author = doc.author_name && doc.author_name[0];
+    const q = 'intitle:' + doc.title + (author ? ' inauthor:' + author : '');
+    let url = 'https://www.googleapis.com/books/v1/volumes?q=' + encodeURIComponent(q) +
+      '&maxResults=20&country=' + encodeURIComponent(selectedCountry.code) +
+      '&key=' + encodeURIComponent(GOOGLE_BOOKS_API_KEY);
+
+    const res = await withTimeout(fetch(url), 6000);
+    if (!res.ok) { logSourceIssue('Google Books editions', res.status); return []; }
+    const data = await res.json();
+    const items = (data.items || []).filter(function(it){
+      return it.volumeInfo && it.volumeInfo.title && isLikelySameBook(it.volumeInfo.title, doc.title);
+    });
+
+    // Same physical listing can appear twice across query variants —
+    // dedupe by Google's own volume id.
+    const seen = new Set();
+    const unique = items.filter(function(it){
+      if (seen.has(it.id)) return false;
+      seen.add(it.id);
+      return true;
+    });
+
+    // For-sale listings first, then by publish year, newest first — the
+    // options most likely to be useful float to the top of a long list.
+    unique.sort(function(a, b){
+      const aSale = a.saleInfo && a.saleInfo.saleability === 'FOR_SALE' ? 1 : 0;
+      const bSale = b.saleInfo && b.saleInfo.saleability === 'FOR_SALE' ? 1 : 0;
+      if (aSale !== bSale) return bSale - aSale;
+      const aYear = parseInt((a.volumeInfo.publishedDate || '').slice(0, 4), 10) || 0;
+      const bYear = parseInt((b.volumeInfo.publishedDate || '').slice(0, 4), 10) || 0;
+      return bYear - aYear;
+    });
+
+    return unique.slice(0, 12);
+  }
+
+  function googleEditionTitle(item){
+    const vi = item.volumeInfo;
+    return vi.title + (vi.subtitle ? ': ' + vi.subtitle : '');
+  }
+
+  function googleEditionMeta(item){
+    const vi = item.volumeInfo;
+    const parts = [];
+    if (vi.publisher) parts.push(vi.publisher);
+    if (vi.publishedDate) parts.push(vi.publishedDate);
+    return parts.join(' · ');
+  }
+
+  function pickIsbnFromGoogleItem(item){
+    const ids = (item.volumeInfo && item.volumeInfo.industryIdentifiers) || [];
+    const isbn13 = ids.find(function(x){ return x.type === 'ISBN_13'; });
+    const isbn10 = ids.find(function(x){ return x.type === 'ISBN_10'; });
+    return (isbn13 && isbn13.identifier) || (isbn10 && isbn10.identifier) || '';
+  }
+
+  function renderGoogleEditionList(doc, items){
+    el.results.innerHTML = '';
+
+    const back = document.createElement('li');
+    const backBtn = document.createElement('button');
+    backBtn.type = 'button';
+    backBtn.className = 'kgcalc-search-again';
+    backBtn.style.margin = '0 0 4px';
+    backBtn.textContent = '← Back to search results';
+    backBtn.addEventListener('click', function(){ runSearch(); });
+    back.appendChild(backBtn);
+    el.results.appendChild(back);
+
+    const heading = document.createElement('li');
+    heading.className = 'kgcalc-country-caption';
+    heading.textContent = 'Select the exact edition';
+    el.results.appendChild(heading);
+
+    items.forEach(function(item){
+      const li = document.createElement('li');
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'kgcalc-result';
+
+      const text = document.createElement('div');
+      text.className = 'kgcalc-result-text';
+      const title = document.createElement('div');
+      title.className = 'kgcalc-result-title';
+      title.textContent = googleEditionTitle(item);
+      const meta = document.createElement('div');
+      meta.className = 'kgcalc-result-author';
+      meta.textContent = googleEditionMeta(item) || 'Edition details unavailable';
+      text.appendChild(title);
+      text.appendChild(meta);
+      btn.appendChild(text);
+
+      const sale = item.saleInfo;
+      if (sale && sale.saleability === 'FOR_SALE' && sale.listPrice && sale.listPrice.amount) {
+        const priceTag = document.createElement('span');
+        priceTag.className = 'kgcalc-pill kgcalc-edition-price-pill';
+        priceTag.textContent = formatMoney(sale.listPrice.amount, sale.listPrice.currencyCode);
+        btn.appendChild(priceTag);
+      }
+
+      btn.addEventListener('click', function(){ selectGoogleEdition(doc, item); });
+      li.appendChild(btn);
+      el.results.appendChild(li);
+    });
+  }
+
+  // A Google-sourced edition may already carry its own price for the
+  // customer's exact country from the same lookup that found it — use
+  // that directly rather than re-querying. Otherwise fall through to the
+  // normal fallback chain, scoped to this specific edition's ISBN only.
+  async function selectGoogleEdition(doc, item){
+    const isbn = pickIsbnFromGoogleItem(item);
+    const book = {
+      title: googleEditionTitle(item),
+      author: (item.volumeInfo.authors && item.volumeInfo.authors[0]) || (doc.author_name && doc.author_name[0]) || '',
+      isbn: isbn,
+      isbns: isbn ? [isbn] : [],
+      edition: item.volumeInfo.subtitle || '',
+      exactEdition: true,
+      cover: item.volumeInfo.imageLinks && (item.volumeInfo.imageLinks.thumbnail || item.volumeInfo.imageLinks.smallThumbnail)
+    };
+
+    el.results.innerHTML = '';
+    el.search.value = book.title;
+
+    const sale = item.saleInfo;
+    if (sale && sale.saleability === 'FOR_SALE' && sale.listPrice && sale.listPrice.amount) {
+      const priceResult = {
+        ok: true,
+        retailPrice: sale.listPrice.amount,
+        currency: sale.listPrice.currencyCode || selectedCountry.currency,
+        format: 'eBook (Google Play)',
+        sourceLabel: 'Google Books',
+        marketplace: 'Google Books — ' + selectedCountry.code,
+        referenceLink: item.volumeInfo.canonicalVolumeLink || item.volumeInfo.infoLink || '',
+        cover: book.cover
+      };
+      setStatus('');
+      renderPriceCard(book, priceResult);
+      cachePrice(book, selectedCountry, priceResult);
+      return;
+    }
+
+    setStatus('Checking the current price…');
+    el.priceWrap.classList.add('kgcalc-hidden');
+    const priceResult = await fetchPrice(book, selectedCountry);
+    setStatus('');
+    if (!priceResult.ok) { renderNotFoundCard(book); return; }
+    renderPriceCard(book, priceResult);
   }
 
   // Open Library's own work→edition grouping is occasionally loose — a
