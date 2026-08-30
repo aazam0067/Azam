@@ -791,6 +791,7 @@ select.kgcalc-select{appearance:none;-webkit-appearance:none;background-image:ur
 .kgcalc-price-box.kgcalc-kg .kgcalc-price-box-value{color:var(--gold);}
 .kgcalc-price-box-strike{text-decoration:line-through;opacity:.5;font-size:.95rem;}
 .kgcalc-savings{text-align:center;margin-top:14px;font-size:.9rem;color:rgba(255,255,255,.75);}
+.kgcalc-notfound-msg{font-size:.88rem;color:rgba(255,255,255,.65);line-height:1.6;margin:18px 0 22px;text-align:center;}
 .kgcalc-savings b{color:var(--gold);}
 .kgcalc-source-note{text-align:center;font-size:.72rem;color:rgba(255,255,255,.4);margin-top:8px;}
 .kgcalc-source-link{color:var(--gold);text-decoration:underline;}
@@ -2237,7 +2238,13 @@ function toggleFaq(el){
   // number of requests reasonable.
   function buildQueries(book, maxIsbns){
     const queries = (book.isbns || []).slice(0, maxIsbns || 4).map(function(i){ return 'isbn:' + i; });
-    queries.push('intitle:' + book.title + (book.author ? ' inauthor:' + book.author : ''));
+    // When the customer picked a specific edition, stay scoped to that
+    // edition's own ISBN(s) only — a broad title/author query could match
+    // a *different* edition and silently show its price instead, which
+    // would misrepresent what the customer actually chose.
+    if (!book.exactEdition) {
+      queries.push('intitle:' + book.title + (book.author ? ' inauthor:' + book.author : ''));
+    }
     return queries;
   }
 
@@ -2448,7 +2455,7 @@ function toggleFaq(el){
 
     try {
       const url = 'https://openlibrary.org/search.json?q=' + encodeURIComponent(q) +
-        '&fields=title,author_name,isbn,cover_i&limit=8';
+        '&fields=key,title,author_name,isbn,cover_i,edition_count&limit=8';
       const res = await withTimeout(fetch(url), 8000);
       if (!res.ok) throw new Error('search failed');
       const data = await res.json();
@@ -2492,16 +2499,7 @@ function toggleFaq(el){
 
     btn.appendChild(cover);
     btn.appendChild(text);
-    btn.addEventListener('click', function(){
-      const isbns = rankIsbns(doc.isbn);
-      selectBook({
-        title: doc.title,
-        author: (doc.author_name && doc.author_name[0]) || '',
-        isbn: isbns[0] || '',
-        isbns: isbns,
-        cover: doc.cover_i ? 'https://covers.openlibrary.org/b/id/' + doc.cover_i + '-M.jpg' : ''
-      });
-    });
+    btn.addEventListener('click', function(){ openEditionPicker(doc); });
 
     li.appendChild(btn);
     return li;
@@ -2516,6 +2514,161 @@ function toggleFaq(el){
     const isbn13s = isbns.filter(function(i){ return i.length === 13; });
     const rest = isbns.filter(function(i){ return i.length !== 13; });
     return isbn13s.concat(rest).slice(0, 6);
+  }
+
+  function bookFromDoc(doc){
+    const isbns = rankIsbns(doc.isbn);
+    return {
+      title: doc.title,
+      author: (doc.author_name && doc.author_name[0]) || '',
+      isbn: isbns[0] || '',
+      isbns: isbns,
+      cover: doc.cover_i ? 'https://covers.openlibrary.org/b/id/' + doc.cover_i + '-M.jpg' : ''
+    };
+  }
+
+  // ── Edition picker ───────────────────────────────────────────────────
+  // A title search finds the *work* (e.g. "Rich Dad Poor Dad"), but the
+  // work can have many real editions with different ISBNs — and often
+  // only one specific edition (a reprint, an anniversary edition) is
+  // actually the one for sale anywhere. If a work has more than one
+  // edition with real edition data, let the customer pick the exact one
+  // instead of guessing.
+  async function openEditionPicker(doc){
+    if (!doc.key || !doc.edition_count || doc.edition_count < 2) {
+      selectBook(bookFromDoc(doc));
+      return;
+    }
+
+    setStatus('Loading editions…');
+    let editions = [];
+    try {
+      const res = await withTimeout(fetch('https://openlibrary.org' + doc.key + '/editions.json?limit=25'), 6000);
+      if (res.ok) {
+        const data = await res.json();
+        editions = dedupeEditions(data.entries || [], doc.title);
+      }
+    } catch (e) { /* fall through to the plain work-level flow below */ }
+    setStatus('');
+
+    if (editions.length < 2) {
+      selectBook(bookFromDoc(doc));
+      return;
+    }
+
+    renderEditionList(doc, editions);
+  }
+
+  // Open Library's own work→edition grouping is occasionally loose — a
+  // "work" can end up including third-party summaries, study guides, or
+  // companion titles that are not really editions of the same book at
+  // all. Filter those out: skip obvious companion-book title prefixes,
+  // and require the edition's title to share real words with the
+  // original title (not just an incidental one).
+  const COMPANION_TITLE_PREFIXES = [
+    'summary of', 'a summary of', 'summary and analysis', 'summary &',
+    'workbook for', 'wisdom from', 'study guide', 'conversation starters',
+    'the summary of'
+  ];
+  const STOPWORDS = new Set(['the','and','for','with','from','your','you','of','to','in','on','at','a','an']);
+  function significantWords(title){
+    return new Set(String(title || '').toLowerCase().replace(/[^a-z0-9 ]/g,' ').split(/\s+/)
+      .filter(function(w){ return w.length > 2 && !STOPWORDS.has(w); }));
+  }
+  function isLikelySameBook(editionTitle, originalTitle){
+    const lower = String(editionTitle || '').toLowerCase();
+    if (COMPANION_TITLE_PREFIXES.some(function(p){ return lower.indexOf(p) === 0; })) return false;
+    const origWords = significantWords(originalTitle);
+    const editionWords = significantWords(editionTitle);
+    if (!origWords.size || !editionWords.size) return true; // not enough info to judge — don't over-filter
+    let shared = 0;
+    origWords.forEach(function(w){ if (editionWords.has(w)) shared++; });
+    return shared / origWords.size >= 0.5;
+  }
+
+  function dedupeEditions(entries, originalTitle){
+    const withIsbn = entries.filter(function(e){
+      return ((e.isbn_13 && e.isbn_13.length) || (e.isbn_10 && e.isbn_10.length)) &&
+        isLikelySameBook(e.title, originalTitle);
+    });
+    const seen = new Set();
+    const unique = [];
+    withIsbn.forEach(function(e){
+      const isbn = (e.isbn_13 && e.isbn_13[0]) || (e.isbn_10 && e.isbn_10[0]);
+      if (seen.has(isbn)) return;
+      seen.add(isbn);
+      unique.push(e);
+    });
+    // Most recent first — a currently-available edition is more likely to
+    // still be for sale than one from decades ago.
+    unique.sort(function(a, b){ return editionYear(b) - editionYear(a); });
+    return unique.slice(0, 12);
+  }
+
+  function editionYear(e){
+    const m = String(e.publish_date || '').match(/\d{4}/);
+    return m ? parseInt(m[0], 10) : 0;
+  }
+
+  function editionLabelText(e){
+    const parts = [];
+    if (e.publishers && e.publishers[0]) parts.push(e.publishers[0]);
+    if (e.publish_date) parts.push(e.publish_date);
+    return parts.join(' · ');
+  }
+
+  function renderEditionList(doc, editions){
+    el.results.innerHTML = '';
+
+    const back = document.createElement('li');
+    const backBtn = document.createElement('button');
+    backBtn.type = 'button';
+    backBtn.className = 'kgcalc-search-again';
+    backBtn.style.margin = '0 0 4px';
+    backBtn.textContent = '← Back to search results';
+    backBtn.addEventListener('click', function(){ runSearch(); });
+    back.appendChild(backBtn);
+    el.results.appendChild(back);
+
+    const heading = document.createElement('li');
+    heading.className = 'kgcalc-country-caption';
+    heading.textContent = 'Select the exact edition';
+    el.results.appendChild(heading);
+
+    editions.forEach(function(e){
+      const li = document.createElement('li');
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'kgcalc-result';
+
+      const text = document.createElement('div');
+      text.className = 'kgcalc-result-text';
+      const title = document.createElement('div');
+      title.className = 'kgcalc-result-title';
+      title.textContent = e.title || doc.title;
+      const meta = document.createElement('div');
+      meta.className = 'kgcalc-result-author';
+      meta.textContent = editionLabelText(e) || 'Edition details unavailable';
+      text.appendChild(title);
+      text.appendChild(meta);
+      btn.appendChild(text);
+
+      btn.addEventListener('click', function(){
+        const isbns = rankIsbns((e.isbn_13 || []).concat(e.isbn_10 || []));
+        selectBook({
+          title: e.title || doc.title,
+          author: (doc.author_name && doc.author_name[0]) || '',
+          isbn: isbns[0] || '',
+          isbns: isbns,
+          edition: editionLabelText(e),
+          exactEdition: true,
+          cover: doc.cover_i ? 'https://covers.openlibrary.org/b/id/' + doc.cover_i + '-M.jpg' : ''
+        });
+      });
+
+      li.appendChild(btn);
+      el.results.appendChild(li);
+    });
   }
 
   el.searchBtn.addEventListener('click', runSearch);
@@ -2535,7 +2688,8 @@ function toggleFaq(el){
     const priceResult = await fetchPrice(book, selectedCountry);
 
     if (!priceResult.ok) {
-      setStatus("We couldn't find a reliable current price for this book. Please try another title or ISBN.", true);
+      setStatus('');
+      renderNotFoundCard(book);
       return;
     }
 
@@ -2606,6 +2760,91 @@ function toggleFaq(el){
 
     document.getElementById('kgcalc-quote-btn').addEventListener('click', function(){
       getQuote(book, priceResult, { retail: retail, kgPrice: kgPrice, savings: savings, discountPct: discountPct });
+    });
+  }
+
+  // Shown when every price source came back empty for this specific book/
+  // edition. Never a dead end — the customer can message the team
+  // directly, with a note already filled in describing exactly what
+  // they're after, so nothing gets lost.
+  function renderNotFoundCard(book){
+    const wrap = el.priceWrap;
+    wrap.innerHTML = '';
+    wrap.classList.remove('kgcalc-hidden');
+
+    const card = document.createElement('div');
+    card.className = 'kgcalc-price-card';
+    card.innerHTML =
+      '<div class="kgcalc-book-row">' +
+        (book.cover ? '<img class="kgcalc-book-cover" src="' + book.cover + '" alt="' + escapeHtml(book.title) + ' cover"/>' : '') +
+        '<div>' +
+          '<div class="kgcalc-book-title">' + escapeHtml(book.title) + '</div>' +
+          (book.author ? '<div class="kgcalc-book-author">' + escapeHtml(book.author) + '</div>' : '') +
+          (book.edition ? '<div class="kgcalc-book-meta"><span class="kgcalc-pill">' + escapeHtml(book.edition) + '</span></div>' : '') +
+        '</div>' +
+      '</div>' +
+      '<p class="kgcalc-notfound-msg">We couldn\'t confirm a current price for ' +
+        (book.exactEdition ? 'this exact edition' : 'this title') +
+        ' in ' + escapeHtml(selectedCountry.name) + ' right now. Message us directly and our team will check it and get back to you.</p>' +
+      '<div class="kgcalc-contact-title">DM us:</div>' +
+      '<div class="kgcalc-contact-grid">' +
+        contactButtonHtml('whatsapp', 'WhatsApp') +
+        contactButtonHtml('facebook', 'Messenger') +
+        contactButtonHtml('instagram', 'Instagram') +
+        contactButtonHtml('linkedin', 'LinkedIn') +
+        contactButtonHtml('email', 'Email') +
+      '</div>' +
+      '<div class="kgcalc-toast" id="kgcalc-toast"></div>' +
+      '<button class="kgcalc-search-again" id="kgcalc-search-again" type="button">Search a different book</button>';
+
+    wrap.appendChild(card);
+
+    card.querySelectorAll('[data-contact]').forEach(function(btn){
+      btn.addEventListener('click', function(){ handleInquiryContactClick(btn.dataset.contact, book); });
+    });
+    document.getElementById('kgcalc-search-again').addEventListener('click', function(){
+      wrap.classList.add('kgcalc-hidden');
+      wrap.innerHTML = '';
+      el.search.value = '';
+      el.search.focus();
+    });
+
+    logInquiry(book);
+  }
+
+  function handleInquiryContactClick(method, book){
+    const editionNote = book.edition ? ' (' + book.edition + ')' : '';
+    const toast = document.getElementById('kgcalc-toast');
+
+    if (method === 'whatsapp') {
+      const msg = "Hi Kitab Guru, I'm looking for " + book.title + editionNote + " in " + selectedCountry.name +
+        " — could you help me with pricing? I couldn't find it on the price checker.";
+      window.open('https://wa.me/' + WHATSAPP_NUMBER + '?text=' + encodeURIComponent(msg), '_blank', 'noopener');
+      return;
+    }
+    if (method === 'email') {
+      const subject = 'Pricing help — ' + book.title;
+      const body = "Hi Kitab Guru,\n\nI'm looking for " + book.title + editionNote + (book.author ? ' by ' + book.author : '') +
+        " in " + selectedCountry.name + ". The price checker on the site couldn't confirm a price for it — could you help?\n\nThanks!";
+      window.location.href = 'mailto:' + CONTACT_EMAIL + '?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body);
+      return;
+    }
+
+    const url = method === 'facebook' ? FACEBOOK_URL : method === 'instagram' ? INSTAGRAM_URL : LINKEDIN_URL;
+    copyToClipboard(book.title + editionNote);
+    if (toast) toast.textContent = 'Copied "' + book.title + editionNote + '" — paste it when you message us.';
+    window.open(url, '_blank', 'noopener');
+  }
+
+  function logInquiry(book){
+    if (!apiConfigured()) return;
+    postToAppsScript({
+      action: 'logInquiry',
+      country: selectedCountry.name,
+      bookTitle: book.title,
+      author: book.author || '',
+      edition: book.edition || '',
+      isbn: book.isbn || ''
     });
   }
 

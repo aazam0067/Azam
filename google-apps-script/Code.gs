@@ -2,9 +2,12 @@
  * Kitab Guru — Book Price Calculator backend.
  *
  * This script receives quote data from the website's "Know Your Book Price"
- * calculator, appends it to a Google Sheet, emails a notification, and
- * serves as a shared price cache so repeated lookups for the same book
- * don't have to hit an external pricing API again.
+ * calculator, appends it to a Google Sheet, emails a notification, serves
+ * as a shared price cache so repeated lookups for the same book don't have
+ * to hit an external pricing API again, and logs a lead whenever a
+ * customer's book/edition couldn't be priced automatically so no interest
+ * gets lost. Three tabs are created automatically on first use: "Quotes",
+ * "PriceCache", and "Inquiries".
  *
  * SETUP: see SETUP.md in this same folder for step-by-step instructions.
  * This Sheet and Apps Script project should be created while logged into
@@ -39,6 +42,15 @@ const CACHE_COLUMNS = [
   'Price Source', 'Reference Link', 'Timestamp'
 ];
 
+// Sheet/tab that logs a lead every time a customer's book/edition
+// couldn't be priced automatically and they were offered a way to
+// message the team instead -- so nothing gets lost even when the
+// calculator itself comes up empty.
+const INQUIRY_SHEET_NAME = 'Inquiries';
+const INQUIRY_COLUMNS = [
+  'Timestamp', 'Country', 'Book Title', 'Author', 'Edition', 'ISBN'
+];
+
 function doPost(e) {
   try {
     const body = JSON.parse(e.postData.contents);
@@ -48,6 +60,7 @@ function doPost(e) {
     if (action === 'updateContactMethod') return handleUpdateContactMethod(body);
     if (action === 'getCachedPrice') return handleGetCachedPrice(body);
     if (action === 'cachePrice') return handleCachePrice(body);
+    if (action === 'logInquiry') return handleLogInquiry(body);
 
     return jsonResponse({ ok: false, error: 'Unknown action' });
   } catch (err) {
@@ -98,6 +111,30 @@ function handleUpdateContactMethod(data) {
     }
   }
   return jsonResponse({ ok: false, error: 'Quote ID not found' });
+}
+
+function handleLogInquiry(data) {
+  const sheet = getInquirySheet_();
+  sheet.appendRow([
+    new Date().toISOString(),
+    data.country || '',
+    data.bookTitle || '',
+    data.author || '',
+    data.edition || '',
+    data.isbn || ''
+  ]);
+  return jsonResponse({ ok: true });
+}
+
+function getInquirySheet_() {
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  let sheet = ss.getSheetByName(INQUIRY_SHEET_NAME);
+  if (!sheet) sheet = ss.insertSheet(INQUIRY_SHEET_NAME);
+  if (sheet.getLastRow() === 0) {
+    sheet.appendRow(INQUIRY_COLUMNS);
+    sheet.setFrozenRows(1);
+  }
+  return sheet;
 }
 
 // ── Shared price cache ───────────────────────────────────────────────────

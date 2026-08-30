@@ -14,8 +14,9 @@ Google account creates and deploys it.
 1. While logged into `eBooksWorld3622@gmail.com`, go to
    [sheets.google.com](https://sheets.google.com) and create a new, blank
    spreadsheet. Name it something like "Kitab Guru Quotes".
-2. Leave it empty — the script creates the header rows and two tabs
-   ("Quotes" and "PriceCache") automatically the first time it runs.
+2. Leave it empty — the script creates the header rows and three tabs
+   ("Quotes", "PriceCache", and "Inquiries") automatically the first time
+   it runs.
 3. Copy the Sheet ID from its URL:
    `https://docs.google.com/spreadsheets/d/`**`THIS_PART_IS_THE_ID`**`/edit`
 
@@ -58,6 +59,14 @@ calculator will now save every quote, use the shared price cache, and email
 Until you do this, the calculator still works end-to-end for browsing and
 testing — it just skips the cache lookup and save-to-Sheet steps and shows
 a quiet console note instead of failing.
+
+## About the Inquiries tab
+
+Whenever a customer picks a book (or a specific edition) and none of the
+price sources can confirm a current price, the calculator still offers
+them a way to message the team directly — and logs a row to the
+`Inquiries` tab (country, title, author, edition, ISBN) so that interest
+isn't lost even when the automatic price check comes up empty.
 
 ## About the price cache
 
