@@ -764,6 +764,7 @@ select.kgcalc-select{appearance:none;-webkit-appearance:none;background-image:ur
 .kgcalc-country-combo{position:relative;}
 .kgcalc-country-results{position:absolute;top:calc(100% + 8px);left:0;right:0;margin:0;z-index:20;background:#151515;border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:8px;box-shadow:0 14px 34px rgba(0,0,0,.4);max-height:280px;}
 .kgcalc-country-result{padding:11px 12px;}
+.kgcalc-country-caption{font-size:.7rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:rgba(255,255,255,.4);padding:6px 10px 8px;}
 .kgcalc-result{display:flex;align-items:center;gap:12px;padding:10px 12px;border:1px solid rgba(255,255,255,.08);border-radius:12px;background:rgba(255,255,255,.02);cursor:pointer;transition:border-color .2s,background .2s;text-align:left;width:100%;}
 .kgcalc-result:hover,.kgcalc-result:focus-visible{border-color:rgba(255,217,61,.4);background:rgba(255,217,61,.05);}
 .kgcalc-result-cover{width:32px;height:46px;object-fit:cover;border-radius:3px;background:#222;flex-shrink:0;}
@@ -2186,28 +2187,53 @@ function toggleFaq(el){
   }
 
   // PRIORITY 3 — Google Books, customer's own country. Real and working
-  // today. Wrapped so quota/rate-limit/timeout/network errors are all
-  // treated as "unavailable" and never shown to the customer.
+  // today. Tries every ISBN edition Open Library returned for this book
+  // (different editions are catalogued separately and often have different
+  // price availability) plus a title/author query, so one missing edition
+  // doesn't sink the whole lookup.
   async function googleBooksSource(book, country) {
-    return googleBooksLookup(book, country.code, 'Google Books');
+    return googleBooksLookup(buildQueries(book), country.code, 'Google Books');
   }
 
   // PRIORITY 4 — "other reliable source". No independent free/legitimate
-  // 4th data source exists today, so this is a second, honestly-labeled
-  // attempt against Google Books' US listing as a reference price, used
-  // only when the customer's own-country listing had nothing. It is never
-  // presented as the customer's local price.
+  // 4th data source exists today (Open Library carries no retail pricing
+  // at all — only Google Books does among free, keyless, non-scraping
+  // options). So this tries a broad cascade of major Google Play Books
+  // markets concurrently — not just one — and uses whichever answers
+  // first. Every result is labeled with exactly which market it came
+  // from; it is never presented as the customer's own-country price.
+  const REFERENCE_MARKETS = ['US', 'GB', 'IN', 'DE', 'CA', 'AU', 'FR', 'JP'];
   async function googleBooksReferenceSource(book, country) {
-    if (country.code === 'US') return { ok: false }; // already tried above
-    return googleBooksLookup(book, 'US', 'Google Books (US reference price)');
+    const markets = REFERENCE_MARKETS.filter(function(m){ return m !== country.code; });
+    const queries = buildQueries(book, 2); // fewer editions per market — breadth comes from the market count
+
+    const attempts = [];
+    markets.forEach(function(market){
+      attempts.push(
+        googleBooksLookup(queries, market, 'Google Books (' + marketName_(market) + ' reference price)')
+      );
+    });
+
+    const results = await Promise.all(attempts);
+    return results.find(function(r){ return r.ok; }) || { ok: false };
   }
 
-  async function googleBooksLookup(book, countryCode, label) {
-    const isbn = book.isbn;
-    const queries = [];
-    if (isbn) queries.push('isbn:' + isbn);
-    queries.push('intitle:' + book.title + (book.author ? ' inauthor:' + book.author : ''));
+  function marketName_(code){
+    const c = COUNTRIES.find(function(x){ return x.code === code; });
+    return c ? c.name : code;
+  }
 
+  // Every ISBN edition Open Library found for this book (a work can have
+  // many print/ebook editions with different price availability), plus a
+  // plain title/author query as a final catch-all. Capped to keep the
+  // number of requests reasonable.
+  function buildQueries(book, maxIsbns){
+    const queries = (book.isbns || []).slice(0, maxIsbns || 4).map(function(i){ return 'isbn:' + i; });
+    queries.push('intitle:' + book.title + (book.author ? ' inauthor:' + book.author : ''));
+    return queries;
+  }
+
+  async function googleBooksLookup(queries, countryCode, label) {
     for (const q of queries) {
       try {
         let url = 'https://www.googleapis.com/books/v1/volumes?q=' +
@@ -2293,14 +2319,25 @@ function toggleFaq(el){
   function renderCountryResults(query){
     const q = query.trim().toLowerCase();
     el.countryResults.innerHTML = '';
-    if (!q) { el.countryResults.classList.add('kgcalc-hidden'); return; }
 
-    const matches = COUNTRIES.filter(function(c){
-      return c.name.toLowerCase().indexOf(q) !== -1;
-    }).slice(0, 8);
+    // COUNTRIES is already alphabetical (Afghanistan first). With no query
+    // yet, show the full list so the customer can browse instead of only
+    // being able to type; as soon as they type, it narrows to matches.
+    const matches = q
+      ? COUNTRIES.filter(function(c){ return c.name.toLowerCase().indexOf(q) !== -1; })
+      : COUNTRIES;
+
+    const caption = document.createElement('li');
+    caption.className = 'kgcalc-country-caption';
+    caption.textContent = 'Search your country';
+    el.countryResults.appendChild(caption);
 
     if (!matches.length) {
-      el.countryResults.classList.add('kgcalc-hidden');
+      const none = document.createElement('li');
+      none.className = 'kgcalc-country-caption';
+      none.textContent = 'No matching country';
+      el.countryResults.appendChild(none);
+      el.countryResults.classList.remove('kgcalc-hidden');
       return;
     }
 
@@ -2335,7 +2372,11 @@ function toggleFaq(el){
     countryDebounce = setTimeout(function(){ renderCountryResults(val); }, 120);
   });
   el.countryInput.addEventListener('focus', function(){
-    if (el.countryInput.value.trim()) renderCountryResults(el.countryInput.value);
+    // Always open showing the full alphabetical list on focus — typing
+    // narrows it from there. (If a country is already selected, select
+    // the text so typing replaces it rather than filtering by it.)
+    el.countryInput.select();
+    renderCountryResults('');
   });
   document.addEventListener('click', function(e){
     if (!e.target.closest('.kgcalc-country-combo')) {
@@ -2402,10 +2443,12 @@ function toggleFaq(el){
     btn.appendChild(cover);
     btn.appendChild(text);
     btn.addEventListener('click', function(){
+      const isbns = rankIsbns(doc.isbn);
       selectBook({
         title: doc.title,
         author: (doc.author_name && doc.author_name[0]) || '',
-        isbn: pickIsbn(doc.isbn),
+        isbn: isbns[0] || '',
+        isbns: isbns,
         cover: doc.cover_i ? 'https://covers.openlibrary.org/b/id/' + doc.cover_i + '-M.jpg' : ''
       });
     });
@@ -2414,10 +2457,15 @@ function toggleFaq(el){
     return li;
   }
 
-  function pickIsbn(isbns){
-    if (!isbns || !isbns.length) return '';
-    const isbn13 = isbns.find(function(i){ return i.length === 13; });
-    return isbn13 || isbns[0];
+  // Different editions of the same book (paperback, various publishers/
+  // years) often have different ISBNs and different price availability —
+  // keep several, preferring ISBN-13s, so the price lookup can try more
+  // than one edition before giving up.
+  function rankIsbns(isbns){
+    if (!isbns || !isbns.length) return [];
+    const isbn13s = isbns.filter(function(i){ return i.length === 13; });
+    const rest = isbns.filter(function(i){ return i.length !== 13; });
+    return isbn13s.concat(rest).slice(0, 6);
   }
 
   el.searchBtn.addEventListener('click', runSearch);
