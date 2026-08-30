@@ -496,7 +496,7 @@ html{scroll-behavior:smooth;}
 <span class="nav-brand-text">Kitab Guru</span>
 </a>
 <div class="nav-links">
-<a href="#book-wall">Explore</a><a href="#price-calculator">Price Calculator</a><a href="#services">Services</a><a href="#reviews">Reviews</a><a href="#about">About Us</a><a href="#faq">FAQ</a><a href="#contact">Contact</a></div>
+<a href="#services">Services</a><a href="#book-wall">Explore</a><a href="#price-calculator">Price Calculator</a><a href="#reviews">Reviews</a><a href="#about">About Us</a><a href="#faq">FAQ</a><a href="#contact">Contact</a></div>
 <a class="nav-cta" href="#contact">Order Ebook →</a>
 <button aria-label="Toggle menu" class="hamburger" id="hamburger">
 <span></span><span></span><span></span>
@@ -504,7 +504,7 @@ html{scroll-behavior:smooth;}
 </nav>
 <div class="mobile-menu" id="mobileMenu">
 <a class="mob-cta" href="#contact" onclick="closeMob()">Order Ebook →</a>
-<a href="#book-wall" onclick="closeMob()">Explore</a><a href="#price-calculator" onclick="closeMob()">Price Calculator</a><a href="#services" onclick="closeMob()">Services</a><a href="#reviews" onclick="closeMob()">Reviews</a><a href="#about" onclick="closeMob()">About Us</a><a href="#faq" onclick="closeMob()">FAQ</a><a href="#contact" onclick="closeMob()">Contact</a></div>
+<a href="#services" onclick="closeMob()">Services</a><a href="#book-wall" onclick="closeMob()">Explore</a><a href="#price-calculator" onclick="closeMob()">Price Calculator</a><a href="#reviews" onclick="closeMob()">Reviews</a><a href="#about" onclick="closeMob()">About Us</a><a href="#faq" onclick="closeMob()">FAQ</a><a href="#contact" onclick="closeMob()">Contact</a></div>
 <!-- HERO -->
 <section class="hero" id="home">
 <div class="hero-bg-grid"></div>
@@ -796,6 +796,8 @@ select.kgcalc-select{appearance:none;-webkit-appearance:none;background-image:ur
 .kgcalc-savings b{color:var(--gold);}
 .kgcalc-source-note{text-align:center;font-size:.72rem;color:rgba(255,255,255,.4);margin-top:8px;}
 .kgcalc-source-link{color:var(--gold);text-decoration:underline;}
+.kgcalc-mini-note{text-align:center;font-size:.78rem;color:rgba(255,255,255,.45);line-height:1.6;margin:10px 0 0;}
+.kgcalc-mini-note a{color:var(--gold);text-decoration:underline;}
 
 .kgcalc-quote-btn-row{margin-top:22px;display:flex;justify-content:center;}
 .kgcalc-search-again{background:none;border:0;color:rgba(255,255,255,.5);font-size:.82rem;text-decoration:underline;cursor:pointer;margin-top:16px;display:block;text-align:center;width:100%;font-family:'Inter',sans-serif;}
@@ -2281,7 +2283,7 @@ function toggleFaq(el){
         if (!item) continue;
         const sale = item.saleInfo;
         if (sale && sale.saleability === 'FOR_SALE' && sale.listPrice && sale.listPrice.amount) {
-          const link = item.volumeInfo && (item.volumeInfo.canonicalVolumeLink || item.volumeInfo.infoLink);
+          const link = googleReferenceLink(item);
           const sourceCurrency = sale.listPrice.currencyCode || countryCode;
           let amount = sale.listPrice.amount;
           let currency = sourceCurrency;
@@ -2678,6 +2680,17 @@ function toggleFaq(el){
     return (isbn13 && isbn13.identifier) || (isbn10 && isbn10.identifier) || '';
   }
 
+  // canonicalVolumeLink/infoLink aren't always present on every item, but
+  // Google Books always assigns a volume id — build a working link from
+  // that as a guaranteed fallback so "view source" is never missing.
+  function googleReferenceLink(item){
+    const vi = item.volumeInfo || {};
+    if (vi.canonicalVolumeLink) return vi.canonicalVolumeLink;
+    if (vi.infoLink) return vi.infoLink;
+    if (item.id) return 'https://books.google.com/books?id=' + item.id;
+    return '';
+  }
+
   function renderGoogleEditionList(doc, items){
     el.results.innerHTML = '';
 
@@ -2756,7 +2769,7 @@ function toggleFaq(el){
         format: 'eBook (Google Play)',
         sourceLabel: 'Google Books',
         marketplace: 'Google Books — ' + selectedCountry.code,
-        referenceLink: item.volumeInfo.canonicalVolumeLink || item.volumeInfo.infoLink || '',
+        referenceLink: googleReferenceLink(item),
         cover: book.cover
       };
       setStatus('');
@@ -2959,8 +2972,10 @@ function toggleFaq(el){
           ? ' — <a class="kgcalc-source-link" href="' + escapeHtml(priceResult.referenceLink) + '" rel="noopener" target="_blank">view source</a>'
           : '') +
       '</div>' +
+      '<p class="kgcalc-mini-note">See a different price or listing at the source? <a href="#contact">Send us the correct retail price</a> and we\'ll double-check it.</p>' +
       '<div class="kgcalc-quote-btn-row"><button class="btn-gold" id="kgcalc-quote-btn" type="button">Get My Quote</button></div>' +
       '<button class="kgcalc-search-again" id="kgcalc-search-again" type="button">Search a different book</button>' +
+      '<p class="kgcalc-mini-note">Looking for a different edition, or can\'t find yours? <a href="#contact">Reach out to us</a> directly.</p>' +
       '<div class="kgcalc-quote-box kgcalc-hidden" id="kgcalc-quote-box"></div>';
 
     wrap.appendChild(card);
