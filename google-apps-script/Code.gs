@@ -2,21 +2,30 @@
  * Kitab Guru — Book Price Calculator backend.
  *
  * This script receives quote data from the website's "Know Your Book Price"
- * calculator, appends it to a Google Sheet, and emails a notification.
+ * calculator, appends it to a Google Sheet, emails a notification, and
+ * serves as a shared price cache so repeated lookups for the same book
+ * don't have to hit an external pricing API again.
  *
  * SETUP: see SETUP.md in this same folder for step-by-step instructions.
- * You only need to edit the two constants directly below.
+ * This Sheet and Apps Script project should be created while logged into
+ * eBooksWorld3622@gmail.com. You only need to edit SPREADSHEET_ID below —
+ * NOTIFY_EMAIL is already set.
  */
 
 // 1. Paste your Google Sheet ID here (the long string in the sheet's URL
 //    between /d/ and /edit).
 const SPREADSHEET_ID = 'PASTE_YOUR_GOOGLE_SHEET_ID_HERE';
 
-// 2. The email address that should receive a notification for every new quote.
-const NOTIFY_EMAIL = 'PASTE_NOTIFICATION_EMAIL_HERE';
+// 2. The email address that receives a notification for every new quote.
+const NOTIFY_EMAIL = 'eBooksWorld3622@gmail.com';
 
-// Name of the sheet/tab inside the spreadsheet where quotes are stored.
+// Name of the sheet/tab where quotes are stored.
 const SHEET_NAME = 'Quotes';
+
+// Name of the sheet/tab used as the shared price cache, and how long a
+// cached price stays valid before a fresh lookup is required.
+const CACHE_SHEET_NAME = 'PriceCache';
+const CACHE_TTL_HOURS = 24;
 
 const COLUMNS = [
   'Quote ID', 'Date', 'Time', 'Timestamp', 'Country', 'Currency',
@@ -25,17 +34,21 @@ const COLUMNS = [
   'Quote Status'
 ];
 
+const CACHE_COLUMNS = [
+  'ISBN', 'Country', 'Format', 'Book Title', 'Currency', 'Retail Price',
+  'Price Source', 'Timestamp'
+];
+
 function doPost(e) {
   try {
     const body = JSON.parse(e.postData.contents);
     const action = body.action || 'saveQuote';
 
-    if (action === 'saveQuote') {
-      return handleSaveQuote(body);
-    }
-    if (action === 'updateContactMethod') {
-      return handleUpdateContactMethod(body);
-    }
+    if (action === 'saveQuote') return handleSaveQuote(body);
+    if (action === 'updateContactMethod') return handleUpdateContactMethod(body);
+    if (action === 'getCachedPrice') return handleGetCachedPrice(body);
+    if (action === 'cachePrice') return handleCachePrice(body);
+
     return jsonResponse({ ok: false, error: 'Unknown action' });
   } catch (err) {
     return jsonResponse({ ok: false, error: String(err) });
@@ -86,6 +99,87 @@ function handleUpdateContactMethod(data) {
   return jsonResponse({ ok: false, error: 'Quote ID not found' });
 }
 
+// ── Shared price cache ───────────────────────────────────────────────────
+// Keyed by ISBN + country + format. This is a protection layer, not the
+// primary reliability mechanism — the frontend's PRICE_SOURCES fallback
+// chain still has to work on its own for books nobody has searched before.
+
+function cacheKey_(isbn, country, format) {
+  return [isbn, country, format || ''].join('|');
+}
+
+function handleGetCachedPrice(data) {
+  const sheet = getCacheSheet_();
+  const values = sheet.getDataRange().getValues();
+  const isbnCol = CACHE_COLUMNS.indexOf('ISBN');
+  const countryCol = CACHE_COLUMNS.indexOf('Country');
+  const formatCol = CACHE_COLUMNS.indexOf('Format');
+  const currencyCol = CACHE_COLUMNS.indexOf('Currency');
+  const priceCol = CACHE_COLUMNS.indexOf('Retail Price');
+  const sourceCol = CACHE_COLUMNS.indexOf('Price Source');
+  const tsCol = CACHE_COLUMNS.indexOf('Timestamp');
+
+  const wantKey = cacheKey_(data.isbn, data.country, data.format);
+  const cutoff = Date.now() - CACHE_TTL_HOURS * 60 * 60 * 1000;
+
+  for (let i = 1; i < values.length; i++) {
+    const row = values[i];
+    const rowKey = cacheKey_(row[isbnCol], row[countryCol], row[formatCol]);
+    if (rowKey !== wantKey) continue;
+
+    const ts = new Date(row[tsCol]).getTime();
+    if (isNaN(ts) || ts < cutoff) return jsonResponse({ ok: true, hit: false });
+
+    return jsonResponse({
+      ok: true,
+      hit: true,
+      currency: row[currencyCol],
+      retailPrice: row[priceCol],
+      format: row[formatCol],
+      priceSource: row[sourceCol]
+    });
+  }
+  return jsonResponse({ ok: true, hit: false });
+}
+
+function handleCachePrice(data) {
+  const sheet = getCacheSheet_();
+  const values = sheet.getDataRange().getValues();
+  const isbnCol = CACHE_COLUMNS.indexOf('ISBN');
+  const countryCol = CACHE_COLUMNS.indexOf('Country');
+  const formatCol = CACHE_COLUMNS.indexOf('Format');
+  const wantKey = cacheKey_(data.isbn, data.country, data.format);
+  const now = new Date();
+
+  const row = [
+    data.isbn || '', data.country || '', data.format || '', data.title || '',
+    data.currency || '', data.retailPrice || '', data.priceSource || '',
+    now.toISOString()
+  ];
+
+  for (let i = 1; i < values.length; i++) {
+    const rowKey = cacheKey_(values[i][isbnCol], values[i][countryCol], values[i][formatCol]);
+    if (rowKey === wantKey) {
+      sheet.getRange(i + 1, 1, 1, row.length).setValues([row]);
+      return jsonResponse({ ok: true, updated: true });
+    }
+  }
+
+  sheet.appendRow(row);
+  return jsonResponse({ ok: true, updated: false });
+}
+
+function getCacheSheet_() {
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  let sheet = ss.getSheetByName(CACHE_SHEET_NAME);
+  if (!sheet) sheet = ss.insertSheet(CACHE_SHEET_NAME);
+  if (sheet.getLastRow() === 0) {
+    sheet.appendRow(CACHE_COLUMNS);
+    sheet.setFrozenRows(1);
+  }
+  return sheet;
+}
+
 function getSheet_() {
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   let sheet = ss.getSheetByName(SHEET_NAME);
@@ -100,7 +194,7 @@ function getSheet_() {
 }
 
 function sendNotificationEmail_(data) {
-  if (!NOTIFY_EMAIL || NOTIFY_EMAIL.indexOf('PASTE_') === 0) return;
+  if (!NOTIFY_EMAIL) return;
 
   const subject = 'New Kitab Guru Quote — ' + (data.quoteId || '');
   const body = [
@@ -110,9 +204,11 @@ function sendNotificationEmail_(data) {
     'Country: ' + (data.country || ''),
     'Book: ' + (data.bookTitle || ''),
     'Author: ' + (data.author || ''),
+    'ISBN: ' + (data.isbn || ''),
     'Format: ' + (data.format || ''),
     'Retail Price: ' + (data.currency || '') + ' ' + (data.retailPrice || ''),
     'Kitab Guru Price: ' + (data.currency || '') + ' ' + (data.kitabGuruPrice || ''),
+    'Discount: ' + (data.discount || ''),
     'Currency: ' + (data.currency || ''),
     'Price Source: ' + (data.priceSource || ''),
     'Contact Method: ' + (data.contactMethod || 'Not yet chosen'),
