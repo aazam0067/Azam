@@ -236,7 +236,7 @@ function getSheet_() {
 function sendNotificationEmail_(data) {
   if (!NOTIFY_EMAIL) return;
 
-  const subject = 'New Kitab Guru Quote — ' + (data.quoteId || '');
+  const subject = 'New KG Quote ' + (data.country || '');
   const body = [
     'New Kitab Guru Quote',
     '',
