@@ -30,13 +30,13 @@ const CACHE_TTL_HOURS = 24;
 const COLUMNS = [
   'Quote ID', 'Date', 'Time', 'Timestamp', 'Country', 'Currency',
   'Book Title', 'Author', 'ISBN', 'Format', 'Retail Price', 'Kitab Guru Price',
-  'Discount', 'Price Source', 'Source Marketplace/Country', 'Contact Method',
-  'Quote Status'
+  'Discount', 'Price Source', 'Source Marketplace/Country', 'Reference Link',
+  'Contact Method', 'Quote Status'
 ];
 
 const CACHE_COLUMNS = [
   'ISBN', 'Country', 'Format', 'Book Title', 'Currency', 'Retail Price',
-  'Price Source', 'Timestamp'
+  'Price Source', 'Reference Link', 'Timestamp'
 ];
 
 function doPost(e) {
@@ -75,6 +75,7 @@ function handleSaveQuote(data) {
     data.discount || '',
     data.priceSource || '',
     data.sourceMarketplace || '',
+    data.referenceLink || '',
     data.contactMethod || '',
     'New'
   ]);
@@ -117,6 +118,7 @@ function handleGetCachedPrice(data) {
   const currencyCol = CACHE_COLUMNS.indexOf('Currency');
   const priceCol = CACHE_COLUMNS.indexOf('Retail Price');
   const sourceCol = CACHE_COLUMNS.indexOf('Price Source');
+  const linkCol = CACHE_COLUMNS.indexOf('Reference Link');
   const tsCol = CACHE_COLUMNS.indexOf('Timestamp');
 
   const wantKey = cacheKey_(data.isbn, data.country, data.format);
@@ -136,7 +138,8 @@ function handleGetCachedPrice(data) {
       currency: row[currencyCol],
       retailPrice: row[priceCol],
       format: row[formatCol],
-      priceSource: row[sourceCol]
+      priceSource: row[sourceCol],
+      referenceLink: row[linkCol]
     });
   }
   return jsonResponse({ ok: true, hit: false });
@@ -154,7 +157,7 @@ function handleCachePrice(data) {
   const row = [
     data.isbn || '', data.country || '', data.format || '', data.title || '',
     data.currency || '', data.retailPrice || '', data.priceSource || '',
-    now.toISOString()
+    data.referenceLink || '', now.toISOString()
   ];
 
   for (let i = 1; i < values.length; i++) {
@@ -211,6 +214,7 @@ function sendNotificationEmail_(data) {
     'Discount: ' + (data.discount || ''),
     'Currency: ' + (data.currency || ''),
     'Price Source: ' + (data.priceSource || ''),
+    'Reference Link: ' + (data.referenceLink || 'N/A'),
     'Contact Method: ' + (data.contactMethod || 'Not yet chosen'),
     'Date/Time: ' + new Date().toString()
   ].join('\n');

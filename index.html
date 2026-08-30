@@ -765,7 +765,7 @@ select.kgcalc-select{appearance:none;-webkit-appearance:none;background-image:ur
 .kgcalc-country-results{position:absolute;top:calc(100% + 8px);left:0;right:0;margin:0;z-index:20;background:#151515;border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:8px;box-shadow:0 14px 34px rgba(0,0,0,.4);max-height:280px;}
 .kgcalc-country-result{padding:11px 12px;}
 .kgcalc-country-caption{font-size:.7rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:rgba(255,255,255,.4);padding:6px 10px 8px;}
-.kgcalc-result{display:flex;align-items:center;gap:12px;padding:10px 12px;border:1px solid rgba(255,255,255,.08);border-radius:12px;background:rgba(255,255,255,.02);cursor:pointer;transition:border-color .2s,background .2s;text-align:left;width:100%;}
+.kgcalc-result{display:flex;align-items:center;gap:12px;padding:10px 12px;border:1px solid rgba(255,255,255,.08);border-radius:12px;background:rgba(255,255,255,.02);cursor:pointer;transition:border-color .2s,background .2s;text-align:left;width:100%;color:var(--wh);font-family:'Inter',sans-serif;font-size:.9rem;}
 .kgcalc-result:hover,.kgcalc-result:focus-visible{border-color:rgba(255,217,61,.4);background:rgba(255,217,61,.05);}
 .kgcalc-result-cover{width:32px;height:46px;object-fit:cover;border-radius:3px;background:#222;flex-shrink:0;}
 .kgcalc-result-text{min-width:0;}
@@ -793,6 +793,7 @@ select.kgcalc-select{appearance:none;-webkit-appearance:none;background-image:ur
 .kgcalc-savings{text-align:center;margin-top:14px;font-size:.9rem;color:rgba(255,255,255,.75);}
 .kgcalc-savings b{color:var(--gold);}
 .kgcalc-source-note{text-align:center;font-size:.72rem;color:rgba(255,255,255,.4);margin-top:8px;}
+.kgcalc-source-link{color:var(--gold);text-decoration:underline;}
 
 .kgcalc-quote-btn-row{margin-top:22px;display:flex;justify-content:center;}
 .kgcalc-search-again{background:none;border:0;color:rgba(255,255,255,.5);font-size:.82rem;text-decoration:underline;cursor:pointer;margin-top:16px;display:block;text-align:center;width:100%;font-family:'Inter',sans-serif;}
@@ -2192,30 +2193,37 @@ function toggleFaq(el){
   // price availability) plus a title/author query, so one missing edition
   // doesn't sink the whole lookup.
   async function googleBooksSource(book, country) {
-    return googleBooksLookup(buildQueries(book), country.code, 'Google Books');
+    return googleBooksLookup(buildQueries(book), country.code, 'Google Books', country);
   }
 
   // PRIORITY 4 — "other reliable source". No independent free/legitimate
   // 4th data source exists today (Open Library carries no retail pricing
   // at all — only Google Books does among free, keyless, non-scraping
-  // options). So this tries a broad cascade of major Google Play Books
-  // markets concurrently — not just one — and uses whichever answers
-  // first. Every result is labeled with exactly which market it came
-  // from; it is never presented as the customer's own-country price.
+  // options). So this casts as wide a net as realistically possible:
+  //  - a concurrent cascade across several major Google Play Books markets
+  //  - PLUS a final query with no country restriction at all
+  // Whichever answers first with a real price is used. If that price is in
+  // a different currency than the customer's, it's converted using a free,
+  // keyless exchange-rate service (open.er-api.com) so the customer always
+  // sees a number in their own currency — clearly labeled as a converted
+  // reference price, with a link back to the original listing so it's
+  // fully checkable, never silently presented as a local price.
   const REFERENCE_MARKETS = ['US', 'GB', 'IN', 'DE', 'CA', 'AU', 'FR', 'JP'];
   async function googleBooksReferenceSource(book, country) {
     const markets = REFERENCE_MARKETS.filter(function(m){ return m !== country.code; });
     const queries = buildQueries(book, 2); // fewer editions per market — breadth comes from the market count
 
-    const attempts = [];
-    markets.forEach(function(market){
-      attempts.push(
-        googleBooksLookup(queries, market, 'Google Books (' + marketName_(market) + ' reference price)')
-      );
+    const attempts = markets.map(function(market){
+      return googleBooksLookup(queries, market, 'Google Books (' + marketName_(market) + ' reference price)', country);
     });
+    // Last resort: no country restriction at all — Google Books falls back
+    // to its own default catalog, which sometimes surfaces a price none of
+    // the explicit per-country attempts found.
+    attempts.push(googleBooksLookup(queries, null, 'Google Books (reference price)', country));
 
     const results = await Promise.all(attempts);
-    return results.find(function(r){ return r.ok; }) || { ok: false };
+    const hit = results.find(function(r){ return r.ok; });
+    return hit || { ok: false };
   }
 
   function marketName_(code){
@@ -2233,11 +2241,11 @@ function toggleFaq(el){
     return queries;
   }
 
-  async function googleBooksLookup(queries, countryCode, label) {
+  async function googleBooksLookup(queries, countryCode, label, customerCountry) {
     for (const q of queries) {
       try {
-        let url = 'https://www.googleapis.com/books/v1/volumes?q=' +
-          encodeURIComponent(q) + '&country=' + encodeURIComponent(countryCode) + '&maxResults=1';
+        let url = 'https://www.googleapis.com/books/v1/volumes?q=' + encodeURIComponent(q) + '&maxResults=1';
+        if (countryCode) url += '&country=' + encodeURIComponent(countryCode);
         if (GOOGLE_BOOKS_API_KEY) url += '&key=' + encodeURIComponent(GOOGLE_BOOKS_API_KEY);
 
         const res = await withTimeout(fetch(url), 6000);
@@ -2247,13 +2255,29 @@ function toggleFaq(el){
         if (!item) continue;
         const sale = item.saleInfo;
         if (sale && sale.saleability === 'FOR_SALE' && sale.listPrice && sale.listPrice.amount) {
+          const link = item.volumeInfo && (item.volumeInfo.canonicalVolumeLink || item.volumeInfo.infoLink);
+          const sourceCurrency = sale.listPrice.currencyCode || countryCode;
+          let amount = sale.listPrice.amount;
+          let currency = sourceCurrency;
+          let finalLabel = label;
+
+          if (customerCountry && sourceCurrency && sourceCurrency !== customerCountry.currency) {
+            const converted = await convertCurrency(amount, sourceCurrency, customerCountry.currency);
+            if (converted != null) {
+              amount = converted;
+              currency = customerCountry.currency;
+              finalLabel = label + ', converted from ' + sourceCurrency;
+            }
+          }
+
           return {
             ok: true,
-            retailPrice: sale.listPrice.amount,
-            currency: sale.listPrice.currencyCode || countryCode,
+            retailPrice: +amount.toFixed(2),
+            currency: currency,
             format: 'eBook (Google Play)',
-            sourceLabel: label,
-            marketplace: label + ' — ' + countryCode,
+            sourceLabel: finalLabel,
+            marketplace: label + (countryCode ? ' — ' + countryCode : ''),
+            referenceLink: link || '',
             cover: item.volumeInfo && item.volumeInfo.imageLinks && (item.volumeInfo.imageLinks.thumbnail || item.volumeInfo.imageLinks.smallThumbnail)
           };
         }
@@ -2264,6 +2288,24 @@ function toggleFaq(el){
       }
     }
     return { ok: false };
+  }
+
+  // Free, keyless exchange-rate lookup (open.er-api.com — no signup,
+  // ~166 currencies, updated daily) used only to convert a real fetched
+  // price into the customer's currency for display. Never used to invent
+  // a price on its own.
+  async function convertCurrency(amount, from, to){
+    try {
+      const res = await withTimeout(fetch('https://open.er-api.com/v6/latest/' + encodeURIComponent(from)), 5000);
+      if (!res.ok) return null;
+      const data = await res.json();
+      const rate = data.rates && data.rates[to];
+      if (!rate) return null;
+      return amount * rate;
+    } catch (e) {
+      logSourceIssue('Currency conversion', e);
+      return null;
+    }
   }
 
   function withTimeout(promise, ms){
@@ -2536,7 +2578,11 @@ function toggleFaq(el){
         '</div>' +
       '</div>' +
       '<div class="kgcalc-savings">You save <b>' + formatMoney(savings, priceResult.currency) + ' (' + discountPct + '%)</b></div>' +
-      '<div class="kgcalc-source-note">Price source: ' + escapeHtml(priceResult.sourceLabel) + '</div>' +
+      '<div class="kgcalc-source-note">Price source: ' + escapeHtml(priceResult.sourceLabel) +
+        (priceResult.referenceLink
+          ? ' — <a class="kgcalc-source-link" href="' + escapeHtml(priceResult.referenceLink) + '" rel="noopener" target="_blank">view source</a>'
+          : '') +
+      '</div>' +
       '<div class="kgcalc-quote-btn-row"><button class="btn-gold" id="kgcalc-quote-btn" type="button">Get My Quote</button></div>' +
       '<button class="kgcalc-search-again" id="kgcalc-search-again" type="button">Search a different book</button>' +
       '<div class="kgcalc-quote-box kgcalc-hidden" id="kgcalc-quote-box"></div>';
@@ -2588,6 +2634,7 @@ function toggleFaq(el){
       discount: prices.discountPct + '%',
       priceSource: priceResult.sourceLabel,
       sourceMarketplace: priceResult.marketplace,
+      referenceLink: priceResult.referenceLink || '',
       contactMethod: ''
     };
 
@@ -2702,6 +2749,7 @@ function toggleFaq(el){
           format: res.format,
           sourceLabel: res.priceSource + ' (cached)',
           marketplace: res.priceSource,
+          referenceLink: res.referenceLink || '',
           cover: ''
         };
       }
@@ -2719,7 +2767,8 @@ function toggleFaq(el){
       currency: priceResult.currency,
       format: priceResult.format,
       retailPrice: priceResult.retailPrice,
-      priceSource: priceResult.sourceLabel
+      priceSource: priceResult.sourceLabel,
+      referenceLink: priceResult.referenceLink || ''
     });
   }
 })();
