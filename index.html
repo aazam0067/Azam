@@ -757,6 +757,9 @@ html{scroll-behavior:smooth;}
 .kgcalc-label{display:block;font-size:.78rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--gold);margin-bottom:10px;}
 .kgcalc-select,.kgcalc-input{width:100%;background:#0d0d0d;border:1px solid rgba(255,255,255,.14);border-radius:12px;padding:13px 16px;font-size:.95rem;color:var(--wh);font-family:'Inter',sans-serif;transition:border-color .2s;}
 .kgcalc-select:focus,.kgcalc-input:focus{outline:none;border-color:var(--gold);}
+.kgcalc-input:disabled{opacity:.5;cursor:not-allowed;}
+.kgcalc-country-lock-note{font-size:.78rem;color:rgba(255,255,255,.5);line-height:1.6;margin:10px 0 0;}
+.kgcalc-inline-link-btn{background:none;border:0;padding:0;color:var(--gold);text-decoration:underline;cursor:pointer;font-size:inherit;font-family:'Inter',sans-serif;}
 select.kgcalc-select{appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='9'%3E%3Cpath d='M1 1l6 6 6-6' stroke='%23FFD93D' stroke-width='2' fill='none' fill-rule='evenodd'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 16px center;padding-right:40px;cursor:pointer;}
 .kgcalc-search-row{display:flex;gap:10px;}
 .kgcalc-search-row .kgcalc-input{flex:1;}
@@ -862,6 +865,7 @@ select.kgcalc-select{appearance:none;-webkit-appearance:none;background-image:ur
 <input autocomplete="off" class="kgcalc-select kgcalc-input" id="kgcalc-country-input" placeholder="Search your country…" type="text"/>
 <ul class="kgcalc-results kgcalc-country-results kgcalc-hidden" id="kgcalc-country-results"></ul>
 </div>
+<p class="kgcalc-country-lock-note kgcalc-hidden" id="kgcalc-country-lock-note"></p>
 </div>
 
 <div class="kgcalc-field kgcalc-hidden" id="kgcalc-search-wrap">
@@ -873,11 +877,11 @@ select.kgcalc-select{appearance:none;-webkit-appearance:none;background-image:ur
 <ul class="kgcalc-results" id="kgcalc-results"></ul>
 </div>
 
+<p aria-live="polite" class="kgcalc-status" id="kgcalc-status" role="status"></p>
+
 <div class="kgcalc-hidden" id="kgcalc-price-wrap"></div>
 
 <div class="kgcalc-hidden" id="kgcalc-cart"></div>
-
-<p aria-live="polite" class="kgcalc-status" id="kgcalc-status" role="status"></p>
 
 <p class="kgcalc-disclaimer">Kitab Guru pricing shown here is an estimated quote based on the selected market price and may require final confirmation with our team.</p>
 </div>
@@ -2462,6 +2466,7 @@ function toggleFaq(el){
   const el = {
     countryInput: document.getElementById('kgcalc-country-input'),
     countryResults: document.getElementById('kgcalc-country-results'),
+    countryLockNote: document.getElementById('kgcalc-country-lock-note'),
     searchWrap: document.getElementById('kgcalc-search-wrap'),
     search: document.getElementById('kgcalc-search'),
     searchBtn: document.getElementById('kgcalc-search-btn'),
@@ -3252,7 +3257,30 @@ function toggleFaq(el){
     el.priceWrap.innerHTML = '';
     el.search.value = '';
     renderCartSummary();
+    updateCountryLockState();
     el.search.focus();
+  }
+
+  // A shared order can only be priced in one currency, so once a book is
+  // in the cart the country can't be changed underneath it (that would
+  // silently mix currencies across the same order). Lock the country
+  // field while the cart has anything in it, with an obvious way out.
+  function updateCountryLockState(){
+    const locked = cart.length > 0;
+    el.countryInput.disabled = locked;
+    if (!locked) {
+      el.countryLockNote.classList.add('kgcalc-hidden');
+      el.countryLockNote.innerHTML = '';
+      return;
+    }
+    el.countryLockNote.classList.remove('kgcalc-hidden');
+    el.countryLockNote.innerHTML = 'Your order is priced in ' + escapeHtml(selectedCountry.name) +
+      '. <button type="button" class="kgcalc-inline-link-btn" id="kgcalc-clear-cart-btn">Clear order to change country</button>';
+    document.getElementById('kgcalc-clear-cart-btn').addEventListener('click', function(){
+      cart = [];
+      renderCartSummary();
+      updateCountryLockState();
+    });
   }
 
   function cartTotals(items){
@@ -3316,6 +3344,7 @@ function toggleFaq(el){
       btn.addEventListener('click', function(){
         cart.splice(parseInt(btn.dataset.cartIndex, 10), 1);
         renderCartSummary();
+        updateCountryLockState();
       });
     });
     document.getElementById('kgcalc-cart-finish-btn').addEventListener('click', function(){
@@ -3349,6 +3378,7 @@ function toggleFaq(el){
       cart = [];
       el.cart.classList.add('kgcalc-hidden');
       el.cart.innerHTML = '';
+      updateCountryLockState();
       getQuote(only.book, only.priceResult, only.prices);
       return;
     }
@@ -3378,6 +3408,7 @@ function toggleFaq(el){
 
     currentQuote = { quoteId: quoteId, contactMethod: '' };
     cart = [];
+    updateCountryLockState();
     el.priceWrap.classList.add('kgcalc-hidden');
     el.priceWrap.innerHTML = '';
     el.search.value = '';
