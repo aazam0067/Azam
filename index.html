@@ -2222,7 +2222,7 @@ function toggleFaq(el){
   // price availability) plus a title/author query, so one missing edition
   // doesn't sink the whole lookup.
   async function googleBooksSource(book, country) {
-    return googleBooksLookup(buildQueries(book), country.code, 'Google Books', country);
+    return googleBooksLookup(buildQueries(book), country.code, 'Google Books', country, false, book.title);
   }
 
   // PRIORITY 4 — "other reliable source". No independent free/legitimate
@@ -2250,14 +2250,14 @@ function toggleFaq(el){
     // effectively concurrent; total added latency is small.
     const attempts = markets.map(function(market, i){
       return sleep(i * 150).then(function(){
-        return googleBooksLookup(queries, market, 'Google Books (' + marketName_(market) + ' reference price)', country);
+        return googleBooksLookup(queries, market, 'Google Books (' + marketName_(market) + ' reference price)', country, false, book.title);
       });
     });
     // Last resort: no country restriction at all — Google Books falls back
     // to its own default catalog, which sometimes surfaces a price none of
     // the explicit per-country attempts found.
     attempts.push(sleep(markets.length * 150).then(function(){
-      return googleBooksLookup(queries, null, 'Google Books (reference price)', country);
+      return googleBooksLookup(queries, null, 'Google Books (reference price)', country, false, book.title);
     }));
 
     const results = await Promise.all(attempts);
@@ -2286,11 +2286,11 @@ function toggleFaq(el){
 
     const attempts = markets.map(function(market, i){
       return sleep(i * 150).then(function(){
-        return googleBooksLookup(queries, market, 'Google Books', country, true);
+        return googleBooksLookup(queries, market, 'Google Books', country, true, book.title);
       });
     });
     attempts.push(sleep(markets.length * 150).then(function(){
-      return googleBooksLookup(queries, null, 'Google Books', country, true);
+      return googleBooksLookup(queries, null, 'Google Books', country, true, book.title);
     }));
 
     const results = await Promise.all(attempts);
@@ -2327,7 +2327,7 @@ function toggleFaq(el){
   };
   function languageName(code){ return LANGUAGE_NAMES[code] || code; }
 
-  async function googleBooksLookup(queries, countryCode, label, customerCountry, allowTranslation) {
+  async function googleBooksLookup(queries, countryCode, label, customerCountry, allowTranslation, expectedTitle) {
     for (const q of queries) {
       try {
         // Ask for several editions, not just one — Google Books often lists
@@ -2343,8 +2343,15 @@ function toggleFaq(el){
         if (!res.ok) { logSourceIssue('Google Books', res.status); continue; }
         const data = await res.json();
         const items = data.items || [];
+        // The broad "intitle:+inauthor:" catch-all query can surface a
+        // different, only topically-related book (e.g. searching
+        // "Construction Project Management" can turn up "Construction
+        // Supervision" as a for-sale result in the same response) —
+        // require it actually be the same book before treating its price
+        // as an answer, the same check already used for the edition list.
         const forSale = items.filter(function(it){
-          return it.saleInfo && it.saleInfo.saleability === 'FOR_SALE' && it.saleInfo.listPrice && it.saleInfo.listPrice.amount;
+          return it.saleInfo && it.saleInfo.saleability === 'FOR_SALE' && it.saleInfo.listPrice && it.saleInfo.listPrice.amount &&
+            (!expectedTitle || isLikelySameBook(it.volumeInfo && it.volumeInfo.title, expectedTitle));
         });
         // Prefer an English listing — some countries' Google Play stores
         // only sell a Hindi/Gujarati/Telugu edition of a title with no
