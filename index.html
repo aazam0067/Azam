@@ -802,6 +802,9 @@ select.kgcalc-select{appearance:none;-webkit-appearance:none;background-image:ur
 .kgcalc-source-link{color:var(--gold);text-decoration:underline;}
 .kgcalc-mini-note{text-align:center;font-size:.78rem;color:rgba(255,255,255,.45);line-height:1.6;margin:10px 0 0;}
 .kgcalc-mini-note a{color:var(--gold);text-decoration:underline;}
+.kgcalc-offedition-note{font-size:.82rem;line-height:1.6;color:rgba(255,255,255,.8);background:rgba(255,217,61,.08);border:1px solid rgba(255,217,61,.25);border-radius:12px;padding:12px 16px;margin:0 0 18px;}
+.kgcalc-offedition-note b{color:var(--gold);}
+.kgcalc-offedition-note a{color:var(--gold);text-decoration:underline;}
 
 .kgcalc-quote-btn-row{margin-top:22px;display:flex;justify-content:center;gap:10px;flex-wrap:wrap;}
 .kgcalc-search-again{background:none;border:0;color:rgba(255,255,255,.5);font-size:.82rem;text-decoration:underline;cursor:pointer;margin-top:16px;display:block;text-align:center;width:100%;font-family:'Inter',sans-serif;}
@@ -2351,13 +2354,17 @@ function toggleFaq(el){
   // number of requests reasonable.
   function buildQueries(book, maxIsbns){
     const queries = (book.isbns || []).slice(0, maxIsbns || 4).map(function(i){ return 'isbn:' + i; });
-    // When the customer picked a specific edition, stay scoped to that
-    // edition's own ISBN(s) only — a broad title/author query could match
-    // a *different* edition and silently show its price instead, which
-    // would misrepresent what the customer actually chose.
-    if (!book.exactEdition) {
-      queries.push('intitle:' + book.title + (book.author ? ' inauthor:' + book.author : ''));
-    }
+    // Always add a broader title/author catch-all too, even for a
+    // specific edition pick — Google's own catalog sometimes splits one
+    // real edition across multiple volume records with different ISBNs
+    // (seen with "Quantum Gravity: Fourth Edition": one record NOT_FOR_
+    // SALE, a separate record with the same title/subtitle genuinely for
+    // sale), and ISBN-only queries would miss a for-sale twin entirely.
+    // googleBooksLookup's own matching decides whether a hit from this
+    // query is the exact edition or a different one and labels it
+    // honestly either way — by design this never silently swaps in a
+    // wrong price, only ever a clearly flagged one.
+    queries.push('intitle:' + book.title + (book.author ? ' inauthor:' + book.author : ''));
     return queries;
   }
 
@@ -2397,7 +2404,7 @@ function toggleFaq(el){
         // as an answer, the same check already used for the edition list.
         const forSale = items.filter(function(it){
           return it.saleInfo && it.saleInfo.saleability === 'FOR_SALE' && it.saleInfo.listPrice && it.saleInfo.listPrice.amount &&
-            (!expectedTitle || isLikelySameBook(it.volumeInfo && it.volumeInfo.title, expectedTitle));
+            (!expectedTitle || isLikelySameBook(googleEditionTitle(it), expectedTitle));
         });
         // Prefer an English listing — some countries' Google Play stores
         // only sell a Hindi/Gujarati/Telugu edition of a title with no
@@ -2407,40 +2414,62 @@ function toggleFaq(el){
         // correct — so a translation is only ever used when explicitly
         // allowed (the very last, clearly-labeled fallback source), never
         // as the everyday result.
-        const englishItem = forSale.find(function(it){ return it.volumeInfo && it.volumeInfo.language === 'en'; });
-        const item = englishItem || (allowTranslation ? forSale[0] : null);
-        if (!item) continue;
+        const englishItems = forSale.filter(function(it){ return it.volumeInfo && it.volumeInfo.language === 'en'; });
+        const candidates = englishItems.length ? englishItems : (allowTranslation ? forSale : []);
+        if (!candidates.length) continue;
+
+        // If the customer picked a specific numbered edition, prefer a
+        // candidate that actually IS that edition. Google's own catalog
+        // sometimes splits one real edition across multiple volume
+        // records with different ISBNs, only one of which is for sale
+        // and discoverable via search — rather than reporting no price
+        // at all when that happens, fall back to whichever edition IS
+        // for sale, but flag it plainly as a different edition/listing
+        // rather than silently presenting it as the exact one requested.
+        const expectedMarker = expectedTitle ? editionMarker(expectedTitle) : null;
+        const exactMatch = expectedMarker
+          ? candidates.find(function(it){ return editionMarker(googleEditionTitle(it)) === expectedMarker; })
+          : candidates[0];
+        const item = exactMatch || candidates[0];
+        const isOffEdition = !!(expectedMarker && editionMarker(googleEditionTitle(item)) !== expectedMarker);
+
         const sale = item.saleInfo;
-        if (sale && sale.saleability === 'FOR_SALE' && sale.listPrice && sale.listPrice.amount) {
-          const link = googleReferenceLink(item);
-          const sourceCurrency = sale.listPrice.currencyCode || countryCode;
-          let amount = sale.listPrice.amount;
-          let currency = sourceCurrency;
-          const itemLang = item.volumeInfo && item.volumeInfo.language;
-          const isTranslation = !englishItem && itemLang && itemLang !== 'en';
-          const langTag = isTranslation ? languageName(itemLang) + ' edition' : '';
-          let finalLabel = label + (langTag ? ' — ' + langTag + ' (no English edition found for sale)' : '');
-
-          if (customerCountry && sourceCurrency && sourceCurrency !== customerCountry.currency) {
-            const converted = await convertCurrency(amount, sourceCurrency, customerCountry.currency);
-            if (converted != null) {
-              amount = converted;
-              currency = customerCountry.currency;
-              finalLabel = label + ', converted from ' + sourceCurrency + (langTag ? ' — ' + langTag + ' (no English edition found for sale)' : '');
-            }
-          }
-
-          return {
-            ok: true,
-            retailPrice: +amount.toFixed(2),
-            currency: currency,
-            format: 'eBook (Google Play)' + (langTag ? ' — ' + langTag : ''),
-            sourceLabel: finalLabel,
-            marketplace: label + (countryCode ? ' — ' + countryCode : ''),
-            referenceLink: link || '',
-            cover: item.volumeInfo && item.volumeInfo.imageLinks && (item.volumeInfo.imageLinks.thumbnail || item.volumeInfo.imageLinks.smallThumbnail)
-          };
+        const link = googleReferenceLink(item);
+        const sourceCurrency = sale.listPrice.currencyCode || countryCode;
+        let amount = sale.listPrice.amount;
+        let currency = sourceCurrency;
+        const itemLang = item.volumeInfo && item.volumeInfo.language;
+        const isTranslation = !englishItems.length && itemLang && itemLang !== 'en';
+        const langTag = isTranslation ? languageName(itemLang) + ' edition' : '';
+        const offEditionTitle = isOffEdition ? googleEditionTitle(item) : '';
+        function buildLabel(base){
+          return base +
+            (langTag ? ' — ' + langTag + ' (no English edition found for sale)' : '') +
+            (offEditionTitle ? ' — priced for "' + offEditionTitle + '", not the exact edition requested' : '');
         }
+        let finalLabel = buildLabel(label);
+
+        if (customerCountry && sourceCurrency && sourceCurrency !== customerCountry.currency) {
+          const converted = await convertCurrency(amount, sourceCurrency, customerCountry.currency);
+          if (converted != null) {
+            amount = converted;
+            currency = customerCountry.currency;
+            finalLabel = buildLabel(label + ', converted from ' + sourceCurrency);
+          }
+        }
+
+        return {
+          ok: true,
+          retailPrice: +amount.toFixed(2),
+          currency: currency,
+          format: 'eBook (Google Play)' + (langTag ? ' — ' + langTag : ''),
+          sourceLabel: finalLabel,
+          marketplace: label + (countryCode ? ' — ' + countryCode : ''),
+          referenceLink: link || '',
+          offEdition: isOffEdition,
+          offEditionTitle: offEditionTitle,
+          cover: item.volumeInfo && item.volumeInfo.imageLinks && (item.volumeInfo.imageLinks.thumbnail || item.volumeInfo.imageLinks.smallThumbnail)
+        };
       } catch (e) {
         logSourceIssue('Google Books', e);
         // quota exceeded, rate limit, timeout, network error — all treated
@@ -2732,6 +2761,26 @@ function toggleFaq(el){
   function isExplicitEditionItem(item){
     const vi = item.volumeInfo || {};
     return isExplicitEditionText((vi.title || '') + ' ' + (vi.subtitle || ''));
+  }
+
+  // Normalizes a numbered/ordinal edition mention to a bare number, so
+  // "Fourth Edition" and "Edition 4" compare equal — used to tell whether
+  // a Google Books result actually IS the specific edition a customer
+  // picked, versus just some other edition of the same title (see
+  // googleBooksLookup's off-edition fallback).
+  const ORDINAL_WORD_TO_NUM = {
+    second: '2', third: '3', fourth: '4', fifth: '5', sixth: '6', seventh: '7',
+    eighth: '8', ninth: '9', tenth: '10', eleventh: '11', twelfth: '12'
+  };
+  function editionMarker(text){
+    const s = String(text || '');
+    let m = s.match(/\b(\d+)(st|nd|rd|th)\s+edition\b/i);
+    if (m) return m[1];
+    m = s.match(new RegExp('\\b' + ORDINAL_EDITION_WORDS + '\\s+edition\\b', 'i'));
+    if (m) return ORDINAL_WORD_TO_NUM[m[1].toLowerCase()];
+    m = s.match(/\bedition\s+(\d+)\b/i);
+    if (m) return m[1];
+    return null;
   }
 
   async function openEditionPicker(doc){
@@ -3144,6 +3193,11 @@ function toggleFaq(el){
           '</div>' +
         '</div>' +
       '</div>' +
+      (priceResult.offEdition
+        ? '<p class="kgcalc-offedition-note">We couldn\'t confirm a price for the exact edition you searched (<b>' +
+            escapeHtml(book.edition || book.title) + '</b>). The price below is for a different available listing of this book instead (<b>' +
+            escapeHtml(priceResult.offEditionTitle) + '</b>) — see the source link to check it. <a href="#contact">Reach out to us</a> if you specifically need the edition you searched.</p>'
+        : '') +
       '<div class="kgcalc-price-grid">' +
         '<div class="kgcalc-price-box">' +
           '<div class="kgcalc-price-box-label">Retail Price</div>' +
