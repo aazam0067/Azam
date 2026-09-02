@@ -61,6 +61,8 @@ function doPost(e) {
     if (action === 'getCachedPrice') return handleGetCachedPrice(body);
     if (action === 'cachePrice') return handleCachePrice(body);
     if (action === 'logInquiry') return handleLogInquiry(body);
+    if (action === 'checkRetailerPrice') return handleCheckRetailerPrice(body);
+    if (action === 'debugRetailerPrice') return handleDebugRetailerPrice(body);
 
     return jsonResponse({ ok: false, error: 'Unknown action' });
   } catch (err) {
@@ -135,6 +137,182 @@ function getInquirySheet_() {
     sheet.setFrozenRows(1);
   }
   return sheet;
+}
+
+// ── Retailer price fallback (TextbookX) ─────────────────────────────────
+// Doesn't have a public pricing API, so this fetches its real pages
+// server-side (a browser can't do this itself -- most sites don't allow
+// cross-origin reads of their raw HTML) and reads the price straight out
+// of the page. The frontend only calls this once Google Books has
+// already come up empty for a book. Prices in USD regardless of visitor
+// location, so the frontend converts to the customer's own currency the
+// same way it already does for other cross-market reference prices.
+//
+// VitalSource was tried too, but dropped: its search page's behavior
+// turned out to be inconsistent between identical requests (sometimes a
+// direct redirect to the product page with real price data, sometimes a
+// results page that loads everything via client-side JavaScript we have
+// no way to run server-side) -- not reliable enough to keep active.
+function handleCheckRetailerPrice(data) {
+  const isbn = data.isbn || '';
+  const hit = tryTextbookX_(isbn);
+  if (!hit) return jsonResponse({ ok: false });
+  return jsonResponse(Object.assign({ ok: true }, hit));
+}
+
+// TEMPORARY — diagnostic only, not called by the site. Shows exactly what
+// the backend actually saw for a given ISBN, so a failure can be diagnosed
+// instead of guessed at. Safe to delete once TextbookX is confirmed working.
+function handleDebugRetailerPrice(data) {
+  const isbn = (data && data.isbn) || '9780573705144';
+  const url = 'https://www.textbookx.com/fastsearch2.php?s=' + encodeURIComponent(isbn) + '&product=book&act=new';
+  const hops = [];
+  let current = url;
+  let final = null;
+  for (let i = 0; i < 5; i++) {
+    let res;
+    try {
+      res = UrlFetchApp.fetch(current, {
+        muteHttpExceptions: true,
+        followRedirects: false,
+        headers: { 'User-Agent': RETAILER_USER_AGENT }
+      });
+    } catch (e) {
+      hops.push({ url: current, error: String(e) });
+      break;
+    }
+    const code = res.getResponseCode();
+    const headers = res.getHeaders();
+    hops.push({ url: current, code: code, location: headers['Location'] || headers['location'] || null });
+    if (code >= 300 && code < 400) {
+      const location = headers['Location'] || headers['location'];
+      if (!location) break;
+      current = resolveUrl_(current, location);
+      continue;
+    }
+    if (code === 200) final = { url: current, html: res.getContentText() };
+    break;
+  }
+  if (!final) return jsonResponse({ ok: false, stage: 'fetch failed or no redirect resolved', hops: hops });
+  const prices = extractPrices_(final.html);
+  const dollarIndex = final.html.indexOf('7.74');
+  return jsonResponse({
+    ok: true,
+    hops: hops,
+    finalUrl: final.url,
+    htmlLength: final.html.length,
+    matchedProductPage: final.url.indexOf('/book/') !== -1,
+    extractedPrices: prices,
+    knownPriceFound: dollarIndex !== -1,
+    knownPriceContext: dollarIndex !== -1 ? final.html.slice(Math.max(0, dollarIndex - 60), dollarIndex + 20) : null,
+    htmlSnippet: final.html.slice(0, 500)
+  });
+}
+
+// UrlFetchApp can follow redirects itself, but never tells you the URL it
+// landed on -- and that final URL IS the product page we need to link to
+// as the source. So redirects are followed by hand here instead, one hop
+// at a time, keeping track of exactly where each request ends up.
+//
+// UrlFetchApp's own default User-Agent gets flatly 403'd by VitalSource
+// (confirmed directly) -- a real browser UA is required.
+const RETAILER_USER_AGENT =
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36';
+
+// Apps Script's runtime has no URL class to resolve a relative redirect
+// against its base (confirmed: "URL is not defined") -- TextbookX's own
+// redirect is relative ("/book/12345", not a full https://... URL), so
+// this has to be done by hand: absolute/protocol-relative URLs pass
+// through untouched, anything else is treated as root-relative to the
+// current request's own origin.
+function resolveUrl_(base, location) {
+  if (/^https?:\/\//i.test(location)) return location;
+  const originMatch = base.match(/^(https?:\/\/[^/]+)/i);
+  const origin = originMatch ? originMatch[1] : '';
+  if (location.indexOf('//') === 0) return (base.match(/^https?:/i) || ['https:'])[0] + location;
+  if (location.indexOf('/') === 0) return origin + location;
+  return origin + '/' + location;
+}
+
+function fetchFollowingRedirects_(url) {
+  let current = url;
+  for (let i = 0; i < 5; i++) {
+    const res = UrlFetchApp.fetch(current, {
+      muteHttpExceptions: true,
+      followRedirects: false,
+      headers: { 'User-Agent': RETAILER_USER_AGENT }
+    });
+    const code = res.getResponseCode();
+    if (code >= 300 && code < 400) {
+      const headers = res.getHeaders();
+      const location = headers['Location'] || headers['location'];
+      if (!location) return null;
+      current = resolveUrl_(current, location);
+      continue;
+    }
+    if (code !== 200) return null;
+    return { url: current, html: res.getContentText() };
+  }
+  return null;
+}
+
+// Price shows up in two different forms depending on the page: some
+// templates embed it as plain "price":"12.34" / "price": 12.34 in the
+// page's own JSON-LD/structured data, others just render it as visible
+// text like "$12.34" with no structured data at all (confirmed both
+// happen on TextbookX depending on the listing). Catch both forms and
+// let the caller decide which instance to use. A "$0.00" placeholder
+// (sample chapters, out-of-stock markers) is filtered out by requiring > 0.
+function extractPrices_(html) {
+  const jsonMatches = html.match(/"price"\s*:\s*"?(\d+\.\d{2})"?/g) || [];
+  const dollarMatches = html.match(/\$\s?(\d+\.\d{2})/g) || [];
+  const prices = [];
+  jsonMatches.concat(dollarMatches).forEach(function(m) {
+    const n = m.match(/(\d+\.\d{2})/);
+    if (n) {
+      const val = parseFloat(n[1]);
+      if (val > 0) prices.push(val);
+    }
+  });
+  return prices;
+}
+
+function tryVitalSource_(isbn) {
+  if (!isbn) return null;
+  try {
+    const result = fetchFollowingRedirects_('https://www.vitalsource.com/search?term=' + encodeURIComponent(isbn));
+    if (!result || result.url.indexOf('/products/') === -1) return null;
+    const prices = extractPrices_(result.html);
+    if (!prices.length) return null;
+    return {
+      retailPrice: Math.min.apply(null, prices),
+      currency: 'USD',
+      format: 'eBook (VitalSource)',
+      sourceLabel: 'VitalSource',
+      referenceLink: result.url
+    };
+  } catch (e) {
+    return null;
+  }
+}
+
+function tryTextbookX_(isbn) {
+  if (!isbn) return null;
+  try {
+    const result = fetchFollowingRedirects_('https://www.textbookx.com/fastsearch2.php?s=' + encodeURIComponent(isbn) + '&product=book&act=new');
+    if (!result || result.url.indexOf('/book/') === -1) return null;
+    const prices = extractPrices_(result.html);
+    if (!prices.length) return null;
+    return {
+      retailPrice: Math.min.apply(null, prices),
+      currency: 'USD',
+      format: 'Book (TextbookX)',
+      sourceLabel: 'TextbookX',
+      referenceLink: result.url
+    };
+  } catch (e) {
+    return null;
+  }
 }
 
 // ── Shared price cache ───────────────────────────────────────────────────

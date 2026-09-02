@@ -2513,7 +2513,53 @@ function toggleFaq(el){
     console.info('[Kitab Guru calculator] ' + name + ' unavailable, trying next source.', detail);
   }
 
-  const PRICE_SOURCES = [amazonSource, localRetailerSource, googleBooksSource, googleBooksReferenceSource, googleBooksTranslatedFallbackSource];
+  // PRIORITY 6 — retailer fallback. Neither VitalSource nor TextbookX has
+  // a public API, so a customer's ISBN is looked up server-side (via the
+  // Apps Script backend's checkRetailerPrice action — a browser can't
+  // read another site's raw HTML directly) against their real product
+  // pages. Both price in USD regardless of the visitor's location, so
+  // the result is converted to the customer's currency the same way a
+  // cross-market Google Books reference price already is.
+  async function retailerScrapeSource(book, country){
+    if (!apiConfigured() || !book.isbn) return { ok: false };
+    try {
+      const res = await withTimeout(postToAppsScript({
+        action: 'checkRetailerPrice',
+        isbn: book.isbn,
+        title: book.title,
+        author: book.author || ''
+      }), 10000);
+      if (!res || !res.ok) return { ok: false };
+
+      let amount = res.retailPrice;
+      let currency = res.currency;
+      let sourceLabel = res.sourceLabel;
+
+      if (country && currency && currency !== country.currency) {
+        const converted = await convertCurrency(amount, currency, country.currency);
+        if (converted != null) {
+          amount = converted;
+          currency = country.currency;
+          sourceLabel = res.sourceLabel + ', converted from ' + res.currency;
+        }
+      }
+
+      return {
+        ok: true,
+        retailPrice: +amount.toFixed(2),
+        currency: currency,
+        format: res.format,
+        sourceLabel: sourceLabel,
+        marketplace: res.sourceLabel,
+        referenceLink: res.referenceLink || ''
+      };
+    } catch (e) {
+      logSourceIssue('Retailer fallback', e);
+      return { ok: false };
+    }
+  }
+
+  const PRICE_SOURCES = [amazonSource, localRetailerSource, googleBooksSource, googleBooksReferenceSource, googleBooksTranslatedFallbackSource, retailerScrapeSource];
 
   async function fetchPrice(book, country){
     // Check the shared cache first (see google-apps-script/Code.gs) —
