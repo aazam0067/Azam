@@ -3719,15 +3719,26 @@ function toggleFaq(el){
       img.src=normalized;
     });
   }
+  // Open Library's cover servers occasionally hang far longer than a
+  // normal request instead of cleanly erroring (confirmed directly:
+  // isolated single requests taking 10-20+ seconds with no response) --
+  // a browser's own native image-load timeout can be even longer than
+  // that. Don't let one slow/stuck request hold up a genre cover
+  // indefinitely; move on to the Google Books fallback after a few
+  // seconds even if the browser hasn't given up on the request yet.
+  const OL_COVER_TIMEOUT_MS=3500;
   function tryOpenLibrary(img){
     const src=olUrl(img.dataset.isbn);
     const key=src.split('?')[0];
-    img.onerror=function(){tryGoogle(img);};
+    let settled=false;
+    img.onerror=function(){ if(settled) return; settled=true; tryGoogle(img); };
     img.onload=function(){
+      if(settled) return; settled=true;
       if(uniqueWithinCard(img,key)) tryGoogle(img);
       else finalize(img,key);
     };
     img.src=src;
+    setTimeout(function(){ if(settled) return; settled=true; tryGoogle(img); }, OL_COVER_TIMEOUT_MS);
   }
   imgs.forEach(tryOpenLibrary);
 })();
