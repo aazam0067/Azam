@@ -104,18 +104,6 @@ nav{position:fixed;top:0;left:0;right:0;z-index:1000;display:flex;align-items:ce
 /* SERVICES */
 .services-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1px;margin-top:52px;border:1px solid rgba(255,255,255,.07);border-radius:18px;overflow:hidden;}
 
-/* WHY US GRID */
-.why-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin-top:52px;}
-.why-card{background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.1);border-radius:18px;padding:32px 28px;transition:border-color .3s,background .3s,transform .3s,box-shadow .3s;position:relative;box-shadow:0 8px 24px rgba(0,0,0,.15);}
-.why-card:hover{border-color:rgba(255,217,61,.4);background:rgba(255,217,61,.05);transform:translateY(-4px);box-shadow:0 12px 32px rgba(0,0,0,.25);}
-.why-card:focus-within{outline:2px solid rgba(255,217,61,.6);outline-offset:2px;}
-.why-icon{width:46px;height:46px;background:rgba(255,217,61,.1);border:1px solid rgba(255,217,61,.22);border-radius:12px;display:flex;align-items:center;justify-content:center;margin-bottom:18px;color:var(--gold);}
-.why-icon svg{width:20px;height:20px;stroke:var(--gold);}
-.why-card h3{font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:700;color:var(--wh);margin-bottom:10px;line-height:1.3;}
-.why-card p{font-size:.9rem;color:rgba(255,255,255,.68);line-height:1.85;font-weight:300;margin-bottom:16px;}
-.why-proof{display:inline-block;font-size:.78rem;font-weight:600;color:var(--gold);background:rgba(255,217,61,.1);border:1px solid rgba(255,217,61,.22);border-radius:50px;padding:6px 14px;letter-spacing:.02em;}
-@media(max-width:768px){.why-grid{grid-template-columns:1fr 1fr;}}
-@media(max-width:480px){.why-grid{grid-template-columns:1fr;}}
 
 /* COMPARISON TABLE */
 .compare-wrap{margin-top:52px;border:1px solid rgba(255,255,255,.08);border-radius:18px;overflow-x:auto;background:rgba(255,255,255,.015);}
@@ -342,8 +330,6 @@ footer p{font-size:.76rem;color:rgba(255,255,255,.2);}
 .svc-visual:after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(13,13,13,.05),rgba(13,13,13,.68));pointer-events:none;}
 .svc-inner{padding:24px 28px 0;}
 .svc .svc-icon{margin-bottom:16px;}
-.svc-featured-tag{z-index:3;top:16px!important;right:16px!important;}
-.svc-visual .svc-featured-tag{position:absolute;}
 .image-caption{position:absolute;z-index:2;left:18px;bottom:15px;color:#fff;font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;font-weight:700;text-shadow:0 2px 8px #000;}
 .book-category-art{position:relative!important;overflow:hidden;}
 .book-category-art>img{transition:transform .55s ease,filter .35s ease!important;}
@@ -369,27 +355,6 @@ footer p{font-size:.76rem;color:rgba(255,255,255,.2);}
 @media(max-width:800px){.book-wall-grid{grid-template-columns:1fr 1fr;grid-template-rows:220px 220px;}.wall-tile.wall-wide{grid-row:auto;}.wall-tile.wall-wide{grid-column:1 / span 2;}}
 @media(max-width:520px){.book-wall-grid{grid-template-columns:1fr;grid-template-rows:220px;}.wall-tile.wall-wide{grid-column:auto;}}
 
-
-.quick-start{background:#111;padding:58px 5vw 76px;border-top:1px solid rgba(255,255,255,.05);border-bottom:1px solid rgba(255,255,255,.05);}
-.quick-start-inner{max-width:1400px;margin:0 auto;}
-.quick-start-heading{display:flex;align-items:end;justify-content:space-between;gap:30px;margin-bottom:28px;}
-.quick-start-heading .section-title{margin-bottom:0;}
-.quick-start-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:0;border-top:1px solid rgba(255,255,255,.08);border-bottom:1px solid rgba(255,255,255,.08);}
-.quick-card{position:relative;min-height:178px;border-radius:0;overflow:hidden;border:0;border-right:1px solid rgba(255,255,255,.08);background:transparent;text-decoration:none;isolation:isolate;display:grid;grid-template-columns:74px 1fr;align-items:center;padding:28px 30px;transition:background .3s ease;}
-.quick-card:last-child{border-right:0;}
-.quick-card:before{content:'';position:absolute;left:0;top:0;bottom:0;width:2px;background:var(--gold);transform:scaleY(0);transform-origin:top;transition:transform .35s ease;z-index:2;}
-.quick-card:hover{background:rgba(255,217,61,.045);}
-.quick-card:hover:before{transform:scaleY(1);}
-.quick-card img{position:relative;inset:auto;width:58px;height:58px;object-fit:cover;border-radius:50%;display:block;border:1px solid rgba(255,217,61,.22);filter:saturate(.7) contrast(1.08);opacity:.84;z-index:2;}
-.quick-card:after{content:'01';position:absolute;right:20px;bottom:5px;background:none;z-index:0;font-family:'Playfair Display',serif;font-size:4rem;font-weight:700;color:rgba(255,255,255,.035);}
-.quick-card:nth-child(2):after{content:'02';color:rgba(255,217,61,.045);}
-.quick-card:nth-child(3):after{content:'03';}
-.quick-card span{position:relative;left:auto;right:auto;bottom:auto;z-index:2;color:#fff;display:flex;flex-direction:column;gap:7px;}
-.quick-card strong{display:block;font-family:'Playfair Display',serif;font-size:1.28rem;line-height:1.15;margin-bottom:0;}
-.quick-card small{display:block;color:rgba(255,255,255,.46);font-size:.82rem;line-height:1.6;max-width:270px;}
-.quick-card:hover img{transform:scale(1.04);filter:saturate(.9) contrast(1.1);}
-@media(max-width:850px){.quick-start-heading{display:block}.quick-start-heading .section-sub{margin-top:8px}.quick-start-grid{grid-template-columns:1fr 1fr}.quick-card:last-child{grid-column:1 / -1;}}
-@media(max-width:560px){.quick-start{padding:46px 5vw 58px}.quick-start-grid{grid-template-columns:1fr}.quick-card:last-child{grid-column:auto}.quick-card{min-height:250px}}
 
 </style>
 <style>
@@ -457,8 +422,7 @@ footer p{font-size:.76rem;color:rgba(255,255,255,.2);}
 .process-promise{display:flex;flex-direction:column;align-items:flex-end;}
 .process-promise strong{font-family:'Playfair Display',serif;font-size:2.3rem;color:#111;line-height:1;}
 .process-promise span{font-size:.72rem;color:rgba(13,13,13,.5);margin-top:6px;}
-.process-bottom{margin-top:24px;padding:18px 20px;border:1px solid rgba(13,13,13,.1);border-radius:16px;background:rgba(255,255,255,.6);display:flex;align-items:center;justify-content:space-between;gap:20px;}
-.process-bottom span{font-size:.78rem;color:rgba(13,13,13,.55);}
+.process-bottom{margin-top:24px;padding:18px 20px;border:1px solid rgba(13,13,13,.1);border-radius:16px;background:rgba(255,255,255,.6);display:flex;align-items:center;justify-content:center;gap:20px;}
 @media(max-width:1050px){.process-grid{grid-template-columns:repeat(2,minmax(0,1fr));}}
 @media(max-width:700px){.genre-cover-wrap{height:340px;}.process-head{align-items:flex-start;flex-direction:column;}.process-promise{align-items:flex-start;}.process-grid{grid-template-columns:1fr;}.process-image{height:150px;}.process-bottom{flex-direction:column;align-items:flex-start;}}
 @media(max-width:520px){.genre-cover-wrap{height:300px;padding:12px;gap:8px;}.genre-card-body{padding:13px 14px 15px;}.genre-card-body small{display:none;}}
@@ -530,9 +494,8 @@ html{scroll-behavior:smooth;}
 </div>
 </div>
 <div aria-label="A library and real book cover examples" class="hero-visual">
-<div class="hero-library"><a aria-label="Contact Kitab Guru to request a book" class="hero-library-label" href="#contact">A world of books, one message away →</a></div>
+<div class="hero-library"><span class="hero-library-label">A world of books, one message away</span></div>
 <div class="hero-cover-stack">
-<span class="hero-cover-badge">Up to 80% off</span>
 <img alt="Classic fiction book covers" class="cover" loading="eager" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1600904290455-241ce18f78bb?fm=jpg&amp;q=90&amp;w=1800';" src="https://hips.hearstapps.com/vader-prod.s3.amazonaws.com/1727809839-1717177144-1677863932-1663348810-book-of-the-month-club-gift-membership-2-750x750-1663348730.jpg?resize=1400:*"/>
 <img alt="Popular nonfiction book covers" class="cover" loading="eager" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1600904290455-241ce18f78bb?fm=jpg&amp;q=90&amp;w=1800';" src="https://images.ctfassets.net/5htbuvjbq6iz/1g3DyIPtZxjcVVZzMvTiiG/e4aa7b1c3f9f88ece45aa7be9141b2b2/03-Book-collage_c-1.jpg?fm=webp&amp;q=90&amp;w=1600"/>
 <img alt="Academic textbook covers" class="cover" loading="eager" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1600904290455-241ce18f78bb?fm=jpg&amp;q=90&amp;w=1800';" src="https://media.karousell.com/media/photos/products/2019/07/17/ebook_text_book_wiley_pearson_mcgraw_hill_education_scholastic_dk_1563335458_7bc90e38.jpg"/>
@@ -567,30 +530,7 @@ html{scroll-behavior:smooth;}
 <span class="marquee-item"><span class="m-dot"></span>Trusted Globally</span>
 </div>
 </div>
-<!-- VISUAL QUICK START -->
-<section aria-label="Why readers choose Kitab Guru" class="quick-start value-strip">
-<div class="quick-start-inner">
-<div class="quick-start-heading">
-<span class="section-tag">Why readers choose us</span>
-<h2 class="section-title">More choice. Less waiting. Less cost.</h2>
-<p class="section-sub">We make hard-to-find digital books easier to get, without subscriptions or long searches.</p>
-</div>
-<div class="quick-start-grid">
-<a class="quick-card value-card" href="#contact">
-<img alt="Large collection of books" loading="eager" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1568667256549-094345857637?auto=format&amp;fit=crop&amp;fm=jpg&amp;q=90&amp;w=1400';" src="https://images.unsplash.com/photo-1495446815901-a7297e633e8d?auto=format&amp;fit=crop&amp;fm=jpg&amp;q=90&amp;w=1400"/>
-<span><strong>One title is enough</strong><small>Send the exact book, author or edition. We do the searching for you.</small></span>
-</a>
-<a class="quick-card value-card" href="#contact">
-<img alt="Books available at affordable prices" loading="eager" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1495446815901-a7297e633e8d?auto=format&amp;fit=crop&amp;fm=jpg&amp;q=90&amp;w=1400';" src="https://images.unsplash.com/photo-1600904290455-241ce18f78bb?fm=jpg&amp;q=90&amp;w=1400"/>
-<span><strong>Up to 80% off retail</strong><small>Digital editions can cost dramatically less than the publisher's retail price.</small></span>
-</a>
-<a class="quick-card value-card" href="#contact">
-<img alt="Reader receiving a digital book" loading="eager" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1568667256549-094345857637?auto=format&amp;fit=crop&amp;fm=jpg&amp;q=90&amp;w=1400';" src="https://images.unsplash.com/photo-1535905313417-483b22cb9d03?auto=format&amp;fit=crop&amp;fm=jpg&amp;q=88&amp;w=1400"/>
-<span><strong>Usually in ~10 minutes</strong><small>Once payment is confirmed, your ebook is sent to your inbox.</small></span>
-</a>
-</div>
-</div>
-</section><section class="section" id="services" style="background:#111;">
+<section class="section" id="services" style="background:#111;">
 <div class="reveal">
 <span class="section-tag">Which Book Are You Looking For?</span>
 <div class="section-eyebrow v12-eyebrow">WHAT WE OFFER</div><h2 class="section-title">Tell Us the Title.<br/>We Source It.</h2>
@@ -651,21 +591,6 @@ html{scroll-behavior:smooth;}
 </div>
 <p class="category-note">Cover examples are shown to make the categories immediately understandable. Specific editions and availability vary; send us the exact title and edition you need.</p>
 <div class="services-grid reveal">
-<div class="svc svc--featured">
-<div class="svc-featured-tag">Most popular</div>
-<div class="svc-visual"><img alt="A stack of real college textbooks" loading="lazy" src="https://img.favpng.com/14/20/22/textbook-college-school-student-png-favpng-uTDAWZ6h61yjC2gQyMQip45jk.jpg"/><span class="image-caption">University &amp; Academic Textbooks</span></div><div class="svc-inner"><div class="svc-icon">
-<svg fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.4" viewbox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
-</div>
-<h3>University &amp; Academic Textbooks</h3>
-<p>That expensive textbook your professor assigned? We source it and deliver it as a high-quality PDF at a fraction of the retail price — same day.</p>
-</div></div>
-<div class="svc">
-<div class="svc-visual"><img alt="Classic fiction book covers" loading="lazy" src="https://core-docs.s3.amazonaws.com/madison_central_school_district_ar/article/image/a80a51fc-9a46-4e5b-adf8-5522b591517a.png"/><span class="image-caption">Bestsellers &amp; Fiction</span></div><div class="svc-inner"><div class="svc-icon">
-<svg fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.4" viewbox="0 0 24 24"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>
-</div>
-<h3>Bestsellers &amp; Fiction</h3>
-<p>Latest releases, all-time classics, award winners. Every genre — literary fiction, thrillers, romance, sci-fi, fantasy, self-help, biographies, and more.</p>
-</div></div>
 <div class="svc">
 <div class="svc-visual"><img alt="Professional medical reference books" loading="lazy" src="https://1.bp.blogspot.com/-4s1aOtggEzA/YSQ4xhwv-xI/AAAAAAAAAhA/pThnwJFEmJgstXvtN8YxLaaQRbStjz7PgCNcBGAsYHQ/w1200-h630-p-k-no-nu/EmbeddedImage.jpg"/><span class="image-caption">Professional &amp; Reference</span></div><div class="svc-inner"><div class="svc-icon">
 <svg fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.4" viewbox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" x2="8" y1="13" y2="13"></line><line x1="16" x2="8" y1="17" y2="17"></line></svg>
@@ -1501,57 +1426,7 @@ select.kgcalc-select{appearance:none;-webkit-appearance:none;background-image:ur
 <h2 class="section-title">The World's Most Accessible<br/>Ebook Service</h2>
 <p class="section-sub">Most people give up finding a book because it's overpriced, unavailable, or locked behind a subscription. We fix all three.</p>
 </div>
-<div class="why-grid reveal">
-<div class="why-card">
-<div class="why-icon">
-<svg fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" viewbox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><path d="M12 8v4l3 3"></path></svg>
-</div>
-<h3>Delivered in ~10 Minutes</h3>
-<p>Not hours. Not days. Once your payment is confirmed, your ebook lands in your inbox in about 10 minutes. We operate 24/7 — no matter your timezone.</p>
-<div class="why-proof">⚡ Avg. delivery: 10 minutes</div>
-</div>
-<div class="why-card">
-<div class="why-icon">
-<svg fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" viewbox="0 0 24 24"><line x1="12" x2="12" y1="1" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
-</div>
-<h3>Up to 80% Off Retail</h3>
-<p>Why pay $60 for a textbook when you can pay $10? We source digital titles at a fraction of publisher prices and pass every penny of savings to you.</p>
-<div class="why-proof">💰 Save up to 80% vs. retail</div>
-</div>
-<div class="why-card">
-<div class="why-icon">
-<svg fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" viewbox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
-</div>
-<h3>Any Book. Any Language.</h3>
-<p>Can't find it anywhere else? Send us the title. We've sourced books in English, Arabic, French, Spanish, Hindi and more — academic, fiction, self-help, professional.</p>
-<div class="why-proof">🌍 Serving 40+ countries</div>
-</div>
-<div class="why-card">
-<div class="why-icon">
-<svg fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" viewbox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
-</div>
-<h3>Every Format You Need</h3>
-<p>PDF, EPUB, or MOBI — you choose. Works perfectly on Kindle, iPad, Kobo, desktop, and every e-reader. No DRM hassle. Your file, yours forever.</p>
-<div class="why-proof">📱 PDF · EPUB · MOBI</div>
-</div>
-<div class="why-card">
-<div class="why-icon">
-<svg fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" viewbox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
-</div>
-<h3>Human Service, Every Time</h3>
-<p>You speak to a real person — not a bot. Message us on WhatsApp, Instagram, Facebook or LinkedIn. We respond fast, explain pricing clearly, and follow up until you're happy.</p>
-<div class="why-proof">💬 Real people. Real replies.</div>
-</div>
-<div class="why-card">
-<div class="why-icon">
-<svg fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" viewbox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
-</div>
-<h3>No Subscriptions. Ever.</h3>
-<p>Pay only for the books you actually want. One book, one payment — UPI, PayPal, or card. No monthly fee, no auto-renewal, no surprise charges.</p>
-<div class="why-proof">✅ Pay per book. That's it.</div>
-</div>
-</div>
-<div class="reveal" id="compare" style="margin-top:72px;">
+<div class="reveal" id="compare" style="margin-top:24px;">
 <span class="section-tag">The Difference</span>
 <h2 class="section-title">How We Stack Up</h2>
 <p class="section-sub">No subscriptions, no waitlists, no overpriced textbooks. Here's how Kitab Guru compares to the usual options.</p>
@@ -1636,7 +1511,7 @@ select.kgcalc-select{appearance:none;-webkit-appearance:none;background-image:ur
 <div class="process-copy"><h4>Open your inbox</h4><p>Your digital book is usually delivered in about 10 minutes.</p><a href="#contact">Continue →</a></div>
 </div>
 </div>
-<div class="process-bottom reveal"><span>Up to 80% off retail · No subscription · Human support</span><a class="btn-dark" href="#contact">Send us your title →</a></div>
+<div class="process-bottom reveal"><a class="btn-dark" href="#contact">Send us your title →</a></div>
 </section><section class="section" id="faq" style="background:var(--ink2);">
 <div class="reveal">
 <span class="section-tag">Good to Know</span>
@@ -1794,9 +1669,6 @@ div.rev-card:hover{border-color:rgba(255,255,255,.07);transform:none;}
 .hero-trust svg{stroke:var(--gold);flex-shrink:0;}
 
 /* services overhaul */
-.svc--featured{border-color:rgba(255,217,61,.25);background:rgba(255,217,61,.05);position:relative;}
-.svc--featured::before{transform:scaleX(1)!important;}
-.svc-featured-tag{position:absolute;top:18px;right:18px;background:var(--gold);color:#0d0d0d;font-size:.65rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:3px 10px;border-radius:50px;}
 .svc-cta-strip{margin-top:32px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:24px 32px;display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap;}
 .svc-cta-text{display:flex;flex-direction:column;gap:4px;}
 .svc-cta-text strong{font-size:.95rem;color:#fff;font-weight:600;}
@@ -1818,7 +1690,6 @@ section[id]{scroll-margin-top:72px;}
   .hero-ctas{flex-direction:column;align-items:center;}
   .hero-ctas a{width:100%;justify-content:center;max-width:340px;}
   .svc-cta-strip{flex-direction:column;text-align:center;align-items:flex-start;}
-  .svc-featured-tag{top:12px;right:12px;}
 }
 
 
