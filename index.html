@@ -698,6 +698,8 @@ html{scroll-behavior:smooth;}
 .kgquiz-next-btn:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 8px 24px rgba(255,217,61,.25);}
 .kgquiz-next-btn:disabled{opacity:.35;cursor:not-allowed;transform:none;box-shadow:none;}
 
+.kgquiz-loading{text-align:center;padding:60px 20px;color:rgba(255,255,255,.5);font-size:.92rem;animation:kgquiz-pulse 1.4s ease-in-out infinite;}
+@keyframes kgquiz-pulse{0%,100%{opacity:.4;}50%{opacity:.9;}}
 .kgquiz-results-head{text-align:center;margin-bottom:28px;}
 .kgquiz-results-head h3{font-family:'Playfair Display',serif;font-size:1.9rem;color:#fff;margin-bottom:10px;}
 .kgquiz-results-head p{color:rgba(255,255,255,.55);font-size:.92rem;max-width:480px;margin:0 auto;}
@@ -711,7 +713,8 @@ html{scroll-behavior:smooth;}
 .kgquiz-book-cover-wrap{width:100%;aspect-ratio:2/3;border-radius:10px;overflow:hidden;background:#0d0d0d;margin-bottom:16px;}
 .kgquiz-book-cover-wrap img{width:100%;height:100%;object-fit:cover;display:block;}
 .kgquiz-book-title{font-family:'Playfair Display',serif;font-size:1.15rem;color:#fff;line-height:1.3;margin-bottom:4px;}
-.kgquiz-book-author{font-size:.82rem;color:rgba(255,255,255,.45);margin-bottom:14px;}
+.kgquiz-book-author{font-size:.82rem;color:rgba(255,255,255,.45);margin-bottom:6px;}
+.kgquiz-book-source{display:inline-block;font-size:.65rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:rgba(255,217,61,.7);background:rgba(255,217,61,.08);border-radius:50px;padding:3px 10px;margin-bottom:14px;width:fit-content;}
 .kgquiz-book-why{font-size:.82rem;color:rgba(255,255,255,.7);line-height:1.6;margin-bottom:14px;}
 .kgquiz-book-why b{color:#fff;}
 .kgquiz-book-helps-label{font-size:.7rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:rgba(255,255,255,.4);margin-bottom:8px;}
@@ -837,6 +840,7 @@ select.kgcalc-select{appearance:none;-webkit-appearance:none;background-image:ur
 .kgcalc-cart-head{font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:700;color:var(--wh);margin-bottom:16px;}
 .kgcalc-cart-list{list-style:none;margin:0 0 18px;padding:0;display:flex;flex-direction:column;gap:10px;}
 .kgcalc-cart-item{display:flex;align-items:center;gap:10px;padding:11px 13px;border:1px solid rgba(255,255,255,.08);border-radius:12px;background:rgba(255,255,255,.02);}
+.kgcalc-cart-item-cover{width:34px;height:50px;object-fit:cover;border-radius:4px;flex-shrink:0;background:#0d0d0d;border:1px solid rgba(255,255,255,.08);}
 .kgcalc-cart-item-text{flex:1;min-width:0;}
 .kgcalc-cart-item-title{font-size:.88rem;font-weight:600;color:var(--wh);}
 .kgcalc-cart-item-author{font-size:.76rem;color:rgba(255,255,255,.5);margin-top:2px;}
@@ -3358,6 +3362,12 @@ function toggleFaq(el){
     return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   }
 
+  // Small branded placeholder for cart-item thumbnails when a book has no
+  // cover URL, or its cover URL fails to load — never show a broken image.
+  const CART_COVER_FALLBACK = 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 68 100"><rect width="68" height="100" rx="4" fill="#171717"/><rect x="8" y="8" width="52" height="84" rx="2" fill="#FFD93D" opacity=".15"/><path d="M18 30h32M18 42h32M18 54h20" stroke="#FFD93D" stroke-linecap="round" stroke-width="4" opacity=".5"/></svg>'
+  );
+
   // ── Multi-book order cart ────────────────────────────────────────────
   // A customer buying more than one book adds each to `cart` instead of
   // getting a separate quote per book. A book with no confirmed price
@@ -3419,7 +3429,9 @@ function toggleFaq(el){
 
   function cartItemRowHtml(it, index, removable){
     const ok = it.priceResult && it.priceResult.ok;
+    const cover = it.book.cover || CART_COVER_FALLBACK;
     return '<li class="kgcalc-cart-item">' +
+      '<img alt="" class="kgcalc-cart-item-cover" onerror="this.onerror=null;this.src=\'' + CART_COVER_FALLBACK + '\';" src="' + cover + '"/>' +
       '<div class="kgcalc-cart-item-text">' +
         '<div class="kgcalc-cart-item-title">' + escapeHtml(it.book.title) + '</div>' +
         (it.book.author ? '<div class="kgcalc-cart-item-author">' + escapeHtml(it.book.author) + '</div>' : '') +
@@ -3793,6 +3805,22 @@ function toggleFaq(el){
         addToCart(book, priceResult, prices);
       }
       setStatus('');
+    },
+    // Lets the quiz discover books beyond its own local database using the
+    // SAME Google Books key rotation / quota fallback the calculator's own
+    // pricing already relies on, instead of duplicating API keys. Read-only
+    // catalog search — never touches cart/price/country state.
+    searchGoogleBooks: async function (query, maxResults) {
+      try {
+        var url = 'https://www.googleapis.com/books/v1/volumes?q=' + encodeURIComponent(query) +
+          '&maxResults=' + (maxResults || 20) + '&orderBy=relevance';
+        var res = await googleBooksFetch(url, 7000);
+        if (!res.ok) return [];
+        var data = await res.json();
+        return data.items || [];
+      } catch (e) {
+        return [];
+      }
     }
   };
 })();
@@ -4460,6 +4488,265 @@ function toggleFaq(el){
     return picks;
   }
 
+  // ============================================================
+  // 4b. EXTERNAL DISCOVERY — Google Books (primary) → Open Library
+  // (fallback). Broadens recommendations beyond the local BOOKS list
+  // above. TextbookX is NOT used here: its robots.txt explicitly
+  // disallows every AI crawler (ClaudeBot included) site-wide, and its
+  // general access policy only grants "search"/"reference" use while
+  // denying "ai-train" -- neither covers scraping its catalog to build a
+  // recommendation database. (Its EXISTING per-ISBN price-check, run
+  // server-side by the Apps Script backend for a book already in the
+  // cart, is a separate, already-approved feature and is untouched.)
+  //
+  // Same natural-language vocabulary as WHY_PHRASES below, but as
+  // multi-word search/matching phrases rather than sentences -- used
+  // both to build the Google Books/Open Library query AND to score an
+  // external result's free-text categories/description against the
+  // quiz profile, so local and external candidates rank on one scale.
+  var TAG_KEYWORDS = {
+    fiction:["fiction","novel"], nonfiction:["nonfiction"], textbook:["textbook","course"],
+    "self-development":["self help","self-improvement","personal development"],
+    discipline:["discipline","self-discipline","willpower"], habits:["habits","habit"],
+    productivity:["productivity","efficiency"], focus:["focus","concentration","deep work"],
+    confidence:["confidence","self-esteem"], money:["money","personal finance","wealth"],
+    relationships:["relationships","love","marriage"], communication:["communication"],
+    leadership:["leadership","management"], career:["career","business"],
+    actionable:["practical","how to","guide"], "big-picture":["concepts","big picture","philosophy"],
+    "diff-easy":["beginner","introduction"], "diff-medium":["intermediate"], "diff-hard":["advanced","comprehensive"],
+    "mystery-thriller":["mystery","thriller","crime"], romance:["romance","love story"],
+    adventure:["adventure"], fantasy:["fantasy"], "historical-fiction":["historical fiction"],
+    "literary-fiction":["literary fiction"], "science-fiction":["science fiction","sci-fi"],
+    "dark-intense":["dark","intense","psychological"], uplifting:["uplifting","inspiring","hopeful"],
+    "thought-provoking":["thought provoking","philosophical"], "light-hearted":["humor","funny","light"],
+    bittersweet:["emotional","bittersweet"], "fast-paced":["fast paced","page turner","suspense"],
+    "character-driven":["character driven","literary"],
+    stoicism:["stoicism","stoic"], "eastern-mindfulness":["mindfulness","meditation","buddhism"],
+    existentialism:["existentialism","existential"], ethics:["ethics","morality"],
+    spirituality:["spirituality","spiritual"], philosophy:["philosophy"],
+    "business-economics":["business","economics"], "science-tech":["science","technology"],
+    "history-social-science":["history","social science"], "language-literature":["language","literature","writing"],
+    "general-knowledge":["general knowledge","popular science"],
+    psychology:["psychology"], "history-topic":["history"], "science-topic":["science"],
+    comforting:["comfort","healing"], business:["business"], health:["health","wellness"],
+    "textbook-style":["textbook","reference"], "popular-overview":["introduction","beginner's guide"],
+    "classic-text":["classic"], "practical-guide":["practical guide"]
+  };
+
+  function withTimeout(promise, ms){
+    return Promise.race([
+      promise,
+      new Promise(function(_, reject){ setTimeout(function(){ reject(new Error("timeout")); }, ms); })
+    ]);
+  }
+
+  // Turns the accumulated profile weights into one short search query --
+  // just the top few most-influential concepts plus the chosen shelf, so
+  // a single request stays focused instead of a giant keyword dump.
+  function buildSearchQuery(profile, answers){
+    var topKeys = Object.keys(profile).sort(function(a,b){ return profile[b]-profile[a]; }).slice(0,5);
+    var terms = [];
+    topKeys.forEach(function(k){
+      var kws = TAG_KEYWORDS[k];
+      if (kws && kws[0] && terms.indexOf(kws[0]) === -1) terms.push(kws[0]);
+    });
+    if (!terms.length) terms.push("popular books");
+    var shelfWord = answers.category === "fiction" ? "fiction" : (answers.category === "textbook" ? "textbook" : "nonfiction");
+    if (terms.indexOf(shelfWord) === -1) terms.push(shelfWord);
+    return terms.join(" ");
+  }
+
+  // Real trade/academic publishers, checked as case-insensitive substrings
+  // of volumeInfo.publisher. Google Books' plain-keyword search surfaces a
+  // large share of anonymous self-published/POD titles for popular topics
+  // (confirmed while building this: a "self-discipline productivity"
+  // search returned zero recognizable publishers in its top 20) -- this
+  // doesn't try to exclude self-published books outright (many are
+  // legitimate), it just gives a same-scale scoring nudge toward books
+  // from a known publisher when one is present, the same way a local
+  // bookstore's staff picks lean toward books they recognize.
+  var KNOWN_PUBLISHERS = [
+    "penguin","random house","harpercollins","harper collins","simon & schuster","simon and schuster",
+    "macmillan","hachette","wiley","pearson","mcgraw","oxford university press","cambridge university press",
+    "bloomsbury","elsevier","springer","palgrave","routledge","vintage","knopf","scribner","little, brown",
+    "little brown","crown","doubleday","norton","houghton mifflin","bantam","ballantine","del rey","tor books",
+    "orbit","picador","faber","basic books","portfolio","grand central","atria","riverhead","viking","dutton",
+    "flatiron","celadon","st. martin's","jones & bartlett","red globe press","cengage","sage publications"
+  ];
+  function isKnownPublisher(publisher){
+    if (!publisher) return false;
+    var p = publisher.toLowerCase();
+    return KNOWN_PUBLISHERS.some(function(name){ return p.indexOf(name) !== -1; });
+  }
+
+  function guessCategory(text){
+    var t = text.toLowerCase();
+    if (/textbook|study aids|study guide|course|curriculum/.test(t)) return "textbook";
+    if (/fiction|novel|literary criticism/.test(t) && !/nonfiction/.test(t)) return "fiction";
+    return "nonfiction";
+  }
+  function guessAudience(text){
+    return /juvenile|young adult|children/.test(text.toLowerCase()) ? "young-adult" : "general";
+  }
+  function guessDifficulty(text){
+    var t = text.toLowerCase();
+    if (/advanced|graduate|comprehensive|in-depth|expert/.test(t)) return "advanced";
+    if (/beginner|introduction|introductory|for beginners|basics|primer/.test(t)) return "beginner";
+    return "intermediate";
+  }
+
+  function bookFromGoogleItem(item){
+    var vi = item.volumeInfo || {};
+    // Skip magazines/journals outright -- printType distinguishes these
+    // cleanly when present.
+    if (vi.printType && vi.printType !== "BOOK") return null;
+    var ids = vi.industryIdentifiers || [];
+    var isbn13 = ids.filter(function(id){ return id.type === "ISBN_13"; })[0];
+    var isbn10 = ids.filter(function(id){ return id.type === "ISBN_10"; })[0];
+    var isbn = (isbn13 && isbn13.identifier) || (isbn10 && isbn10.identifier) || "";
+    if (!isbn || !vi.title) return null;
+    // An unusually long title+subtitle is a reliable enough signal of a
+    // keyword-stuffed self-published listing (e.g. "Self-Discipline & Time
+    // Management: Develop Unbreakable Habits, Boost Productivity, Conquer
+    // Procrastination...") to filter out without a heavier quality model.
+    var fullTitle = vi.title + (vi.subtitle ? ": " + vi.subtitle : "");
+    if (fullTitle.length > 90) return null;
+    // A tiny page count (when Google actually reports one) usually means a
+    // pamphlet/sample rather than a real book.
+    if (vi.pageCount && vi.pageCount > 0 && vi.pageCount < 40) return null;
+    var categories = (vi.categories || []).join(" ");
+    var textBlob = ((vi.title||"") + " " + (vi.subtitle||"") + " " + categories + " " + (vi.description||"")).toLowerCase();
+    return {
+      title: vi.title, author: (vi.authors||[])[0] || "", isbn: isbn,
+      year: parseInt((vi.publishedDate||"").slice(0,4),10) || null,
+      category: guessCategory(textBlob), genre: (vi.categories||[])[0] || "General",
+      difficulty: guessDifficulty(textBlob), audience: guessAudience(textBlob),
+      cover: (vi.imageLinks && (vi.imageLinks.thumbnail || vi.imageLinks.smallThumbnail) || "").replace(/^http:/,"https:"),
+      publisher: vi.publisher || "", description: vi.description || "",
+      source: "Google Books", _textBlob: textBlob
+    };
+  }
+
+  function bookFromOpenLibraryDoc(doc){
+    var isbns = doc.isbn || [];
+    var isbn13 = isbns.filter(function(i){ return i.length === 13; })[0];
+    var isbn = isbn13 || isbns[0] || "";
+    if (!isbn || !doc.title) return null;
+    var subjects = (doc.subject || []).slice(0,8).join(" ");
+    var textBlob = ((doc.title||"") + " " + subjects).toLowerCase();
+    return {
+      title: doc.title, author: (doc.author_name||[])[0] || "", isbn: isbn,
+      year: doc.first_publish_year || null,
+      category: guessCategory(textBlob), genre: (doc.subject||[])[0] || "General",
+      difficulty: guessDifficulty(textBlob), audience: guessAudience(textBlob),
+      cover: doc.cover_i ? ("https://covers.openlibrary.org/b/id/" + doc.cover_i + "-M.jpg") : "",
+      publisher: "", description: "",
+      source: "Open Library", _textBlob: textBlob
+    };
+  }
+
+  function searchOpenLibraryBooks(query, limit){
+    var url = "https://openlibrary.org/search.json?q=" + encodeURIComponent(query) +
+      "&limit=" + (limit||20) + "&fields=title,author_name,isbn,cover_i,first_publish_year,subject";
+    return withTimeout(fetch(url), 7000).then(function(res){
+      if (!res.ok) return [];
+      return res.json();
+    }).then(function(data){
+      return (data.docs || []).map(bookFromOpenLibraryDoc).filter(Boolean);
+    }).catch(function(){ return []; });
+  }
+
+  function scoreExternalBook(book, profile, answers){
+    var score = 0;
+    var matchedKeys = [];
+    // Local books let their own category/genre act as full profile-weighted
+    // matches (see bookMatchableKeys) -- an external book must get the same
+    // treatment, or it's structurally disadvantaged on exactly the highest-
+    // weighted question (the shelf picker, worth up to 14+ points) just
+    // because its metadata doesn't literally contain the word "textbook".
+    var genreSlug = book.genre ? book.genre.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/(^-|-$)/g,"") : null;
+    [book.category, genreSlug].filter(Boolean).forEach(function(k){
+      if (profile[k] && matchedKeys.indexOf(k) === -1) { score += profile[k]; matchedKeys.push(k); }
+    });
+    Object.keys(profile).forEach(function(k){
+      if (matchedKeys.indexOf(k) !== -1) return;
+      var kws = TAG_KEYWORDS[k];
+      if (!kws) return;
+      var hit = kws.some(function(kw){ return book._textBlob.indexOf(kw) !== -1; });
+      if (hit) { score += profile[k]; matchedKeys.push(k); }
+    });
+    if (answers.category && answers.category !== "any" && answers.category === book.category) score += 6;
+    var diffMap = { "diff-easy":"beginner", "diff-medium":"intermediate", "diff-hard":"advanced" };
+    if (answers.difficulty && diffMap[answers.difficulty] === book.difficulty) score += 5;
+    if (answers.era === "era-modern" && book.year && book.year >= 2010) score += 5;
+    if (answers.era === "era-classic" && book.year && book.year <= 1980) score += 5;
+    if (answers.audience === "young-adult" && book.audience === "young-adult") score += 6;
+    if ((!answers.audience || answers.audience === "general") && book.audience === "young-adult") score -= 4;
+    if (isKnownPublisher(book.publisher)) score += 8;
+    return { book:book, score:score, matchedKeys:matchedKeys };
+  }
+
+  // A book already in the local library shouldn't also show up a second
+  // time as an "external" result -- de-dupe by ISBN (falling back to
+  // title+author) and keep whichever scored entry is higher.
+  function dedupeScored(scoredList){
+    var byKey = {};
+    scoredList.forEach(function(entry){
+      var key = entry.book.isbn || ((entry.book.title + "|" + entry.book.author).toLowerCase());
+      if (!byKey[key] || byKey[key].score < entry.score) byKey[key] = entry;
+    });
+    return Object.keys(byKey).map(function(k){ return byKey[k]; });
+  }
+
+  // In-memory cache so retaking the quiz (or re-rendering results) with an
+  // identical profile doesn't refire network requests. Cleared naturally
+  // on page reload -- no need for it to survive longer than that.
+  var DISCOVERY_CACHE = {};
+
+  // Google Books first; Open Library only if Google didn't return enough
+  // usable (has-an-ISBN) candidates to work with. At most 2 external
+  // requests total per quiz completion. Any failure (network error,
+  // timeout, exhausted quota, empty result) just falls through to the
+  // next source -- never throws, so the quiz always has the local
+  // database to fall back on even if both sources are unavailable.
+  async function discoverExternalBooks(profile, answers){
+    var query = buildSearchQuery(profile, answers);
+    if (DISCOVERY_CACHE[query]) return DISCOVERY_CACHE[query];
+
+    var results = [];
+    if (window.kgQuizIntegration && typeof window.kgQuizIntegration.searchGoogleBooks === "function") {
+      try {
+        var items = await withTimeout(window.kgQuizIntegration.searchGoogleBooks(query, 20), 8000);
+        results = (items || []).map(bookFromGoogleItem).filter(Boolean);
+      } catch (e) { /* Google Books unavailable -- fall through to Open Library */ }
+    }
+
+    if (results.length < 6) {
+      try {
+        var olResults = await searchOpenLibraryBooks(query, 20);
+        results = results.concat(olResults);
+      } catch (e) { /* Open Library unavailable -- proceed with whatever we have */ }
+    }
+
+    var scored = dedupeScored(results.map(function(b){ return scoreExternalBook(b, profile, answers); }));
+    DISCOVERY_CACHE[query] = scored;
+    return scored;
+  }
+
+  // External books don't come with hand-written "goals" bullets like the
+  // local library does -- generate them from the same matched profile
+  // signals used for the "why we recommend it" text, so they stay
+  // explainable rather than invented.
+  function autoGoals(matchedKeys, profile){
+    var top = matchedKeys.slice().sort(function(a,b){ return (profile[b]||0) - (profile[a]||0); });
+    var out = [];
+    for (var i = 0; i < top.length && out.length < 3; i++) {
+      var phrase = WHY_PHRASES[top[i]];
+      if (phrase && out.indexOf(phrase) === -1) out.push(phrase.charAt(0).toUpperCase() + phrase.slice(1));
+    }
+    return out;
+  }
+
   var WHY_PHRASES = {
     fiction:"a great story to get lost in", nonfiction:"real-world, practical ideas", textbook:"structured, subject-focused learning",
     discipline:"build consistency and self-discipline", habits:"build better daily habits", productivity:"get more done with less friction",
@@ -4511,13 +4798,23 @@ function toggleFaq(el){
   var lastTop3 = [];
   var displayMode = "top3";
 
-  function renderResults(){
+  async function renderResults(){
     elCard.classList.add("kgquiz-hidden");
     elResults.classList.remove("kgquiz-hidden");
+    elResults.innerHTML = '<div class="kgquiz-loading">Finding your best matches…</div>';
 
     var profile = buildProfile();
-    var scored = BOOKS.map(function(b){ return scoreBook(b, profile, state.answers); });
-    var top5 = pickTopN(scored, 5);
+    var localScored = BOOKS.map(function(b){ return scoreBook(b, profile, state.answers); });
+
+    // Best-effort: if external discovery throws for any reason not already
+    // caught internally, the local library alone still produces a full,
+    // valid result -- the quiz never dead-ends on a network problem.
+    var externalScored = [];
+    try { externalScored = await discoverExternalBooks(profile, state.answers); }
+    catch (e) { /* proceed with local-only results */ }
+
+    var combined = dedupeScored(localScored.concat(externalScored));
+    var top5 = pickTopN(combined, 5);
     lastTop3 = top5.slice(0, 3);
     displayMode = state.answers.result_pref || "top3";
 
@@ -4526,17 +4823,24 @@ function toggleFaq(el){
 
   function bookCardHtml(entry, rank, profile){
     var b = entry.book;
-    var cover = coverUrl(b.isbn);
+    // External sources hand us a real cover URL directly; local library
+    // entries only carry an ISBN, so derive the Open Library cover from
+    // that instead. Either way, a broken/missing image falls back to the
+    // branded placeholder rather than showing nothing.
+    var primaryCover = b.cover || coverUrl(b.isbn);
     var fallback = brandedFallbackCover(b.title);
     var why = whyText(entry.matchedKeys, profile);
+    var goals = (b.goals && b.goals.length) ? b.goals : autoGoals(entry.matchedKeys, profile);
+    var sourceLabel = b.source || "Kitab Guru Library";
     return '<div class="kgquiz-book-card">' +
       '<div class="kgquiz-book-rank">#' + rank + ' Match</div>' +
-      '<div class="kgquiz-book-cover-wrap"><img alt="' + escHtml(b.title) + ' cover" onerror="this.onerror=null;this.src=\'' + fallback + '\';" src="' + cover + '"/></div>' +
+      '<div class="kgquiz-book-cover-wrap"><img alt="' + escHtml(b.title) + ' cover" onerror="this.onerror=null;this.src=\'' + fallback + '\';" src="' + primaryCover + '"/></div>' +
       '<div class="kgquiz-book-title">' + escHtml(b.title) + "</div>" +
       '<div class="kgquiz-book-author">' + escHtml(b.author) + "</div>" +
+      '<div class="kgquiz-book-source">' + escHtml(sourceLabel) + "</div>" +
       '<div class="kgquiz-book-why"><b>Why we recommend it:</b><br/>' + escHtml(why) + "</div>" +
       '<div class="kgquiz-book-helps-label">What this book can help with</div>' +
-      '<ul class="kgquiz-book-helps">' + (b.goals || []).slice(0, 3).map(function(g){ return "<li>" + escHtml(g) + "</li>"; }).join("") + "</ul>" +
+      '<ul class="kgquiz-book-helps">' + goals.slice(0, 3).map(function(g){ return "<li>" + escHtml(g) + "</li>"; }).join("") + "</ul>" +
       "</div>";
   }
 
