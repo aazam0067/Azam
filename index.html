@@ -3740,7 +3740,29 @@ function toggleFaq(el){
     img.src=src;
     setTimeout(function(){ if(settled) return; settled=true; tryGoogle(img); }, OL_COVER_TIMEOUT_MS);
   }
-  imgs.forEach(tryOpenLibrary);
+
+  // 24 of the 30 genres (144 of these 180 images) start hidden behind
+  // "see other genres" -- fetching real covers for all of them
+  // immediately competes for the same limited browser connections the
+  // handful of genres actually on screen need, making the visible ones
+  // take far longer to appear than they should. Load only what's
+  // visible now; the rest starts loading the moment "see other genres"
+  // is actually clicked, by which point the Google Books batch lookup
+  // below (cheap, already running for every ISBN regardless) has
+  // likely already resolved, so those covers tend to appear quickly too.
+  const visibleImgs=imgs.filter(function(img){ return !img.closest('.genre-hidden'); });
+  const hiddenImgs=imgs.filter(function(img){ return img.closest('.genre-hidden'); });
+  visibleImgs.forEach(tryOpenLibrary);
+
+  let hiddenStarted=false;
+  const expandBtn=document.getElementById('genreExpandBtn');
+  if(expandBtn && hiddenImgs.length){
+    expandBtn.addEventListener('click',function(){
+      if(hiddenStarted) return;
+      hiddenStarted=true;
+      hiddenImgs.forEach(tryOpenLibrary);
+    });
+  }
 })();
 </script>
 
