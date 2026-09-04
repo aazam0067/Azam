@@ -4544,7 +4544,16 @@ function toggleFaq(el){
   // just the top few most-influential concepts plus the chosen shelf, so
   // a single request stays focused instead of a giant keyword dump.
   function buildSearchQuery(profile, answers){
-    var topKeys = Object.keys(profile).sort(function(a,b){ return profile[b]-profile[a]; }).slice(0,5);
+    // A weak signal padded in just to fill 5 slots can drag in a
+    // thematically orthogonal keyword (e.g. a throwaway "relax and
+    // escape" pick contributing a low-weight "light-hearted" alongside a
+    // much stronger, deliberate "dark & intense" pick) and produce a
+    // genuinely self-contradictory query ("dark ... humor"). Require a
+    // real minimum weight before a signal earns a place in the query.
+    var topKeys = Object.keys(profile)
+      .filter(function(k){ return profile[k] >= 6; })
+      .sort(function(a,b){ return profile[b]-profile[a]; })
+      .slice(0,5);
     var terms = [];
     topKeys.forEach(function(k){
       var kws = TAG_KEYWORDS[k];
@@ -4605,15 +4614,30 @@ function toggleFaq(el){
     var isbn10 = ids.filter(function(id){ return id.type === "ISBN_10"; })[0];
     var isbn = (isbn13 && isbn13.identifier) || (isbn10 && isbn10.identifier) || "";
     if (!isbn || !vi.title) return null;
-    // An unusually long title+subtitle is a reliable enough signal of a
-    // keyword-stuffed self-published listing (e.g. "Self-Discipline & Time
-    // Management: Develop Unbreakable Habits, Boost Productivity, Conquer
-    // Procrastination...") to filter out without a heavier quality model.
+    // These flag likely junk WITHOUT dropping the candidate outright --
+    // scoreExternalBook applies a heavy penalty instead. Hard-excluding
+    // them was tried first and caused a real problem: for some queries,
+    // this kind of junk fills most of Google's top-20 relevance results,
+    // so filtering it out could shrink the pool below 3 usable candidates
+    // and trigger the local-library fallback -- exactly what recommending
+    // from external sources only is supposed to avoid. A score penalty
+    // keeps them in the pool (so the fallback stays rare) while still
+    // keeping them out of an actual Top 3 whenever anything better exists.
     var fullTitle = vi.title + (vi.subtitle ? ": " + vi.subtitle : "");
-    if (fullTitle.length > 90) return null;
-    // A tiny page count (when Google actually reports one) usually means a
-    // pamphlet/sample rather than a real book.
-    if (vi.pageCount && vi.pageCount > 0 && vi.pageCount < 40) return null;
+    var lowQuality =
+      // Unusually long title+subtitle: a reliable signal of a keyword-
+      // stuffed self-published listing (e.g. "Self-Discipline & Time
+      // Management: Develop Unbreakable Habits, Boost Productivity...").
+      fullTitle.length > 90 ||
+      // A tiny page count (when Google actually reports one) usually
+      // means a pamphlet/sample rather than a real book.
+      (vi.pageCount && vi.pageCount > 0 && vi.pageCount < 40) ||
+      // Annual industry directories for AUTHORS submitting manuscripts
+      // (not books for readers) rank surprisingly high on genre keyword
+      // searches -- their categories are inconsistent (seen tagged
+      // Education, Business & Economics, Computers...) but the title
+      // pattern is reliable.
+      /writer'?s (market|digest)|literary market place/i.test(vi.title || "");
     var categories = (vi.categories || []).join(" ");
     var textBlob = ((vi.title||"") + " " + (vi.subtitle||"") + " " + categories + " " + (vi.description||"")).toLowerCase();
     return {
@@ -4623,7 +4647,7 @@ function toggleFaq(el){
       difficulty: guessDifficulty(textBlob), audience: guessAudience(textBlob),
       cover: (vi.imageLinks && (vi.imageLinks.thumbnail || vi.imageLinks.smallThumbnail) || "").replace(/^http:/,"https:"),
       publisher: vi.publisher || "", description: vi.description || "",
-      source: "Google Books", _textBlob: textBlob
+      source: "Google Books", _textBlob: textBlob, _lowQuality: lowQuality
     };
   }
 
@@ -4683,6 +4707,7 @@ function toggleFaq(el){
     if (answers.audience === "young-adult" && book.audience === "young-adult") score += 6;
     if ((!answers.audience || answers.audience === "general") && book.audience === "young-adult") score -= 4;
     if (isKnownPublisher(book.publisher)) score += 8;
+    if (book._lowQuality) score -= 30;
     return { book:book, score:score, matchedKeys:matchedKeys };
   }
 
@@ -4714,21 +4739,35 @@ function toggleFaq(el){
     if (DISCOVERY_CACHE[query]) return DISCOVERY_CACHE[query];
 
     var results = [];
+    var rawGoogleCount = 0;
     if (window.kgQuizIntegration && typeof window.kgQuizIntegration.searchGoogleBooks === "function") {
       try {
-        var items = await withTimeout(window.kgQuizIntegration.searchGoogleBooks(query, 20), 8000);
+        var items = await withTimeout(window.kgQuizIntegration.searchGoogleBooks(query, 40), 8000);
+        rawGoogleCount = (items || []).length;
         results = (items || []).map(bookFromGoogleItem).filter(Boolean);
-      } catch (e) { /* Google Books unavailable -- fall through to Open Library */ }
+      } catch (e) { console.info("[Find Your Next Book] Google Books discovery failed:", e); }
     }
 
-    if (results.length < 6) {
+    var afterGoogleCount = results.length;
+    // Trigger on genuinely-good count, not raw count -- some queries
+    // return plenty of results that are almost entirely low-quality (e.g.
+    // annual "Writer's Market" directories dominating a genre search), and
+    // those still need Open Library's different catalog to have real
+    // alternatives to rank ahead of the junk.
+    var goodCount = results.filter(function(b){ return !b._lowQuality; }).length;
+    var rawOlCount = 0;
+    if (goodCount < 6) {
       try {
-        var olResults = await searchOpenLibraryBooks(query, 20);
+        var olResults = await searchOpenLibraryBooks(query, 40);
+        rawOlCount = olResults.length;
         results = results.concat(olResults);
-      } catch (e) { /* Open Library unavailable -- proceed with whatever we have */ }
+      } catch (e) { console.info("[Find Your Next Book] Open Library discovery failed:", e); }
     }
 
     var scored = dedupeScored(results.map(function(b){ return scoreExternalBook(b, profile, answers); }));
+    console.info("[Find Your Next Book] query=" + JSON.stringify(query) +
+      " googleRaw=" + rawGoogleCount + " googleAfterFilter=" + afterGoogleCount +
+      " openLibraryRaw=" + rawOlCount + " finalUsable=" + scored.length);
     DISCOVERY_CACHE[query] = scored;
     return scored;
   }
