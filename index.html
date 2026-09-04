@@ -4804,17 +4804,23 @@ function toggleFaq(el){
     elResults.innerHTML = '<div class="kgquiz-loading">Finding your best matches…</div>';
 
     var profile = buildProfile();
-    var localScored = BOOKS.map(function(b){ return scoreBook(b, profile, state.answers); });
 
-    // Best-effort: if external discovery throws for any reason not already
-    // caught internally, the local library alone still produces a full,
-    // valid result -- the quiz never dead-ends on a network problem.
+    // Recommendations come from external discovery only -- the local
+    // library is NOT blended into normal ranking. It's kept strictly as an
+    // emergency fallback: only consulted if external discovery couldn't
+    // return enough (fewer than 3) usable candidates to form a real Top 3,
+    // e.g. both Google Books and Open Library are down/unreachable.
     var externalScored = [];
     try { externalScored = await discoverExternalBooks(profile, state.answers); }
-    catch (e) { /* proceed with local-only results */ }
+    catch (e) { /* handled per-source inside discoverExternalBooks already */ }
 
-    var combined = dedupeScored(localScored.concat(externalScored));
-    var top5 = pickTopN(combined, 5);
+    var pool = externalScored;
+    if (pool.length < 3) {
+      var localScored = BOOKS.map(function(b){ return scoreBook(b, profile, state.answers); });
+      pool = dedupeScored(pool.concat(localScored));
+    }
+
+    var top5 = pickTopN(pool, 5);
     lastTop3 = top5.slice(0, 3);
     displayMode = state.answers.result_pref || "top3";
 
