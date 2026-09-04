@@ -447,8 +447,8 @@ footer p{font-size:.76rem;color:rgba(255,255,255,.2);}
 /* V12: conversion-first landing-page order */
 html{scroll-behavior:smooth;}
 #book-wall{scroll-margin-top:82px;}
-#services,#reviews,#about,#faq,#contact,#how,#price-calculator{scroll-margin-top:82px;}
-@media(min-width:901px){#book-wall{padding-top:72px;}#services{padding-top:72px;}#reviews{padding-top:72px;}#about{padding-top:72px;}}
+#services,#reviews,#about,#faq,#contact,#how,#price-calculator,#book-quiz{scroll-margin-top:82px;}
+@media(min-width:901px){#book-wall{padding-top:72px;}#services{padding-top:72px;}#reviews{padding-top:72px;}#about{padding-top:72px;}#book-quiz{padding-top:72px;}}
 </style></head>
 <body id="top">
 <!-- NAV -->
@@ -458,7 +458,7 @@ html{scroll-behavior:smooth;}
 <span class="nav-brand-text">Kitab Guru</span>
 </a>
 <div class="nav-links">
-<a href="#services">Services</a><a href="#book-wall">Explore</a><a href="#price-calculator">Price Calculator</a><a href="#reviews">Reviews</a><a href="#about">About Us</a><a href="#faq">FAQ</a><a href="#contact">Contact</a></div>
+<a href="#services">Services</a><a href="#book-wall">Explore</a><a href="#book-quiz">Find Your Book</a><a href="#price-calculator">Price Calculator</a><a href="#reviews">Reviews</a><a href="#about">About Us</a><a href="#faq">FAQ</a><a href="#contact">Contact</a></div>
 <a class="nav-cta" href="#contact">Order Ebook →</a>
 <button aria-label="Toggle menu" class="hamburger" id="hamburger">
 <span></span><span></span><span></span>
@@ -466,7 +466,7 @@ html{scroll-behavior:smooth;}
 </nav>
 <div class="mobile-menu" id="mobileMenu">
 <a class="mob-cta" href="#contact" onclick="closeMob()">Order Ebook →</a>
-<a href="#services" onclick="closeMob()">Services</a><a href="#book-wall" onclick="closeMob()">Explore</a><a href="#price-calculator" onclick="closeMob()">Price Calculator</a><a href="#reviews" onclick="closeMob()">Reviews</a><a href="#about" onclick="closeMob()">About Us</a><a href="#faq" onclick="closeMob()">FAQ</a><a href="#contact" onclick="closeMob()">Contact</a></div>
+<a href="#services" onclick="closeMob()">Services</a><a href="#book-wall" onclick="closeMob()">Explore</a><a href="#book-quiz" onclick="closeMob()">Find Your Book</a><a href="#price-calculator" onclick="closeMob()">Price Calculator</a><a href="#reviews" onclick="closeMob()">Reviews</a><a href="#about" onclick="closeMob()">About Us</a><a href="#faq" onclick="closeMob()">FAQ</a><a href="#contact" onclick="closeMob()">Contact</a></div>
 <!-- HERO -->
 <section class="hero" id="home">
 <div class="hero-bg-grid"></div>
@@ -490,6 +490,7 @@ html{scroll-behavior:smooth;}
 <span><svg fill="none" height="13" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24" width="13"><polyline points="20 6 9 17 4 12"></polyline></svg> 1,700+ happy readers across 40+ countries</span>
 <span><svg fill="none" height="13" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24" width="13"><polyline points="20 6 9 17 4 12"></polyline></svg> No subscription. Pay per book only.</span>
 </div>
+<a class="hero-quiz-cta" href="#book-quiz"><span class="hero-quiz-cta-q">Not sure what to read?</span><span class="hero-quiz-cta-link">Find Your Next Book →</span></a>
 </div>
 <div aria-label="A library and real book cover examples" class="hero-visual">
 <div class="hero-library"><span class="hero-library-label">A world of books, one message away</span></div>
@@ -670,6 +671,96 @@ html{scroll-behavior:smooth;}
 </div>
 <div class="genre-expand-wrap reveal"><button class="btn-gold-sm genre-expand-btn" id="genreExpandBtn" type="button">Click here to see other genres we serve</button></div>
 </section>
+<style id="kg-quiz-styles">
+.kgquiz-section{max-width:900px;margin:0 auto;padding:80px 5vw;}
+.kgquiz-head{max-width:640px;}
+.kgquiz-intro-card{margin-top:36px;background:#151515;border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:40px;text-align:center;box-shadow:0 10px 28px rgba(0,0,0,.25);}
+.kgquiz-intro-card p{color:rgba(255,255,255,.6);font-size:.95rem;line-height:1.7;margin:0 auto 26px;max-width:480px;}
+.kgquiz-card{margin-top:36px;background:#151515;border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:32px;box-shadow:0 10px 28px rgba(0,0,0,.25);}
+.kgquiz-hidden{display:none!important;}
+.kgquiz-progress-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px;gap:16px;}
+.kgquiz-progress-label{font-size:.78rem;color:rgba(255,255,255,.45);white-space:nowrap;}
+.kgquiz-progress-track{flex:1;height:6px;background:rgba(255,255,255,.08);border-radius:3px;overflow:hidden;}
+.kgquiz-progress-fill{height:100%;background:var(--gold);border-radius:3px;transition:width .35s ease;}
+.kgquiz-question{font-family:'Playfair Display',serif;font-size:1.5rem;color:#fff;margin-bottom:8px;line-height:1.35;}
+.kgquiz-question-hint{font-size:.82rem;color:rgba(255,255,255,.4);margin-bottom:22px;}
+.kgquiz-options{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:26px;}
+.kgquiz-option{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.02);border:1.5px solid rgba(255,255,255,.1);border-radius:14px;padding:16px 18px;color:#fff;font-size:.9rem;text-align:left;cursor:pointer;transition:border-color .18s,background .18s,transform .12s;font-family:inherit;}
+.kgquiz-option:hover{border-color:rgba(255,217,61,.4);background:rgba(255,217,61,.04);}
+.kgquiz-option.kgquiz-selected{border-color:var(--gold);background:rgba(255,217,61,.1);}
+.kgquiz-option-check{width:18px;height:18px;border-radius:5px;border:1.5px solid rgba(255,255,255,.25);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:.7rem;color:#0d0d0d;transition:background .15s,border-color .15s;}
+.kgquiz-option.kgquiz-selected .kgquiz-option-check{background:var(--gold);border-color:var(--gold);}
+.kgquiz-nav-row{display:flex;align-items:center;justify-content:space-between;gap:14px;}
+.kgquiz-back-btn{background:none;border:1px solid rgba(255,255,255,.15);color:rgba(255,255,255,.6);border-radius:50px;padding:12px 22px;font-size:.85rem;font-weight:600;cursor:pointer;transition:border-color .18s,color .18s;font-family:inherit;}
+.kgquiz-back-btn:hover:not(:disabled){border-color:rgba(255,255,255,.35);color:#fff;}
+.kgquiz-back-btn:disabled{opacity:.35;cursor:not-allowed;}
+.kgquiz-next-btn{background:var(--gold);color:#0d0d0d;border:none;border-radius:50px;padding:12px 28px;font-size:.85rem;font-weight:700;cursor:pointer;transition:transform .18s,box-shadow .18s,opacity .18s;font-family:inherit;}
+.kgquiz-next-btn:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 8px 24px rgba(255,217,61,.25);}
+.kgquiz-next-btn:disabled{opacity:.35;cursor:not-allowed;transform:none;box-shadow:none;}
+
+.kgquiz-loading{text-align:center;padding:60px 20px;color:rgba(255,255,255,.5);font-size:.92rem;animation:kgquiz-pulse 1.4s ease-in-out infinite;}
+@keyframes kgquiz-pulse{0%,100%{opacity:.4;}50%{opacity:.9;}}
+.kgquiz-results-head{text-align:center;margin-bottom:28px;}
+.kgquiz-results-head h3{font-family:'Playfair Display',serif;font-size:1.9rem;color:#fff;margin-bottom:10px;}
+.kgquiz-results-head p{color:rgba(255,255,255,.55);font-size:.92rem;max-width:480px;margin:0 auto;}
+.kgquiz-pref-row{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-bottom:34px;}
+.kgquiz-pref-btn{background:rgba(255,255,255,.03);border:1.5px solid rgba(255,255,255,.1);color:rgba(255,255,255,.7);border-radius:50px;padding:10px 18px;font-size:.8rem;font-weight:600;cursor:pointer;transition:border-color .18s,color .18s,background .18s;font-family:inherit;}
+.kgquiz-pref-btn.kgquiz-selected{border-color:var(--gold);color:var(--gold);background:rgba(255,217,61,.08);}
+.kgquiz-results-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-bottom:32px;}
+.kgquiz-results-grid.kgquiz-grid-1{grid-template-columns:minmax(0,340px);justify-content:center;}
+.kgquiz-book-card{background:#171717;border:1px solid rgba(255,255,255,.1);border-radius:18px;padding:22px;display:flex;flex-direction:column;box-shadow:0 8px 22px rgba(0,0,0,.2);}
+.kgquiz-book-rank{font-size:.7rem;font-weight:700;letter-spacing:.1em;color:var(--gold);text-transform:uppercase;margin-bottom:12px;}
+.kgquiz-book-cover-wrap{width:100%;aspect-ratio:2/3;border-radius:10px;overflow:hidden;background:#0d0d0d;margin-bottom:16px;}
+.kgquiz-book-cover-wrap img{width:100%;height:100%;object-fit:cover;display:block;}
+.kgquiz-book-title{font-family:'Playfair Display',serif;font-size:1.15rem;color:#fff;line-height:1.3;margin-bottom:4px;}
+.kgquiz-book-author{font-size:.82rem;color:rgba(255,255,255,.45);margin-bottom:6px;}
+.kgquiz-book-source{display:inline-block;font-size:.65rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:rgba(255,217,61,.7);background:rgba(255,217,61,.08);border-radius:50px;padding:3px 10px;margin-bottom:14px;width:fit-content;}
+.kgquiz-book-why{font-size:.82rem;color:rgba(255,255,255,.7);line-height:1.6;margin-bottom:14px;}
+.kgquiz-book-why b{color:#fff;}
+.kgquiz-book-helps-label{font-size:.7rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:rgba(255,255,255,.4);margin-bottom:8px;}
+.kgquiz-book-helps{list-style:none;font-size:.8rem;color:rgba(255,255,255,.65);line-height:1.7;}
+.kgquiz-book-helps li{padding-left:16px;position:relative;}
+.kgquiz-book-helps li:before{content:'✓';position:absolute;left:0;color:var(--gold);}
+.kgquiz-cta-box{text-align:center;background:rgba(255,217,61,.06);border:1px solid rgba(255,217,61,.2);border-radius:20px;padding:32px;}
+.kgquiz-cta-box h4{font-family:'Playfair Display',serif;font-size:1.3rem;color:#fff;margin-bottom:8px;}
+.kgquiz-cta-box p{color:rgba(255,255,255,.6);font-size:.88rem;margin:0 auto 20px;max-width:440px;}
+.kgquiz-restart-btn{display:block;margin:18px auto 0;background:none;border:none;color:rgba(255,255,255,.4);font-size:.8rem;text-decoration:underline;cursor:pointer;font-family:inherit;}
+
+@media(max-width:720px){
+  .kgquiz-options{grid-template-columns:1fr;}
+  .kgquiz-results-grid{grid-template-columns:1fr;}
+  .kgquiz-card,.kgquiz-intro-card{padding:24px;}
+  .kgquiz-question{font-size:1.25rem;}
+}
+</style>
+<section class="section kgquiz-section" id="book-quiz" style="background:#0d0d0d;">
+<div class="reveal kgquiz-head">
+<span class="section-tag">Not Sure What To Read?</span>
+<h2 class="section-title">Find Your Next Book.</h2>
+<p class="section-sub">Answer a few quick questions and we'll match you with books based on what you're actually looking for right now.</p>
+</div>
+
+<div class="kgquiz-intro-card reveal" id="kgquiz-intro">
+<p>Takes about 2 minutes — roughly 15 quick questions, tailored as you go. You can go back and change any answer at any time.</p>
+<button class="btn-gold kgquiz-start-btn" id="kgquiz-start-btn" type="button">Start the Quiz →</button>
+</div>
+
+<div class="kgquiz-card kgquiz-hidden" id="kgquiz-question-card">
+<div class="kgquiz-progress-row">
+<span class="kgquiz-progress-label" id="kgquiz-progress-label">Question 1 of 15</span>
+<div class="kgquiz-progress-track"><div class="kgquiz-progress-fill" id="kgquiz-progress-fill" style="width:0%;"></div></div>
+</div>
+<div class="kgquiz-question" id="kgquiz-question-text"></div>
+<div class="kgquiz-question-hint" id="kgquiz-question-hint"></div>
+<div class="kgquiz-options" id="kgquiz-options"></div>
+<div class="kgquiz-nav-row">
+<button class="kgquiz-back-btn" disabled="" id="kgquiz-back-btn" type="button">← Back</button>
+<button class="kgquiz-next-btn" disabled="" id="kgquiz-next-btn" type="button">Next →</button>
+</div>
+</div>
+
+<div class="kgquiz-hidden" id="kgquiz-results"></div>
+</section>
 <style id="kgcalc-styles">
 .kgcalc-section{max-width:1180px;margin:0 auto;padding:80px 5vw;}
 .kgcalc-head{max-width:640px;}
@@ -749,6 +840,7 @@ select.kgcalc-select{appearance:none;-webkit-appearance:none;background-image:ur
 .kgcalc-cart-head{font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:700;color:var(--wh);margin-bottom:16px;}
 .kgcalc-cart-list{list-style:none;margin:0 0 18px;padding:0;display:flex;flex-direction:column;gap:10px;}
 .kgcalc-cart-item{display:flex;align-items:center;gap:10px;padding:11px 13px;border:1px solid rgba(255,255,255,.08);border-radius:12px;background:rgba(255,255,255,.02);}
+.kgcalc-cart-item-cover{width:34px;height:50px;object-fit:cover;border-radius:4px;flex-shrink:0;background:#0d0d0d;border:1px solid rgba(255,255,255,.08);}
 .kgcalc-cart-item-text{flex:1;min-width:0;}
 .kgcalc-cart-item-title{font-size:.88rem;font-weight:600;color:var(--wh);}
 .kgcalc-cart-item-author{font-size:.76rem;color:rgba(255,255,255,.5);margin-top:2px;}
@@ -1665,6 +1757,10 @@ div.rev-card:hover{border-color:rgba(255,255,255,.07);transform:none;}
 .hero-trust{display:flex;flex-wrap:wrap;gap:16px;justify-content:center;margin-top:4px;margin-bottom:36px;animation:fadeUp .7s .52s ease both;}
 .hero-trust span{display:flex;align-items:center;gap:6px;font-size:.78rem;color:rgba(255,255,255,.38);}
 .hero-trust svg{stroke:var(--gold);flex-shrink:0;}
+.hero-quiz-cta{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.03);border:1px solid rgba(255,217,61,.2);border-radius:50px;padding:10px 20px;text-decoration:none;width:fit-content;margin:0 auto;transition:border-color .2s,background .2s,transform .2s;animation:fadeUp .7s .58s ease both;}
+.hero-quiz-cta:hover{border-color:rgba(255,217,61,.5);background:rgba(255,217,61,.06);transform:translateY(-1px);}
+.hero-quiz-cta-q{font-size:.8rem;color:rgba(255,255,255,.5);}
+.hero-quiz-cta-link{font-size:.8rem;font-weight:600;color:var(--gold);white-space:nowrap;}
 
 /* services overhaul */
 .svc-cta-strip{margin-top:32px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:24px 32px;display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap;}
@@ -2521,6 +2617,16 @@ function toggleFaq(el){
     el.priceWrap.innerHTML = '';
     setStatus('');
     el.searchWrap.classList.remove('kgcalc-hidden');
+
+    // If the "Find Your Next Book" quiz sent books over before a country was
+    // picked (the quiz never asks for one), they've been waiting in
+    // kgQuizIntegration.pendingBooks. Now that we have a country, price and
+    // add them the normal way.
+    if (window.kgQuizIntegration && window.kgQuizIntegration.pendingBooks) {
+      var pending = window.kgQuizIntegration.pendingBooks;
+      window.kgQuizIntegration.pendingBooks = null;
+      window.kgQuizIntegration._addBooksNow(pending);
+    }
   }
 
   el.countryInput.addEventListener('input', function(){
@@ -3256,6 +3362,12 @@ function toggleFaq(el){
     return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   }
 
+  // Small branded placeholder for cart-item thumbnails when a book has no
+  // cover URL, or its cover URL fails to load — never show a broken image.
+  const CART_COVER_FALLBACK = 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 68 100"><rect width="68" height="100" rx="4" fill="#171717"/><rect x="8" y="8" width="52" height="84" rx="2" fill="#FFD93D" opacity=".15"/><path d="M18 30h32M18 42h32M18 54h20" stroke="#FFD93D" stroke-linecap="round" stroke-width="4" opacity=".5"/></svg>'
+  );
+
   // ── Multi-book order cart ────────────────────────────────────────────
   // A customer buying more than one book adds each to `cart` instead of
   // getting a separate quote per book. A book with no confirmed price
@@ -3317,7 +3429,9 @@ function toggleFaq(el){
 
   function cartItemRowHtml(it, index, removable){
     const ok = it.priceResult && it.priceResult.ok;
+    const cover = it.book.cover || CART_COVER_FALLBACK;
     return '<li class="kgcalc-cart-item">' +
+      '<img alt="" class="kgcalc-cart-item-cover" onerror="this.onerror=null;this.src=\'' + CART_COVER_FALLBACK + '\';" src="' + cover + '"/>' +
       '<div class="kgcalc-cart-item-text">' +
         '<div class="kgcalc-cart-item-title">' + escapeHtml(it.book.title) + '</div>' +
         (it.book.author ? '<div class="kgcalc-cart-item-author">' + escapeHtml(it.book.author) + '</div>' : '') +
@@ -3649,6 +3763,1185 @@ function toggleFaq(el){
       priceSource: priceResult.sourceLabel,
       referenceLink: priceResult.referenceLink || ''
     });
+  }
+
+  // ── Bridge for the "Find Your Next Book" quiz ───────────────────────
+  // The quiz builds its own recommendations from a local book database and
+  // never touches country/price/cart logic directly — it just hands us
+  // plain {title, author, isbn, cover} objects and we run them through the
+  // exact same fetchPrice/addToCart pipeline a manual search would use.
+  window.kgQuizIntegration = {
+    pendingBooks: null,
+    // Called by the quiz's "Check Price & Get These Books" button.
+    addRecommendedBooksToCart: function (books) {
+      if (!selectedCountry) {
+        this.pendingBooks = books;
+        setStatus('Select your country below and we\'ll price your ' + books.length + ' recommended books automatically.');
+        if (el.countryInput) el.countryInput.focus();
+        return { needsCountry: true };
+      }
+      this._addBooksNow(books);
+      return { needsCountry: false };
+    },
+    _addBooksNow: async function (books) {
+      for (var i = 0; i < books.length; i++) {
+        var b = books[i];
+        var book = {
+          title: b.title,
+          author: b.author || '',
+          isbn: b.isbn || '',
+          isbns: b.isbn ? [b.isbn] : [],
+          cover: b.cover || ''
+        };
+        setStatus('Checking price for ' + book.title + '…');
+        var priceResult = await fetchPrice(book, selectedCountry);
+        var prices = null;
+        if (priceResult && priceResult.ok) {
+          var retail = priceResult.retailPrice;
+          var kgPrice = +(retail * 0.20).toFixed(2);
+          var savings = +(retail * 0.80).toFixed(2);
+          prices = { retail: retail, kgPrice: kgPrice, savings: savings, discountPct: 80 };
+        }
+        addToCart(book, priceResult, prices);
+      }
+      setStatus('');
+    },
+    // Lets the quiz discover books beyond its own local database using the
+    // SAME Google Books key rotation / quota fallback the calculator's own
+    // pricing already relies on, instead of duplicating API keys. Read-only
+    // catalog search — never touches cart/price/country state.
+    searchGoogleBooks: async function (query, maxResults) {
+      try {
+        var url = 'https://www.googleapis.com/books/v1/volumes?q=' + encodeURIComponent(query) +
+          '&maxResults=' + (maxResults || 20) + '&orderBy=relevance';
+        var res = await googleBooksFetch(url, 7000);
+        if (!res.ok) return [];
+        var data = await res.json();
+        return data.items || [];
+      } catch (e) {
+        return [];
+      }
+    }
+  };
+})();
+</script>
+<script id="kg-quiz-script">
+(function(){
+  var root = document.getElementById('book-quiz');
+  if (!root) return;
+
+  // ============================================================
+  // 1. BOOK DATABASE — local, modular, easy to extend.
+  // Cover images resolve live from Open Library by ISBN (same source
+  // used for the genre wall) with a branded-SVG fallback on error.
+  // ============================================================
+  var BOOKS = [
+    // ---- SELF-DEVELOPMENT / HABITS / PRODUCTIVITY ----
+    { title:"Atomic Habits", author:"James Clear", isbn:"9780735211292", year:2018, category:"nonfiction", genre:"Self-Help", difficulty:"beginner", audience:"general",
+      tags:["self-development","discipline","habits","productivity","actionable","diff-easy"],
+      goals:["Building better habits","Improving daily discipline","Understanding behavior change"] },
+    { title:"Deep Work", author:"Cal Newport", isbn:"9781455586691", year:2016, category:"nonfiction", genre:"Self-Help", difficulty:"intermediate", audience:"general",
+      tags:["productivity","focus","career","actionable","diff-medium"],
+      goals:["Working with fewer distractions","Producing higher-quality work","Building sustained focus"] },
+    { title:"The 7 Habits of Highly Effective People", author:"Stephen R. Covey", isbn:"9781982137274", year:1989, category:"nonfiction", genre:"Self-Help", difficulty:"intermediate", audience:"general",
+      tags:["self-development","discipline","leadership","big-picture","diff-medium"],
+      goals:["Building a personal effectiveness framework","Aligning daily actions with long-term goals","Improving leadership habits"] },
+    { title:"How to Win Friends and Influence People", author:"Dale Carnegie", isbn:"9780671027032", year:1936, category:"nonfiction", genre:"Self-Help", subgenre:"Relationships", difficulty:"beginner", audience:"general",
+      tags:["relationships","communication","confidence","leadership","actionable","diff-easy","era-classic"],
+      goals:["Communicating more persuasively","Building rapport with people","Growing your confidence in conversation"] },
+    { title:"Think and Grow Rich", author:"Napoleon Hill", isbn:"9781585424337", year:1937, category:"nonfiction", genre:"Self-Help", subgenre:"Finance", difficulty:"intermediate", audience:"general",
+      tags:["money","mindset","discipline","big-picture","diff-medium","era-classic"],
+      goals:["Reframing your relationship with money","Building persistence toward goals","Developing a growth mindset"] },
+    { title:"The Power of Now", author:"Eckhart Tolle", isbn:"9781577314806", year:1997, category:"nonfiction", genre:"Religion & Spirituality", subgenre:"Mindfulness", difficulty:"intermediate", audience:"general",
+      tags:["spirituality","eastern-mindfulness","comforting","practical-guide","diff-medium"],
+      goals:["Reducing anxious overthinking","Practicing present-moment awareness","Finding a calmer daily mindset"] },
+    { title:"The Subtle Art of Not Giving a F*ck", author:"Mark Manson", isbn:"9780062457714", year:2016, category:"nonfiction", genre:"Self-Help", difficulty:"beginner", audience:"general",
+      tags:["mindset","confidence","big-picture","light-hearted","diff-easy"],
+      goals:["Focusing on what actually matters to you","Building emotional resilience","Letting go of unhelpful expectations"] },
+    { title:"Can't Hurt Me", author:"David Goggins", isbn:"9781544512280", year:2018, category:"nonfiction", genre:"Self-Help", subgenre:"Memoir", difficulty:"beginner", audience:"general",
+      tags:["discipline","confidence","mindset","actionable","dark-intense","diff-easy"],
+      goals:["Building mental toughness","Pushing past self-imposed limits","Developing extreme discipline"] },
+    { title:"Grit", author:"Angela Duckworth", isbn:"9781501111105", year:2016, category:"nonfiction", genre:"Psychology", difficulty:"intermediate", audience:"general",
+      tags:["psychology","discipline","confidence","big-picture","diff-medium"],
+      goals:["Understanding what drives long-term success","Building perseverance toward goals","Strengthening passion and persistence"] },
+    { title:"Mindset", author:"Carol S. Dweck", isbn:"9780345472328", year:2006, category:"nonfiction", genre:"Psychology", difficulty:"intermediate", audience:"general",
+      tags:["psychology","confidence","mindset","big-picture","diff-medium"],
+      goals:["Shifting from a fixed to a growth mindset","Handling failure more productively","Building resilience through challenges"] },
+    { title:"The Compound Effect", author:"Darren Hardy", isbn:"9781593156541", year:2010, category:"nonfiction", genre:"Self-Help", difficulty:"beginner", audience:"general",
+      tags:["discipline","habits","productivity","actionable","diff-easy"],
+      goals:["Understanding how small choices compound","Building consistent daily systems","Staying motivated over the long run"] },
+
+    // ---- LEADERSHIP / BUSINESS ----
+    { title:"Start with Why", author:"Simon Sinek", isbn:"9781591846444", year:2009, category:"nonfiction", genre:"Business", difficulty:"beginner", audience:"general",
+      tags:["business","leadership","career","big-picture","diff-easy"],
+      goals:["Clarifying your sense of purpose","Communicating a vision that inspires others","Leading with more conviction"] },
+    { title:"Leaders Eat Last", author:"Simon Sinek", isbn:"9781591845324", year:2014, category:"nonfiction", genre:"Business", subgenre:"Leadership", difficulty:"intermediate", audience:"general",
+      tags:["leadership","relationships","career","big-picture","diff-medium"],
+      goals:["Building trust within a team","Leading with empathy","Creating a culture people want to stay in"] },
+    { title:"Good to Great", author:"Jim Collins", isbn:"9780066620992", year:2001, category:"nonfiction", genre:"Business", difficulty:"intermediate", audience:"general",
+      tags:["business","leadership","career","big-picture","diff-medium"],
+      goals:["Understanding what separates great companies","Applying disciplined leadership principles","Thinking long-term about growth"] },
+    { title:"Zero to One", author:"Peter Thiel", isbn:"9780804139298", year:2014, category:"nonfiction", genre:"Business", subgenre:"Startups", difficulty:"intermediate", audience:"general",
+      tags:["business","career","big-picture","diff-medium","business-economics"],
+      goals:["Thinking about building something genuinely new","Understanding startup strategy","Challenging conventional business thinking"] },
+    { title:"The Lean Startup", author:"Eric Ries", isbn:"9780307887894", year:2011, category:"nonfiction", genre:"Business", subgenre:"Startups", difficulty:"intermediate", audience:"general",
+      tags:["business","career","actionable","diff-medium","business-economics"],
+      goals:["Testing ideas before committing fully","Building a product customers actually want","Reducing wasted effort in early-stage work"] },
+    { title:"The Hard Thing About Hard Things", author:"Ben Horowitz", isbn:"9780062273208", year:2014, category:"nonfiction", genre:"Business", difficulty:"advanced", audience:"general",
+      tags:["business","leadership","career","dark-intense","diff-hard"],
+      goals:["Navigating difficult leadership decisions","Understanding the realities of running a company","Building resilience under pressure"] },
+    { title:"Shoe Dog", author:"Phil Knight", isbn:"9781501135910", year:2016, category:"nonfiction", genre:"Business", subgenre:"Memoir", difficulty:"beginner", audience:"general",
+      tags:["business","career","discipline","thought-provoking","diff-easy"],
+      goals:["Seeing what building a company really looks like","Staying persistent through early failure","Finding inspiration from a real founder's story"] },
+
+    // ---- MONEY / FINANCE ----
+    { title:"Rich Dad Poor Dad", author:"Robert T. Kiyosaki", isbn:"9781612680194", year:1997, category:"nonfiction", genre:"Finance", difficulty:"beginner", audience:"general",
+      tags:["money","business-economics","mindset","actionable","diff-easy"],
+      goals:["Rethinking assets vs. liabilities","Building financial literacy fundamentals","Shifting your mindset around money"] },
+    { title:"The Psychology of Money", author:"Morgan Housel", isbn:"9780857197689", year:2020, category:"nonfiction", genre:"Finance", difficulty:"beginner", audience:"general",
+      tags:["money","psychology","business-economics","big-picture","diff-easy"],
+      goals:["Understanding your own behavior around money","Building better long-term financial habits","Making calmer financial decisions"] },
+
+    // ---- PSYCHOLOGY ----
+    { title:"Thinking, Fast and Slow", author:"Daniel Kahneman", isbn:"9780374533557", year:2011, category:"nonfiction", genre:"Psychology", difficulty:"advanced", audience:"general",
+      tags:["psychology","big-picture","science-tech","diff-hard"],
+      goals:["Understanding how you actually make decisions","Spotting your own cognitive biases","Thinking more clearly under uncertainty"] },
+    { title:"Influence", author:"Robert B. Cialdini", isbn:"9780061241895", year:1984, category:"nonfiction", genre:"Psychology", difficulty:"intermediate", audience:"general",
+      tags:["psychology","communication","business","actionable","diff-medium"],
+      goals:["Recognizing persuasion techniques used on you","Communicating more effectively","Understanding the psychology of decisions"] },
+    { title:"Man's Search for Meaning", author:"Viktor E. Frankl", isbn:"9780807014271", year:1946, category:"nonfiction", genre:"Psychology", subgenre:"Philosophy", difficulty:"intermediate", audience:"general",
+      tags:["psychology","philosophy","existentialism","thought-provoking","dark-intense","diff-medium","era-classic"],
+      goals:["Finding meaning through difficulty","Reframing suffering and purpose","Building psychological resilience"] },
+    { title:"Predictably Irrational", author:"Dan Ariely", isbn:"9780061353246", year:2008, category:"nonfiction", genre:"Psychology", difficulty:"intermediate", audience:"general",
+      tags:["psychology","business-economics","science-tech","thought-provoking","diff-medium"],
+      goals:["Understanding why people make irrational choices","Applying behavioral insight to daily decisions","Seeing your own blind spots"] },
+    { title:"Emotional Intelligence", author:"Daniel Goleman", isbn:"9780553383713", year:1995, category:"nonfiction", genre:"Psychology", difficulty:"intermediate", audience:"general",
+      tags:["psychology","relationships","confidence","leadership","diff-medium"],
+      goals:["Understanding and managing your emotions","Improving relationships through empathy","Building stronger interpersonal skills"] },
+    { title:"Quiet", author:"Susan Cain", isbn:"9780307352149", year:2012, category:"nonfiction", genre:"Psychology", difficulty:"beginner", audience:"general",
+      tags:["psychology","confidence","relationships","thought-provoking","diff-easy"],
+      goals:["Understanding introversion as a strength","Working with your natural temperament","Building confidence your own way"] },
+
+    // ---- RELATIONSHIPS ----
+    { title:"The 5 Love Languages", author:"Gary Chapman", isbn:"9780802412706", year:1992, category:"nonfiction", genre:"Relationships", difficulty:"beginner", audience:"general",
+      tags:["relationships","communication","comforting","actionable","diff-easy"],
+      goals:["Understanding how people give and receive love","Improving communication in relationships","Reducing recurring relationship friction"] },
+
+    // ---- PHILOSOPHY / SPIRITUALITY ----
+    { title:"Meditations", author:"Marcus Aurelius", isbn:"9780140449334", year:180, category:"nonfiction", genre:"Philosophy", subgenre:"Stoicism", difficulty:"intermediate", audience:"general",
+      tags:["philosophy","stoicism","classic-text","thought-provoking","diff-medium","era-classic"],
+      goals:["Building emotional resilience","Practicing stoic self-discipline","Gaining perspective on what you can control"] },
+    { title:"The Daily Stoic", author:"Ryan Holiday", isbn:"9780735211735", year:2016, category:"nonfiction", genre:"Philosophy", subgenre:"Stoicism", difficulty:"beginner", audience:"general",
+      tags:["philosophy","stoicism","practical-guide","actionable","diff-easy"],
+      goals:["Applying stoic ideas to daily life","Building calm under pressure","Practicing resilience one day at a time"] },
+    { title:"The Republic", author:"Plato", isbn:"9780140455113", year:-375, category:"nonfiction", genre:"Philosophy", difficulty:"advanced", audience:"general",
+      tags:["philosophy","ethics","classic-text","big-picture","diff-hard","era-classic"],
+      goals:["Exploring justice and ideal society","Engaging with foundational Western philosophy","Practicing rigorous philosophical reasoning"] },
+    { title:"Beyond Good and Evil", author:"Friedrich Nietzsche", isbn:"9780140449235", year:1886, category:"nonfiction", genre:"Philosophy", difficulty:"advanced", audience:"general",
+      tags:["philosophy","ethics","existentialism","classic-text","dark-intense","diff-hard","era-classic"],
+      goals:["Challenging conventional moral assumptions","Engaging with existentialist thought","Reading a foundational philosophical text"] },
+    { title:"The Stranger", author:"Albert Camus", isbn:"9780679720201", year:1942, category:"fiction", genre:"Literary Fiction", subgenre:"Existentialism", difficulty:"intermediate", audience:"general",
+      tags:["fiction","literary-fiction","existentialism","philosophy","thought-provoking","character-driven","diff-medium","era-classic"],
+      goals:["Exploring existentialist ideas through story","Sitting with questions of meaning","Reading a landmark of literary philosophy"] },
+    { title:"The Myth of Sisyphus", author:"Albert Camus", isbn:"9780525564454", year:1942, category:"nonfiction", genre:"Philosophy", subgenre:"Existentialism", difficulty:"advanced", audience:"general",
+      tags:["philosophy","existentialism","classic-text","thought-provoking","diff-hard","era-classic"],
+      goals:["Confronting questions of meaning and absurdity","Engaging with existentialist philosophy","Gaining a new lens on life's difficulties"] },
+    { title:"Siddhartha", author:"Hermann Hesse", isbn:"9780553208849", year:1922, category:"fiction", genre:"Religion & Spirituality", subgenre:"Eastern Philosophy", difficulty:"beginner", audience:"general",
+      tags:["spirituality","eastern-mindfulness","fiction","comforting","thought-provoking","diff-easy","era-classic"],
+      goals:["Exploring a spiritual journey through story","Reflecting on meaning and self-discovery","Engaging with Eastern philosophical ideas"] },
+    { title:"The Alchemist", author:"Paulo Coelho", isbn:"9780062315007", year:1988, category:"fiction", genre:"Religion & Spirituality", difficulty:"beginner", audience:"general",
+      tags:["spirituality","fiction","uplifting","comforting","diff-easy"],
+      goals:["Reflecting on purpose and personal legend","Finding inspiration for a life change","Reading an easy, uplifting spiritual story"] },
+    { title:"A New Earth", author:"Eckhart Tolle", isbn:"9780452289963", year:2005, category:"nonfiction", genre:"Religion & Spirituality", subgenre:"Mindfulness", difficulty:"intermediate", audience:"general",
+      tags:["spirituality","eastern-mindfulness","comforting","practical-guide","diff-medium"],
+      goals:["Practicing present-moment awareness","Letting go of ego-driven thinking","Finding a calmer sense of self"] },
+    { title:"The Four Agreements", author:"Don Miguel Ruiz", isbn:"9781878424310", year:1997, category:"nonfiction", genre:"Religion & Spirituality", difficulty:"beginner", audience:"general",
+      tags:["spirituality","ethics","practical-guide","comforting","diff-easy"],
+      goals:["Adopting simple guiding life principles","Reducing self-judgment","Practicing a more mindful way of living"] },
+
+    // ---- SCIENCE / HISTORY / GENERAL KNOWLEDGE (also serve academic path) ----
+    { title:"Sapiens", author:"Yuval Noah Harari", isbn:"9780062316097", year:2011, category:"nonfiction", genre:"History", difficulty:"intermediate", audience:"general",
+      tags:["history-topic","history-social-science","general-knowledge","big-picture","diff-medium"],
+      goals:["Understanding the arc of human history","Gaining big-picture perspective on society","Engaging with accessible historical analysis"] },
+    { title:"Guns, Germs, and Steel", author:"Jared Diamond", isbn:"9780393317558", year:1997, category:"nonfiction", genre:"History", difficulty:"advanced", audience:"general",
+      tags:["history-topic","history-social-science","science-topic","big-picture","diff-hard"],
+      goals:["Understanding why civilizations developed differently","Engaging with cross-disciplinary history","Building a broader worldview"] },
+    { title:"The Silk Roads", author:"Peter Frankopan", isbn:"9781101912379", year:2015, category:"nonfiction", genre:"History", difficulty:"advanced", audience:"general",
+      tags:["history-topic","history-social-science","diff-hard"],
+      goals:["Seeing world history from a new angle","Understanding global trade and power shifts","Engaging with in-depth historical narrative"] },
+    { title:"Team of Rivals", author:"Doris Kearns Goodwin", isbn:"9780743270755", year:2005, category:"nonfiction", genre:"History", subgenre:"Biography", difficulty:"advanced", audience:"general",
+      tags:["history-topic","history-social-science","leadership","diff-hard"],
+      goals:["Studying leadership through history","Understanding political strategy","Reading in-depth political biography"] },
+    { title:"A Short History of Nearly Everything", author:"Bill Bryson", isbn:"9780767908184", year:2003, category:"nonfiction", genre:"Science", difficulty:"beginner", audience:"general",
+      tags:["science-topic","science-tech","general-knowledge","light-hearted","diff-easy"],
+      goals:["Getting an accessible tour of science","Satisfying broad curiosity","Enjoying science without a technical background"] },
+    { title:"A Brief History of Time", author:"Stephen Hawking", isbn:"9780553380163", year:1988, category:"nonfiction", genre:"Science", difficulty:"advanced", audience:"general",
+      tags:["science-topic","science-tech","big-picture","diff-hard"],
+      goals:["Understanding the universe's biggest questions","Engaging with physics at a conceptual level","Building scientific general knowledge"] },
+    { title:"Cosmos", author:"Carl Sagan", isbn:"9780345539434", year:1980, category:"nonfiction", genre:"Science", difficulty:"intermediate", audience:"general",
+      tags:["science-topic","science-tech","thought-provoking","diff-medium","era-classic"],
+      goals:["Exploring the universe and our place in it","Building scientific curiosity","Reading a classic of popular science"] },
+    { title:"The Selfish Gene", author:"Richard Dawkins", isbn:"9780199291151", year:1976, category:"nonfiction", genre:"Science", difficulty:"advanced", audience:"general",
+      tags:["science-topic","science-tech","big-picture","diff-hard","era-classic"],
+      goals:["Understanding evolution from a gene's-eye view","Engaging with a landmark science book","Building scientific general knowledge"] },
+    { title:"Astrophysics for People in a Hurry", author:"Neil deGrasse Tyson", isbn:"9780393609394", year:2017, category:"nonfiction", genre:"Science", difficulty:"beginner", audience:"general",
+      tags:["science-topic","science-tech","general-knowledge","light-hearted","diff-easy"],
+      goals:["Getting quick, digestible science insight","Satisfying curiosity about the universe","Reading science in short sessions"] },
+    { title:"Freakonomics", author:"Steven D. Levitt & Stephen J. Dubner", isbn:"9780060731335", year:2005, category:"nonfiction", genre:"Economics", difficulty:"beginner", audience:"general",
+      tags:["business-economics","general-knowledge","thought-provoking","diff-easy"],
+      goals:["Seeing everyday situations through an economic lens","Building curiosity about incentives and data","Enjoying accessible economics"] },
+    { title:"Basic Economics", author:"Thomas Sowell", isbn:"9780465060733", year:2000, category:"nonfiction", genre:"Economics", difficulty:"intermediate", audience:"general",
+      tags:["business-economics","general-knowledge","diff-medium"],
+      goals:["Building foundational economics knowledge","Understanding markets and trade-offs","Studying economics without heavy math"] },
+    { title:"The Elements of Style", author:"William Strunk Jr. & E.B. White", isbn:"9780205309023", year:1959, category:"textbook", genre:"Language & Literature", difficulty:"beginner", audience:"general",
+      tags:["language-literature","textbook-style","actionable","diff-easy","era-classic"],
+      goals:["Writing clearer, more concise prose","Building strong grammar fundamentals","Studying a classic writing reference"] },
+
+    // ---- FICTION: MYSTERY & THRILLER ----
+    { title:"The Girl on the Train", author:"Paula Hawkins", isbn:"9781594634024", year:2015, category:"fiction", genre:"Mystery & Thriller", difficulty:"beginner", audience:"general",
+      tags:["fiction","mystery-thriller","fast-paced","dark-intense","diff-easy"],
+      goals:["A fast, twisty page-turner","An unreliable-narrator mystery","A gripping psychological thriller"] },
+    { title:"The Girl with the Dragon Tattoo", author:"Stieg Larsson", isbn:"9780307454546", year:2005, category:"fiction", genre:"Mystery & Thriller", difficulty:"intermediate", audience:"general",
+      tags:["fiction","mystery-thriller","fast-paced","dark-intense","diff-medium"],
+      goals:["A dense, atmospheric crime thriller","A complex investigative plot","A dark, character-driven mystery"] },
+    { title:"The Silent Patient", author:"Alex Michaelides", isbn:"9781250301697", year:2019, category:"fiction", genre:"Mystery & Thriller", subgenre:"Psychological", difficulty:"beginner", audience:"general",
+      tags:["fiction","mystery-thriller","psychological","fast-paced","dark-intense","diff-easy"],
+      goals:["A psychological thriller with a twist ending","A fast, immersive read","A story exploring the mind of its characters"] },
+    { title:"The Da Vinci Code", author:"Dan Brown", isbn:"9780307474278", year:2003, category:"fiction", genre:"Mystery & Thriller", subgenre:"Adventure", difficulty:"beginner", audience:"general",
+      tags:["fiction","mystery-thriller","adventure","fast-paced","diff-easy"],
+      goals:["A fast-paced puzzle-driven thriller","An adventure blended with mystery","An easy, page-turning read"] },
+    { title:"And Then There Were None", author:"Agatha Christie", isbn:"9780062073488", year:1939, category:"fiction", genre:"Mystery & Thriller", difficulty:"beginner", audience:"general",
+      tags:["fiction","mystery-thriller","fast-paced","dark-intense","diff-easy","era-classic"],
+      goals:["A classic whodunit mystery","A tightly plotted suspense story","A quick, satisfying classic thriller"] },
+
+    // ---- FICTION: ROMANCE ----
+    { title:"Pride and Prejudice", author:"Jane Austen", isbn:"9780141439518", year:1813, category:"fiction", genre:"Romance", difficulty:"intermediate", audience:"general",
+      tags:["fiction","romance","character-driven","uplifting","diff-medium","era-classic"],
+      goals:["A classic romance with sharp wit","A character-driven love story","A timeless piece of literary romance"] },
+
+    // ---- FICTION: ADVENTURE ----
+    { title:"Treasure Island", author:"Robert Louis Stevenson", isbn:"9781840327809", year:1883, category:"fiction", genre:"Adventure", difficulty:"beginner", audience:"general",
+      tags:["fiction","adventure","fast-paced","uplifting","diff-easy","era-classic"],
+      goals:["A classic high-seas adventure","A fast, fun escapist read","A timeless adventure story"] },
+    { title:"The Call of the Wild", author:"Jack London", isbn:"9780689856747", year:1903, category:"fiction", genre:"Adventure", difficulty:"beginner", audience:"general",
+      tags:["fiction","adventure","dark-intense","character-driven","diff-easy","era-classic"],
+      goals:["A gripping survival adventure","A short, powerful classic","An intense story of resilience"] },
+    { title:"Robinson Crusoe", author:"Daniel Defoe", isbn:"9780141439822", year:1719, category:"fiction", genre:"Adventure", difficulty:"intermediate", audience:"general",
+      tags:["fiction","adventure","character-driven","diff-medium","era-classic"],
+      goals:["A classic survival story","A reflective, character-driven adventure","A foundational adventure novel"] },
+    { title:"Kidnapped", author:"Robert Louis Stevenson", isbn:"9781513266350", year:1886, category:"fiction", genre:"Adventure", difficulty:"beginner", audience:"general",
+      tags:["fiction","adventure","fast-paced","diff-easy","era-classic"],
+      goals:["A fast-moving historical adventure","An easy, entertaining classic","A story of escape and survival"] },
+
+    // ---- FICTION: FANTASY ----
+    { title:"The Hobbit", author:"J.R.R. Tolkien", isbn:"9780547928227", year:1937, category:"fiction", genre:"Fantasy", difficulty:"beginner", audience:"general",
+      tags:["fiction","fantasy","adventure","uplifting","diff-easy","era-classic"],
+      goals:["A warm, accessible fantasy adventure","A gateway into epic fantasy","A lighter, fun fantasy read"] },
+    { title:"The Fellowship of the Ring", author:"J.R.R. Tolkien", isbn:"9780547928210", year:1954, category:"fiction", genre:"Fantasy", difficulty:"intermediate", audience:"general",
+      tags:["fiction","fantasy","adventure","big-picture","diff-medium","era-classic"],
+      goals:["An epic, world-building fantasy journey","A deeper commitment to a fantasy series","A foundational work of modern fantasy"] },
+    { title:"A Game of Thrones", author:"George R.R. Martin", isbn:"9780553593716", year:1996, category:"fiction", genre:"Fantasy", difficulty:"advanced", audience:"general",
+      tags:["fiction","fantasy","dark-intense","character-driven","diff-hard"],
+      goals:["A dense, politically complex fantasy epic","A dark, morally grey story world","An immersive long-form fantasy series"] },
+    { title:"The Name of the Wind", author:"Patrick Rothfuss", isbn:"9780756404741", year:2007, category:"fiction", genre:"Fantasy", difficulty:"intermediate", audience:"general",
+      tags:["fiction","fantasy","character-driven","thought-provoking","diff-medium"],
+      goals:["A lyrical, character-driven fantasy","A story about storytelling itself","An emotionally rich fantasy read"] },
+
+    // ---- FICTION: HISTORICAL FICTION ----
+    { title:"The Book Thief", author:"Markus Zusak", isbn:"9780375842207", year:2005, category:"fiction", genre:"Historical Fiction", difficulty:"intermediate", audience:"general",
+      tags:["fiction","historical-fiction","bittersweet","thought-provoking","diff-medium"],
+      goals:["An emotional WWII-era story","A bittersweet, memorable narrative","A historical story told from an unusual perspective"] },
+    { title:"All the Light We Cannot See", author:"Anthony Doerr", isbn:"9781501173219", year:2014, category:"fiction", genre:"Historical Fiction", difficulty:"intermediate", audience:"general",
+      tags:["fiction","historical-fiction","bittersweet","character-driven","diff-medium"],
+      goals:["A beautifully written WWII story","An emotionally layered historical novel","A character-driven wartime narrative"] },
+    { title:"The Nightingale", author:"Kristin Hannah", isbn:"9781250080400", year:2015, category:"fiction", genre:"Historical Fiction", difficulty:"beginner", audience:"general",
+      tags:["fiction","historical-fiction","bittersweet","uplifting","diff-easy"],
+      goals:["An emotional story of courage in wartime","A moving historical family drama","An accessible, powerful historical read"] },
+    { title:"A Thousand Splendid Suns", author:"Khaled Hosseini", isbn:"9781594483851", year:2007, category:"fiction", genre:"Historical Fiction", difficulty:"intermediate", audience:"general",
+      tags:["fiction","historical-fiction","dark-intense","bittersweet","diff-medium"],
+      goals:["A powerful story of resilience","An emotionally intense historical drama","A story centered on human endurance"] },
+    { title:"The Kite Runner", author:"Khaled Hosseini", isbn:"9781594631931", year:2003, category:"fiction", genre:"Historical Fiction", difficulty:"intermediate", audience:"general",
+      tags:["fiction","historical-fiction","dark-intense","bittersweet","diff-medium"],
+      goals:["A story of guilt, friendship, and redemption","An emotionally intense narrative","A historically grounded personal story"] },
+
+    // ---- FICTION: LITERARY FICTION ----
+    { title:"The Great Gatsby", author:"F. Scott Fitzgerald", isbn:"9780743273565", year:1925, category:"fiction", genre:"Literary Fiction", difficulty:"beginner", audience:"general",
+      tags:["fiction","literary-fiction","bittersweet","thought-provoking","diff-easy","era-classic"],
+      goals:["A short, iconic piece of American literature","A story about ambition and illusion","An accessible literary classic"] },
+    { title:"To Kill a Mockingbird", author:"Harper Lee", isbn:"9780061120084", year:1960, category:"fiction", genre:"Literary Fiction", difficulty:"beginner", audience:"general",
+      tags:["fiction","literary-fiction","thought-provoking","uplifting","diff-easy","era-classic"],
+      goals:["A moving story about justice and morality","An accessible, widely loved classic","A thought-provoking coming-of-age story"] },
+    { title:"Beloved", author:"Toni Morrison", isbn:"9781400033416", year:1987, category:"fiction", genre:"Literary Fiction", difficulty:"advanced", audience:"general",
+      tags:["fiction","literary-fiction","dark-intense","thought-provoking","diff-hard"],
+      goals:["A profound, demanding literary work","A story confronting history and memory","A challenging, rewarding literary read"] },
+    { title:"The Catcher in the Rye", author:"J.D. Salinger", isbn:"9780316769488", year:1951, category:"fiction", genre:"Literary Fiction", difficulty:"beginner", audience:"general",
+      tags:["fiction","literary-fiction","character-driven","thought-provoking","diff-easy","era-classic"],
+      goals:["A voice-driven coming-of-age story","A classic of alienation and identity","A quick, iconic literary read"] },
+    { title:"One Hundred Years of Solitude", author:"Gabriel García Márquez", isbn:"9780060883287", year:1967, category:"fiction", genre:"Literary Fiction", difficulty:"advanced", audience:"general",
+      tags:["fiction","literary-fiction","big-picture","thought-provoking","diff-hard","era-classic"],
+      goals:["An ambitious, multigenerational epic","A landmark of magical realism","A demanding, richly rewarding classic"] },
+    { title:"The Road", author:"Cormac McCarthy", isbn:"9780307387899", year:2006, category:"fiction", genre:"Literary Fiction", difficulty:"intermediate", audience:"general",
+      tags:["fiction","literary-fiction","dark-intense","character-driven","diff-medium"],
+      goals:["A stark, emotionally intense story","A minimalist, atmospheric narrative","A story about love amid devastation"] },
+
+    // ---- FICTION: SCIENCE FICTION ----
+    { title:"Dune", author:"Frank Herbert", isbn:"9780441172719", year:1965, category:"fiction", genre:"Science Fiction", difficulty:"advanced", audience:"general",
+      tags:["fiction","science-fiction","big-picture","thought-provoking","diff-hard"],
+      goals:["An epic, world-building science fiction saga","A politically complex sci-fi universe","A genre-defining classic of science fiction"] },
+    { title:"1984", author:"George Orwell", isbn:"9780451524935", year:1949, category:"fiction", genre:"Science Fiction", subgenre:"Dystopian", difficulty:"intermediate", audience:"general",
+      tags:["fiction","science-fiction","dark-intense","thought-provoking","diff-medium","era-classic"],
+      goals:["A chilling look at surveillance and control","A thought-provoking dystopian classic","A politically resonant, urgent read"] },
+    { title:"Fahrenheit 451", author:"Ray Bradbury", isbn:"9781451673319", year:1953, category:"fiction", genre:"Science Fiction", subgenre:"Dystopian", difficulty:"beginner", audience:"general",
+      tags:["fiction","science-fiction","thought-provoking","diff-easy","era-classic"],
+      goals:["A short, thought-provoking dystopia","A classic warning about censorship","A quick, impactful sci-fi read"] },
+    { title:"Foundation", author:"Isaac Asimov", isbn:"9780553293357", year:1951, category:"fiction", genre:"Science Fiction", difficulty:"intermediate", audience:"general",
+      tags:["fiction","science-fiction","big-picture","diff-medium","era-classic"],
+      goals:["A grand, idea-driven science fiction epic","A foundational work of the genre","A story about civilizations and long-term thinking"] },
+    { title:"The Martian", author:"Andy Weir", isbn:"9780804139021", year:2011, category:"fiction", genre:"Science Fiction", difficulty:"beginner", audience:"general",
+      tags:["fiction","science-fiction","fast-paced","light-hearted","diff-easy"],
+      goals:["A fast, fun survival story","A science-driven, problem-solving adventure","An accessible, entertaining sci-fi read"] },
+
+    // ---- YOUNG ADULT ----
+    { title:"The Hunger Games", author:"Suzanne Collins", isbn:"9780439023481", year:2008, category:"fiction", genre:"Young Adult", subgenre:"Dystopian", difficulty:"beginner", audience:"young-adult",
+      tags:["fiction","science-fiction","fast-paced","dark-intense","diff-easy"],
+      goals:["A fast-paced dystopian adventure","A gripping, easy-to-binge series starter","A story about survival and rebellion"] },
+    { title:"Divergent", author:"Veronica Roth", isbn:"9780062024039", year:2011, category:"fiction", genre:"Young Adult", subgenre:"Dystopian", difficulty:"beginner", audience:"young-adult",
+      tags:["fiction","science-fiction","fast-paced","diff-easy"],
+      goals:["A fast-paced YA dystopian adventure","An easy, plot-driven series starter","A story about identity and belonging"] }
+  ];
+
+  function coverUrl(isbn){ return "https://covers.openlibrary.org/b/isbn/" + isbn + "-L.jpg?default=false"; }
+  function escHtml(s){ return String(s == null ? "" : s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
+  function brandedFallbackCover(title){
+    var t = escHtml((title || "Book").slice(0, 40));
+    var svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 900"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#FFD93D"/><stop offset="1" stop-color="#6f5f12"/></linearGradient></defs><rect width="700" height="900" fill="#111"/><rect x="45" y="45" width="610" height="810" rx="14" fill="url(#g)"/><rect x="78" y="78" width="544" height="744" rx="10" fill="#171717" opacity=".92"/><text x="105" y="170" fill="#FFD93D" font-family="Arial" font-size="26" font-weight="700">KITAB GURU</text><text x="105" y="420" fill="#fff" font-family="Georgia" font-size="40" font-weight="700">' + t + '</text><text x="105" y="500" fill="#ccc" font-family="Arial" font-size="20">Book preview</text></svg>';
+    return "data:image/svg+xml;charset=UTF-8," + encodeURIComponent(svg);
+  }
+
+  // ============================================================
+  // 2. QUESTION BANK (adaptive — showIf gates conditional questions)
+  // ============================================================
+  function has(answers, id, value){
+    var a = answers[id];
+    if (a == null) return false;
+    return Array.isArray(a) ? a.indexOf(value) !== -1 : a === value;
+  }
+
+  var QUESTIONS = [
+    { id:"purpose", text:"What are you hoping to get from your next book?", multi:false,
+      options:[
+        { label:"A great story to get lost in", value:"story", w:{ fiction:10 } },
+        { label:"Personal growth & self-improvement", value:"growth", w:{ nonfiction:8, "self-development":6 } },
+        { label:"Knowledge for school or work", value:"academic", w:{ nonfiction:6, textbook:6 } },
+        { label:"Philosophical or spiritual insight", value:"philosophy", w:{ nonfiction:6, philosophy:6, spirituality:4 } },
+        { label:"I'm not sure — surprise me", value:"explore", w:{} }
+      ]},
+    { id:"why_read", text:"What's the biggest reason you want to read right now?", multi:false,
+      options:[
+        { label:"Pure curiosity / love of reading", value:"curiosity", w:{ "thought-provoking":2 } },
+        { label:"Career or work requirement", value:"career", w:{ business:6, leadership:4, career:8 } },
+        { label:"Someone recommended it to me", value:"recommended", w:{} },
+        { label:"Required for school/coursework", value:"coursework", w:{ textbook:8, "academic":4 } },
+        { label:"I want to relax and escape a bit", value:"relax", w:{ fiction:6, "light-hearted":4, uplifting:3 } }
+      ]},
+    { id:"category", text:"Which shelf should we pull your recommendations from?", multi:false,
+      options:[
+        { label:"Fiction — novels & stories", value:"fiction", w:{ fiction:14 } },
+        { label:"Nonfiction — real-world ideas", value:"nonfiction", w:{ nonfiction:14 } },
+        { label:"Academic / textbook-style", value:"textbook", w:{ textbook:14 } },
+        { label:"Not sure, open to anything", value:"any", w:{} }
+      ]},
+    { id:"topics", text:"Which topics genuinely interest you?", hint:"Pick up to 3.", multi:true, maxSelect:3,
+      options:[
+        { label:"Business", value:"business", w:{ business:8 } },
+        { label:"Psychology", value:"psychology", w:{ psychology:8 } },
+        { label:"Relationships", value:"relationships", w:{ relationships:8 } },
+        { label:"Health & wellness", value:"health", w:{ health:6 } },
+        { label:"Technology", value:"technology", w:{ "science-tech":6 } },
+        { label:"Spirituality", value:"spirituality", w:{ spirituality:8 } },
+        { label:"History", value:"history", w:{ "history-topic":8 } },
+        { label:"Science", value:"science", w:{ "science-topic":8 } },
+        { label:"Personal finance", value:"finance", w:{ money:8 } },
+        { label:"Fiction & stories", value:"fiction-topic", w:{ fiction:6 } }
+      ]},
+
+    // --- fiction branch ---
+    { id:"fiction_genre", text:"Which genres are you drawn to?", hint:"Pick up to 2.", multi:true, maxSelect:2,
+      showIf:function(a){ return has(a,"purpose","story") || has(a,"category","fiction"); },
+      options:[
+        { label:"Mystery & Thriller", value:"mystery-thriller", w:{ "mystery-thriller":10 } },
+        { label:"Romance", value:"romance", w:{ romance:10 } },
+        { label:"Adventure", value:"adventure", w:{ adventure:10 } },
+        { label:"Fantasy", value:"fantasy", w:{ fantasy:10 } },
+        { label:"Historical Fiction", value:"historical-fiction", w:{ "historical-fiction":10 } },
+        { label:"Literary / Psychological Fiction", value:"literary-fiction", w:{ "literary-fiction":10 } },
+        { label:"Science Fiction", value:"science-fiction", w:{ "science-fiction":10 } }
+      ]},
+    { id:"fiction_tone", text:"What emotional tone are you in the mood for?",
+      showIf:function(a){ return has(a,"purpose","story") || has(a,"category","fiction"); },
+      options:[
+        { label:"Dark & intense", value:"dark-intense", w:{ "dark-intense":8 } },
+        { label:"Uplifting & hopeful", value:"uplifting", w:{ uplifting:8 } },
+        { label:"Thought-provoking", value:"thought-provoking", w:{ "thought-provoking":8 } },
+        { label:"Fun & light-hearted", value:"light-hearted", w:{ "light-hearted":8 } },
+        { label:"Bittersweet & emotional", value:"bittersweet", w:{ bittersweet:8 } }
+      ]},
+    { id:"fiction_pace", text:"Fast-paced page-turner, or a slower, character-driven story?",
+      showIf:function(a){ return has(a,"purpose","story") || has(a,"category","fiction"); },
+      options:[
+        { label:"Fast-paced page-turner", value:"fast-paced", w:{ "fast-paced":6 } },
+        { label:"Character-driven & reflective", value:"character-driven", w:{ "character-driven":6 } },
+        { label:"Either is fine", value:"either", w:{} }
+      ]},
+
+    // --- growth branch ---
+    { id:"growth_area", text:"What part of yourself are you hoping to grow?", hint:"Pick up to 2.", multi:true, maxSelect:2,
+      showIf:function(a){ return has(a,"purpose","growth"); },
+      options:[
+        { label:"Discipline & habits", value:"discipline", w:{ discipline:10, habits:6 } },
+        { label:"Confidence & mindset", value:"confidence", w:{ confidence:10 } },
+        { label:"Productivity & focus", value:"productivity", w:{ productivity:10, focus:6 } },
+        { label:"Money & finance", value:"money", w:{ money:10 } },
+        { label:"Relationships & communication", value:"relationships", w:{ relationships:10, communication:6 } },
+        { label:"Leadership & influence", value:"leadership", w:{ leadership:10 } }
+      ]},
+    { id:"growth_blocker", text:"What's mainly holding you back right now?",
+      showIf:function(a){ return has(a,"purpose","growth"); },
+      options:[
+        { label:"Procrastination", value:"procrastination", w:{ discipline:6, actionable:4 } },
+        { label:"Self-doubt", value:"self-doubt", w:{ confidence:6 } },
+        { label:"No clear system or plan", value:"lack-of-systems", w:{ actionable:8 } },
+        { label:"Lack of clarity on my goals", value:"lack-of-clarity", w:{ "big-picture":8 } }
+      ]},
+    { id:"growth_style", text:"Do you prefer step-by-step advice or big-picture thinking?",
+      showIf:function(a){ return has(a,"purpose","growth"); },
+      options:[
+        { label:"Step-by-step, actionable advice", value:"actionable", w:{ actionable:8 } },
+        { label:"Big ideas & mindset shifts", value:"big-picture", w:{ "big-picture":8 } },
+        { label:"A mix of both", value:"mix", w:{} }
+      ]},
+
+    // --- academic branch ---
+    { id:"academic_subject", text:"Which subject or field is this for?",
+      showIf:function(a){ return has(a,"purpose","academic") || has(a,"category","textbook"); },
+      options:[
+        { label:"Business & Economics", value:"business-economics", w:{ "business-economics":10 } },
+        { label:"Science & Technology", value:"science-tech", w:{ "science-tech":10 } },
+        { label:"History & Social Science", value:"history-social-science", w:{ "history-social-science":10 } },
+        { label:"Language & Literature", value:"language-literature", w:{ "language-literature":10 } },
+        { label:"General knowledge", value:"general-knowledge", w:{ "general-knowledge":10 } }
+      ]},
+    { id:"academic_format", text:"A structured textbook/reference, or a more readable overview?",
+      showIf:function(a){ return has(a,"purpose","academic") || has(a,"category","textbook"); },
+      options:[
+        { label:"Structured textbook / reference", value:"textbook-style", w:{ "textbook-style":8, textbook:6 } },
+        { label:"Readable overview / popular science", value:"popular-overview", w:{ "popular-overview":8 } }
+      ]},
+    { id:"academic_approach", text:"Practical application, or theory & concepts?",
+      showIf:function(a){ return has(a,"purpose","academic") || has(a,"category","textbook"); },
+      options:[
+        { label:"Practical / applied", value:"actionable", w:{ actionable:6 } },
+        { label:"Theory & concepts", value:"big-picture", w:{ "big-picture":6 } },
+        { label:"Both equally", value:"both", w:{} }
+      ]},
+
+    // --- philosophy branch ---
+    { id:"philosophy_focus", text:"What draws you to philosophy or spirituality?",
+      showIf:function(a){ return has(a,"purpose","philosophy"); },
+      options:[
+        { label:"Stoicism & resilience", value:"stoicism", w:{ stoicism:10 } },
+        { label:"Eastern philosophy & mindfulness", value:"eastern-mindfulness", w:{ "eastern-mindfulness":10 } },
+        { label:"Existential meaning", value:"existentialism", w:{ existentialism:10 } },
+        { label:"Religious / spiritual practice", value:"religious-spiritual", w:{ spirituality:10 } },
+        { label:"Ethics — how to live well", value:"ethics", w:{ ethics:10 } }
+      ]},
+    { id:"philosophy_format", text:"Classic primary texts, or modern practical guides?",
+      showIf:function(a){ return has(a,"purpose","philosophy"); },
+      options:[
+        { label:"Classic primary texts", value:"classic-text", w:{ "classic-text":8 } },
+        { label:"Modern practical guides", value:"practical-guide", w:{ "practical-guide":8 } },
+        { label:"Either is fine", value:"either", w:{} }
+      ]},
+
+    // --- explore branch (only 2 extra, keeps this path lighter) ---
+    { id:"explore_mood", text:"When you imagine your ideal reading session, what does it feel like?",
+      showIf:function(a){ return has(a,"purpose","explore"); },
+      options:[
+        { label:"Getting lost in a story", value:"story-mood", w:{ fiction:8 } },
+        { label:"Learning something useful", value:"learn-mood", w:{ nonfiction:8, actionable:4 } },
+        { label:"Feeling inspired to change", value:"inspire-mood", w:{ "self-development":8, discipline:4 } },
+        { label:"Sitting with big questions", value:"reflect-mood", w:{ philosophy:8 } }
+      ]},
+    { id:"explore_outcome", text:"What kind of feeling are you hoping this book gives you?",
+      showIf:function(a){ return has(a,"purpose","explore"); },
+      options:[
+        { label:"Entertainment or escape", value:"entertainment", w:{ fiction:6, "light-hearted":4 } },
+        { label:"A new skill or capability", value:"skill", w:{ nonfiction:6, actionable:4 } },
+        { label:"A shift in perspective", value:"perspective", w:{ philosophy:4, "big-picture":4 } },
+        { label:"Comfort or emotional connection", value:"comfort", w:{ comforting:6 } }
+      ]},
+
+    // --- universal tail (everyone) ---
+    { id:"difficulty", text:"How do you like your reading — easy and breezy, or dense and challenging?",
+      options:[
+        { label:"Easy & accessible", value:"diff-easy", w:{ "diff-easy":8 } },
+        { label:"Moderate — some challenge is fine", value:"diff-medium", w:{ "diff-medium":8 } },
+        { label:"Dense & challenging", value:"diff-hard", w:{ "diff-hard":8 } }
+      ]},
+    { id:"era", text:"Newer releases, or timeless classics?",
+      options:[
+        { label:"Modern (recent years)", value:"era-modern", w:{} },
+        { label:"Classic & timeless", value:"era-classic", w:{} },
+        { label:"Doesn't matter", value:"era-any", w:{} }
+      ]},
+    { id:"audience", text:"Should we include young-adult / teen-friendly picks?",
+      options:[
+        { label:"General adult reads only", value:"general", w:{} },
+        { label:"Sure, include YA / teen-friendly picks", value:"young-adult", w:{} }
+      ]},
+    { id:"emotional_pref", text:"Do you prefer books that challenge you emotionally, or ones that comfort and reassure?",
+      options:[
+        { label:"Challenge me / make me think hard", value:"challenging-emotion", w:{ "dark-intense":4, "thought-provoking":4 } },
+        { label:"Comfort & reassure me", value:"comforting", w:{ comforting:8, uplifting:4 } },
+        { label:"No strong preference", value:"neutral", w:{} }
+      ]},
+    { id:"reading_freq", text:"How would you describe yourself as a reader?",
+      options:[
+        { label:"I read constantly", value:"voracious-reader", w:{} },
+        { label:"I read sometimes", value:"casual-reader", w:{} },
+        { label:"I'm getting back into it", value:"returning-reader", w:{ "diff-easy":3 } }
+      ]},
+    { id:"language", text:"Any language preference for your books?",
+      options:[
+        { label:"English is perfect", value:"english-only", w:{} },
+        { label:"Open to translated editions too", value:"open-translated", w:{} }
+      ]},
+    { id:"result_pref", text:"How would you like your recommendations?",
+      options:[
+        { label:"Give me one book to start with", value:"one", w:{} },
+        { label:"Show me your Top 3", value:"top3", w:{} },
+        { label:"Give me more options", value:"more", w:{} }
+      ]}
+  ];
+
+  // ============================================================
+  // 3. QUIZ STATE + NAVIGATION (adaptive, one question per screen)
+  // ============================================================
+  var state = { answers:{}, history:[] };
+
+  function activeQuestions(){
+    return QUESTIONS.filter(function(q){ return !q.showIf || q.showIf(state.answers); });
+  }
+
+  var elIntro = document.getElementById("kgquiz-intro");
+  var elCard = document.getElementById("kgquiz-question-card");
+  var elResults = document.getElementById("kgquiz-results");
+  var elProgressLabel = document.getElementById("kgquiz-progress-label");
+  var elProgressFill = document.getElementById("kgquiz-progress-fill");
+  var elQText = document.getElementById("kgquiz-question-text");
+  var elQHint = document.getElementById("kgquiz-question-hint");
+  var elOptions = document.getElementById("kgquiz-options");
+  var elBackBtn = document.getElementById("kgquiz-back-btn");
+  var elNextBtn = document.getElementById("kgquiz-next-btn");
+  var elStartBtn = document.getElementById("kgquiz-start-btn");
+
+  function renderQuestion(){
+    var list = activeQuestions();
+    var idx = state.history.length;
+    var q = list[idx];
+    if (!q) { renderResults(); return; }
+
+    elProgressLabel.textContent = "Question " + (idx + 1) + " of " + list.length;
+    elProgressFill.style.width = Math.round(((idx) / list.length) * 100) + "%";
+    elQText.textContent = q.text;
+    elQHint.textContent = q.hint || (q.multi ? "Pick as many as apply." : "");
+    elBackBtn.disabled = idx === 0;
+
+    var current = state.answers[q.id];
+    var selectedSet = q.multi ? (current || []) : null;
+
+    elOptions.innerHTML = "";
+    q.options.forEach(function(opt){
+      var btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "kgquiz-option";
+      var isSelected = q.multi ? selectedSet.indexOf(opt.value) !== -1 : current === opt.value;
+      if (isSelected) btn.classList.add("kgquiz-selected");
+      btn.innerHTML = '<span class="kgquiz-option-check">' + (isSelected ? "✓" : "") + "</span><span>" + escHtml(opt.label) + "</span>";
+      btn.addEventListener("click", function(){ selectOption(q, opt); });
+      elOptions.appendChild(btn);
+    });
+
+    updateNextEnabled(q);
+  }
+
+  function updateNextEnabled(q){
+    var current = state.answers[q.id];
+    var answered = q.multi ? !!(current && current.length) : current != null;
+    elNextBtn.disabled = !answered;
+  }
+
+  function selectOption(q, opt){
+    if (q.multi) {
+      var arr = state.answers[q.id] ? state.answers[q.id].slice() : [];
+      var i = arr.indexOf(opt.value);
+      if (i !== -1) {
+        arr.splice(i, 1);
+      } else {
+        if (q.maxSelect && arr.length >= q.maxSelect) arr.shift();
+        arr.push(opt.value);
+      }
+      state.answers[q.id] = arr;
+    } else {
+      state.answers[q.id] = opt.value;
+    }
+    renderQuestion();
+  }
+
+  function goNext(){
+    var list = activeQuestions();
+    var idx = state.history.length;
+    var q = list[idx];
+    state.history.push(q.id);
+    var newList = activeQuestions();
+    if (state.history.length >= newList.length) {
+      renderResults();
+    } else {
+      renderQuestion();
+    }
+  }
+
+  function goBack(){
+    if (!state.history.length) return;
+    state.history.pop();
+    renderQuestion();
+  }
+
+  elStartBtn.addEventListener("click", function(){
+    elIntro.classList.add("kgquiz-hidden");
+    elCard.classList.remove("kgquiz-hidden");
+    renderQuestion();
+  });
+  elNextBtn.addEventListener("click", goNext);
+  elBackBtn.addEventListener("click", goBack);
+
+  // ============================================================
+  // 4. SCORING ENGINE (deterministic, explainable)
+  // ============================================================
+  function buildProfile(){
+    var profile = {};
+    function add(key, val){ profile[key] = (profile[key] || 0) + val; }
+    activeQuestions().forEach(function(q){
+      var ans = state.answers[q.id];
+      if (ans == null) return;
+      var chosen = q.multi ? ans : [ans];
+      chosen.forEach(function(val){
+        var opt = q.options.filter(function(o){ return o.value === val; })[0];
+        if (!opt || !opt.w) return;
+        Object.keys(opt.w).forEach(function(k){ add(k, opt.w[k]); });
+      });
+    });
+    return profile;
+  }
+
+  function bookMatchableKeys(book){
+    return [book.category, book.genre ? book.genre.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/(^-|-$)/g,"") : null]
+      .concat(book.tags || [])
+      .filter(Boolean);
+  }
+
+  function scoreBook(book, profile, answers){
+    var keys = bookMatchableKeys(book);
+    var score = 0;
+    var matchedKeys = [];
+    keys.forEach(function(k){
+      if (profile[k]) { score += profile[k]; matchedKeys.push(k); }
+    });
+    // category exact-match bonus (fiction/nonfiction/textbook)
+    if (answers.category && answers.category !== "any" && answers.category === book.category) score += 6;
+    // difficulty exact-match bonus
+    var diffMap = { "diff-easy":"beginner", "diff-medium":"intermediate", "diff-hard":"advanced" };
+    if (answers.difficulty && diffMap[answers.difficulty] === book.difficulty) score += 5;
+    // era bonus, computed from year rather than a stored tag
+    if (answers.era === "era-modern" && book.year >= 2010) score += 5;
+    if (answers.era === "era-classic" && book.year <= 1980) score += 5;
+    // audience bonus
+    if (answers.audience === "young-adult" && book.audience === "young-adult") score += 6;
+    if ((!answers.audience || answers.audience === "general") && book.audience === "young-adult") score -= 4;
+    return { book:book, score:score, matchedKeys:matchedKeys };
+  }
+
+  function pickTopN(scored, n){
+    var pool = scored.slice().sort(function(a,b){ return b.score - a.score; });
+    var picks = [];
+    var usedGenres = {};
+    while (picks.length < n && pool.length) {
+      var idx = -1;
+      for (var i = 0; i < pool.length; i++) {
+        if (!usedGenres[pool[i].book.genre]) { idx = i; break; }
+      }
+      if (idx === -1) idx = 0;
+      var chosen = pool.splice(idx, 1)[0];
+      picks.push(chosen);
+      usedGenres[chosen.book.genre] = true;
+    }
+    return picks;
+  }
+
+  // ============================================================
+  // 4b. EXTERNAL DISCOVERY — Google Books (primary) → Open Library
+  // (fallback). Broadens recommendations beyond the local BOOKS list
+  // above. TextbookX is NOT used here: its robots.txt explicitly
+  // disallows every AI crawler (ClaudeBot included) site-wide, and its
+  // general access policy only grants "search"/"reference" use while
+  // denying "ai-train" -- neither covers scraping its catalog to build a
+  // recommendation database. (Its EXISTING per-ISBN price-check, run
+  // server-side by the Apps Script backend for a book already in the
+  // cart, is a separate, already-approved feature and is untouched.)
+  //
+  // Same natural-language vocabulary as WHY_PHRASES below, but as
+  // multi-word search/matching phrases rather than sentences -- used
+  // both to build the Google Books/Open Library query AND to score an
+  // external result's free-text categories/description against the
+  // quiz profile, so local and external candidates rank on one scale.
+  var TAG_KEYWORDS = {
+    fiction:["fiction","novel"], nonfiction:["nonfiction"], textbook:["textbook","course"],
+    "self-development":["self help","self-improvement","personal development"],
+    discipline:["discipline","self-discipline","willpower"], habits:["habits","habit"],
+    productivity:["productivity","efficiency"], focus:["focus","concentration","deep work"],
+    confidence:["confidence","self-esteem"], money:["money","personal finance","wealth"],
+    relationships:["relationships","love","marriage"], communication:["communication"],
+    leadership:["leadership","management"], career:["career","business"],
+    actionable:["practical","how to","guide"], "big-picture":["concepts","big picture","philosophy"],
+    "diff-easy":["beginner","introduction"], "diff-medium":["intermediate"], "diff-hard":["advanced","comprehensive"],
+    "mystery-thriller":["mystery","thriller","crime"], romance:["romance","love story"],
+    adventure:["adventure"], fantasy:["fantasy"], "historical-fiction":["historical fiction"],
+    "literary-fiction":["literary fiction"], "science-fiction":["science fiction","sci-fi"],
+    "dark-intense":["dark","intense","psychological"], uplifting:["uplifting","inspiring","hopeful"],
+    "thought-provoking":["thought provoking","philosophical"], "light-hearted":["humor","funny","light"],
+    bittersweet:["emotional","bittersweet"], "fast-paced":["fast paced","page turner","suspense"],
+    "character-driven":["character driven","literary"],
+    stoicism:["stoicism","stoic"], "eastern-mindfulness":["mindfulness","meditation","buddhism"],
+    existentialism:["existentialism","existential"], ethics:["ethics","morality"],
+    spirituality:["spirituality","spiritual"], philosophy:["philosophy"],
+    "business-economics":["business","economics"], "science-tech":["science","technology"],
+    "history-social-science":["history","social science"], "language-literature":["language","literature","writing"],
+    "general-knowledge":["general knowledge","popular science"],
+    psychology:["psychology"], "history-topic":["history"], "science-topic":["science"],
+    comforting:["comfort","healing"], business:["business"], health:["health","wellness"],
+    "textbook-style":["textbook","reference"], "popular-overview":["introduction","beginner's guide"],
+    "classic-text":["classic"], "practical-guide":["practical guide"]
+  };
+
+  function withTimeout(promise, ms){
+    return Promise.race([
+      promise,
+      new Promise(function(_, reject){ setTimeout(function(){ reject(new Error("timeout")); }, ms); })
+    ]);
+  }
+
+  // Turns the accumulated profile weights into one short search query --
+  // just the top few most-influential concepts plus the chosen shelf, so
+  // a single request stays focused instead of a giant keyword dump.
+  function buildSearchQuery(profile, answers){
+    // A weak signal padded in just to fill 5 slots can drag in a
+    // thematically orthogonal keyword (e.g. a throwaway "relax and
+    // escape" pick contributing a low-weight "light-hearted" alongside a
+    // much stronger, deliberate "dark & intense" pick) and produce a
+    // genuinely self-contradictory query ("dark ... humor"). Require a
+    // real minimum weight before a signal earns a place in the query.
+    var topKeys = Object.keys(profile)
+      .filter(function(k){ return profile[k] >= 6; })
+      .sort(function(a,b){ return profile[b]-profile[a]; })
+      .slice(0,5);
+    var terms = [];
+    topKeys.forEach(function(k){
+      var kws = TAG_KEYWORDS[k];
+      if (kws && kws[0] && terms.indexOf(kws[0]) === -1) terms.push(kws[0]);
+    });
+    if (!terms.length) terms.push("popular books");
+    var shelfWord = answers.category === "fiction" ? "fiction" : (answers.category === "textbook" ? "textbook" : "nonfiction");
+    if (terms.indexOf(shelfWord) === -1) terms.push(shelfWord);
+    return terms.join(" ");
+  }
+
+  // Real trade/academic publishers, checked as case-insensitive substrings
+  // of volumeInfo.publisher. Google Books' plain-keyword search surfaces a
+  // large share of anonymous self-published/POD titles for popular topics
+  // (confirmed while building this: a "self-discipline productivity"
+  // search returned zero recognizable publishers in its top 20) -- this
+  // doesn't try to exclude self-published books outright (many are
+  // legitimate), it just gives a same-scale scoring nudge toward books
+  // from a known publisher when one is present, the same way a local
+  // bookstore's staff picks lean toward books they recognize.
+  var KNOWN_PUBLISHERS = [
+    "penguin","random house","harpercollins","harper collins","simon & schuster","simon and schuster",
+    "macmillan","hachette","wiley","pearson","mcgraw","oxford university press","cambridge university press",
+    "bloomsbury","elsevier","springer","palgrave","routledge","vintage","knopf","scribner","little, brown",
+    "little brown","crown","doubleday","norton","houghton mifflin","bantam","ballantine","del rey","tor books",
+    "orbit","picador","faber","basic books","portfolio","grand central","atria","riverhead","viking","dutton",
+    "flatiron","celadon","st. martin's","jones & bartlett","red globe press","cengage","sage publications"
+  ];
+  function isKnownPublisher(publisher){
+    if (!publisher) return false;
+    var p = publisher.toLowerCase();
+    return KNOWN_PUBLISHERS.some(function(name){ return p.indexOf(name) !== -1; });
+  }
+
+  function guessCategory(text){
+    var t = text.toLowerCase();
+    if (/textbook|study aids|study guide|course|curriculum/.test(t)) return "textbook";
+    if (/fiction|novel|literary criticism/.test(t) && !/nonfiction/.test(t)) return "fiction";
+    return "nonfiction";
+  }
+  function guessAudience(text){
+    return /juvenile|young adult|children/.test(text.toLowerCase()) ? "young-adult" : "general";
+  }
+  function guessDifficulty(text){
+    var t = text.toLowerCase();
+    if (/advanced|graduate|comprehensive|in-depth|expert/.test(t)) return "advanced";
+    if (/beginner|introduction|introductory|for beginners|basics|primer/.test(t)) return "beginner";
+    return "intermediate";
+  }
+
+  function bookFromGoogleItem(item){
+    var vi = item.volumeInfo || {};
+    // Skip magazines/journals outright -- printType distinguishes these
+    // cleanly when present.
+    if (vi.printType && vi.printType !== "BOOK") return null;
+    var ids = vi.industryIdentifiers || [];
+    var isbn13 = ids.filter(function(id){ return id.type === "ISBN_13"; })[0];
+    var isbn10 = ids.filter(function(id){ return id.type === "ISBN_10"; })[0];
+    var isbn = (isbn13 && isbn13.identifier) || (isbn10 && isbn10.identifier) || "";
+    if (!isbn || !vi.title) return null;
+    // These flag likely junk WITHOUT dropping the candidate outright --
+    // scoreExternalBook applies a heavy penalty instead. Hard-excluding
+    // them was tried first and caused a real problem: for some queries,
+    // this kind of junk fills most of Google's top-20 relevance results,
+    // so filtering it out could shrink the pool below 3 usable candidates
+    // and trigger the local-library fallback -- exactly what recommending
+    // from external sources only is supposed to avoid. A score penalty
+    // keeps them in the pool (so the fallback stays rare) while still
+    // keeping them out of an actual Top 3 whenever anything better exists.
+    var fullTitle = vi.title + (vi.subtitle ? ": " + vi.subtitle : "");
+    var lowQuality =
+      // Unusually long title+subtitle: a reliable signal of a keyword-
+      // stuffed self-published listing (e.g. "Self-Discipline & Time
+      // Management: Develop Unbreakable Habits, Boost Productivity...").
+      fullTitle.length > 90 ||
+      // A tiny page count (when Google actually reports one) usually
+      // means a pamphlet/sample rather than a real book.
+      (vi.pageCount && vi.pageCount > 0 && vi.pageCount < 40) ||
+      // Annual industry directories for AUTHORS submitting manuscripts
+      // (not books for readers) rank surprisingly high on genre keyword
+      // searches -- their categories are inconsistent (seen tagged
+      // Education, Business & Economics, Computers...) but the title
+      // pattern is reliable.
+      /writer'?s (market|digest)|literary market place/i.test(vi.title || "");
+    var categories = (vi.categories || []).join(" ");
+    var textBlob = ((vi.title||"") + " " + (vi.subtitle||"") + " " + categories + " " + (vi.description||"")).toLowerCase();
+    return {
+      title: vi.title, author: (vi.authors||[])[0] || "", isbn: isbn,
+      year: parseInt((vi.publishedDate||"").slice(0,4),10) || null,
+      category: guessCategory(textBlob), genre: (vi.categories||[])[0] || "General",
+      difficulty: guessDifficulty(textBlob), audience: guessAudience(textBlob),
+      cover: (vi.imageLinks && (vi.imageLinks.thumbnail || vi.imageLinks.smallThumbnail) || "").replace(/^http:/,"https:"),
+      publisher: vi.publisher || "", description: vi.description || "",
+      source: "Google Books", _textBlob: textBlob, _lowQuality: lowQuality
+    };
+  }
+
+  function bookFromOpenLibraryDoc(doc){
+    var isbns = doc.isbn || [];
+    var isbn13 = isbns.filter(function(i){ return i.length === 13; })[0];
+    var isbn = isbn13 || isbns[0] || "";
+    if (!isbn || !doc.title) return null;
+    var subjects = (doc.subject || []).slice(0,8).join(" ");
+    var textBlob = ((doc.title||"") + " " + subjects).toLowerCase();
+    return {
+      title: doc.title, author: (doc.author_name||[])[0] || "", isbn: isbn,
+      year: doc.first_publish_year || null,
+      category: guessCategory(textBlob), genre: (doc.subject||[])[0] || "General",
+      difficulty: guessDifficulty(textBlob), audience: guessAudience(textBlob),
+      cover: doc.cover_i ? ("https://covers.openlibrary.org/b/id/" + doc.cover_i + "-M.jpg") : "",
+      publisher: "", description: "",
+      source: "Open Library", _textBlob: textBlob
+    };
+  }
+
+  function searchOpenLibraryBooks(query, limit){
+    var url = "https://openlibrary.org/search.json?q=" + encodeURIComponent(query) +
+      "&limit=" + (limit||20) + "&fields=title,author_name,isbn,cover_i,first_publish_year,subject";
+    return withTimeout(fetch(url), 7000).then(function(res){
+      if (!res.ok) return [];
+      return res.json();
+    }).then(function(data){
+      return (data.docs || []).map(bookFromOpenLibraryDoc).filter(Boolean);
+    }).catch(function(){ return []; });
+  }
+
+  function scoreExternalBook(book, profile, answers){
+    var score = 0;
+    var matchedKeys = [];
+    // Local books let their own category/genre act as full profile-weighted
+    // matches (see bookMatchableKeys) -- an external book must get the same
+    // treatment, or it's structurally disadvantaged on exactly the highest-
+    // weighted question (the shelf picker, worth up to 14+ points) just
+    // because its metadata doesn't literally contain the word "textbook".
+    var genreSlug = book.genre ? book.genre.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/(^-|-$)/g,"") : null;
+    [book.category, genreSlug].filter(Boolean).forEach(function(k){
+      if (profile[k] && matchedKeys.indexOf(k) === -1) { score += profile[k]; matchedKeys.push(k); }
+    });
+    Object.keys(profile).forEach(function(k){
+      if (matchedKeys.indexOf(k) !== -1) return;
+      var kws = TAG_KEYWORDS[k];
+      if (!kws) return;
+      var hit = kws.some(function(kw){ return book._textBlob.indexOf(kw) !== -1; });
+      if (hit) { score += profile[k]; matchedKeys.push(k); }
+    });
+    if (answers.category && answers.category !== "any" && answers.category === book.category) score += 6;
+    var diffMap = { "diff-easy":"beginner", "diff-medium":"intermediate", "diff-hard":"advanced" };
+    if (answers.difficulty && diffMap[answers.difficulty] === book.difficulty) score += 5;
+    if (answers.era === "era-modern" && book.year && book.year >= 2010) score += 5;
+    if (answers.era === "era-classic" && book.year && book.year <= 1980) score += 5;
+    if (answers.audience === "young-adult" && book.audience === "young-adult") score += 6;
+    if ((!answers.audience || answers.audience === "general") && book.audience === "young-adult") score -= 4;
+    if (isKnownPublisher(book.publisher)) score += 8;
+    if (book._lowQuality) score -= 30;
+    return { book:book, score:score, matchedKeys:matchedKeys };
+  }
+
+  // A book already in the local library shouldn't also show up a second
+  // time as an "external" result -- de-dupe by ISBN (falling back to
+  // title+author) and keep whichever scored entry is higher.
+  function dedupeScored(scoredList){
+    var byKey = {};
+    scoredList.forEach(function(entry){
+      var key = entry.book.isbn || ((entry.book.title + "|" + entry.book.author).toLowerCase());
+      if (!byKey[key] || byKey[key].score < entry.score) byKey[key] = entry;
+    });
+    return Object.keys(byKey).map(function(k){ return byKey[k]; });
+  }
+
+  // In-memory cache so retaking the quiz (or re-rendering results) with an
+  // identical profile doesn't refire network requests. Cleared naturally
+  // on page reload -- no need for it to survive longer than that.
+  var DISCOVERY_CACHE = {};
+
+  // Google Books first; Open Library only if Google didn't return enough
+  // usable (has-an-ISBN) candidates to work with. At most 2 external
+  // requests total per quiz completion. Any failure (network error,
+  // timeout, exhausted quota, empty result) just falls through to the
+  // next source -- never throws, so the quiz always has the local
+  // database to fall back on even if both sources are unavailable.
+  async function discoverExternalBooks(profile, answers){
+    var query = buildSearchQuery(profile, answers);
+    if (DISCOVERY_CACHE[query]) return DISCOVERY_CACHE[query];
+
+    var results = [];
+    var rawGoogleCount = 0;
+    if (window.kgQuizIntegration && typeof window.kgQuizIntegration.searchGoogleBooks === "function") {
+      try {
+        var items = await withTimeout(window.kgQuizIntegration.searchGoogleBooks(query, 40), 8000);
+        rawGoogleCount = (items || []).length;
+        results = (items || []).map(bookFromGoogleItem).filter(Boolean);
+      } catch (e) { console.info("[Find Your Next Book] Google Books discovery failed:", e); }
+    }
+
+    var afterGoogleCount = results.length;
+    // Trigger on genuinely-good count, not raw count -- some queries
+    // return plenty of results that are almost entirely low-quality (e.g.
+    // annual "Writer's Market" directories dominating a genre search), and
+    // those still need Open Library's different catalog to have real
+    // alternatives to rank ahead of the junk.
+    var goodCount = results.filter(function(b){ return !b._lowQuality; }).length;
+    var rawOlCount = 0;
+    if (goodCount < 6) {
+      try {
+        var olResults = await searchOpenLibraryBooks(query, 40);
+        rawOlCount = olResults.length;
+        results = results.concat(olResults);
+      } catch (e) { console.info("[Find Your Next Book] Open Library discovery failed:", e); }
+    }
+
+    var scored = dedupeScored(results.map(function(b){ return scoreExternalBook(b, profile, answers); }));
+    console.info("[Find Your Next Book] query=" + JSON.stringify(query) +
+      " googleRaw=" + rawGoogleCount + " googleAfterFilter=" + afterGoogleCount +
+      " openLibraryRaw=" + rawOlCount + " finalUsable=" + scored.length);
+    DISCOVERY_CACHE[query] = scored;
+    return scored;
+  }
+
+  // External books don't come with hand-written "goals" bullets like the
+  // local library does -- generate them from the same matched profile
+  // signals used for the "why we recommend it" text, so they stay
+  // explainable rather than invented.
+  function autoGoals(matchedKeys, profile){
+    var top = matchedKeys.slice().sort(function(a,b){ return (profile[b]||0) - (profile[a]||0); });
+    var out = [];
+    for (var i = 0; i < top.length && out.length < 3; i++) {
+      var phrase = WHY_PHRASES[top[i]];
+      if (phrase && out.indexOf(phrase) === -1) out.push(phrase.charAt(0).toUpperCase() + phrase.slice(1));
+    }
+    return out;
+  }
+
+  var WHY_PHRASES = {
+    fiction:"a great story to get lost in", nonfiction:"real-world, practical ideas", textbook:"structured, subject-focused learning",
+    discipline:"build consistency and self-discipline", habits:"build better daily habits", productivity:"get more done with less friction",
+    focus:"work with fewer distractions", confidence:"grow your confidence", money:"think more clearly about money",
+    relationships:"strengthen your relationships", communication:"communicate more effectively", leadership:"lead and influence others",
+    career:"grow in your career", actionable:"actionable, step-by-step advice", "big-picture":"big-picture thinking",
+    "mystery-thriller":"a gripping mystery or thriller", romance:"a heartfelt romance", adventure:"an exciting adventure",
+    fantasy:"an immersive fantasy world", "historical-fiction":"a rich historical story", "literary-fiction":"a thought-provoking literary read",
+    "science-fiction":"an imaginative science-fiction story", "dark-intense":"a dark, intense tone", uplifting:"an uplifting, hopeful tone",
+    "thought-provoking":"a thought-provoking read", "light-hearted":"a fun, light-hearted read", bittersweet:"a bittersweet, emotional story",
+    "fast-paced":"a fast-paced page-turner", "character-driven":"a slower, character-driven story",
+    stoicism:"stoic resilience", "eastern-mindfulness":"mindfulness and present-moment awareness", existentialism:"questions of meaning and existence",
+    ethics:"how to live a good life", spirituality:"spiritual reflection", philosophy:"philosophical insight",
+    "business-economics":"business and economics knowledge", "science-tech":"science and technology topics",
+    "history-social-science":"history and society", "language-literature":"language and writing craft", "general-knowledge":"broad general knowledge",
+    psychology:"how the mind works", "history-topic":"history", "science-topic":"science", comforting:"comfort and reassurance",
+    business:"business strategy and ideas", health:"health and wellbeing", "textbook-style":"a structured, reference-style format",
+    "popular-overview":"an accessible, readable overview", "classic-text":"a classic primary text", "practical-guide":"a modern, practical guide"
+  };
+
+  // "fiction"/"nonfiction"/"textbook" are almost always the single biggest
+  // score contributor (the shelf-selector question alone is worth 14), but
+  // since every book in a Top 3 already shares that shelf, leading with it
+  // makes every card's explanation read the same. Prefer the more specific
+  // signals (genre, goal, tone, subject) and only fall back to the shelf
+  // category if nothing more specific matched.
+  var GENERIC_WHY_KEYS = { fiction:1, nonfiction:1, textbook:1 };
+
+  function whyText(matchedKeys, profile){
+    var specific = matchedKeys.filter(function(k){ return !GENERIC_WHY_KEYS[k]; });
+    var top = specific.slice().sort(function(a,b){ return (profile[b]||0) - (profile[a]||0); });
+    var phrases = [];
+    for (var i = 0; i < top.length && phrases.length < 2; i++) {
+      if (WHY_PHRASES[top[i]] && phrases.indexOf(WHY_PHRASES[top[i]]) === -1) phrases.push(WHY_PHRASES[top[i]]);
+    }
+    if (phrases.length < 2) {
+      var fallback = matchedKeys.slice().sort(function(a,b){ return (profile[b]||0) - (profile[a]||0); });
+      for (var j = 0; j < fallback.length && phrases.length < 2; j++) {
+        if (WHY_PHRASES[fallback[j]] && phrases.indexOf(WHY_PHRASES[fallback[j]]) === -1) phrases.push(WHY_PHRASES[fallback[j]]);
+      }
+    }
+    if (!phrases.length) return "Your answers suggest this book is a solid overall match for what you're looking for.";
+    return "Your answers suggest you're looking for " + phrases.join(" and ") + ".";
+  }
+
+  // ============================================================
+  // 5. RESULTS UI
+  // ============================================================
+  var lastTop3 = [];
+  var displayMode = "top3";
+
+  async function renderResults(){
+    elCard.classList.add("kgquiz-hidden");
+    elResults.classList.remove("kgquiz-hidden");
+    elResults.innerHTML = '<div class="kgquiz-loading">Finding your best matches…</div>';
+
+    var profile = buildProfile();
+
+    // Recommendations come from external discovery only -- the local
+    // library is NOT blended into normal ranking. It's kept strictly as an
+    // emergency fallback: only consulted if external discovery couldn't
+    // return enough (fewer than 3) usable candidates to form a real Top 3,
+    // e.g. both Google Books and Open Library are down/unreachable.
+    var externalScored = [];
+    try { externalScored = await discoverExternalBooks(profile, state.answers); }
+    catch (e) { /* handled per-source inside discoverExternalBooks already */ }
+
+    var pool = externalScored;
+    if (pool.length < 3) {
+      var localScored = BOOKS.map(function(b){ return scoreBook(b, profile, state.answers); });
+      pool = dedupeScored(pool.concat(localScored));
+    }
+
+    var top5 = pickTopN(pool, 5);
+    lastTop3 = top5.slice(0, 3);
+    displayMode = state.answers.result_pref || "top3";
+
+    renderResultsBody(top5);
+  }
+
+  function bookCardHtml(entry, rank, profile){
+    var b = entry.book;
+    // External sources hand us a real cover URL directly; local library
+    // entries only carry an ISBN, so derive the Open Library cover from
+    // that instead. Either way, a broken/missing image falls back to the
+    // branded placeholder rather than showing nothing.
+    var primaryCover = b.cover || coverUrl(b.isbn);
+    var fallback = brandedFallbackCover(b.title);
+    var why = whyText(entry.matchedKeys, profile);
+    var goals = (b.goals && b.goals.length) ? b.goals : autoGoals(entry.matchedKeys, profile);
+    var sourceLabel = b.source || "Kitab Guru Library";
+    return '<div class="kgquiz-book-card">' +
+      '<div class="kgquiz-book-rank">#' + rank + ' Match</div>' +
+      '<div class="kgquiz-book-cover-wrap"><img alt="' + escHtml(b.title) + ' cover" onerror="this.onerror=null;this.src=\'' + fallback + '\';" src="' + primaryCover + '"/></div>' +
+      '<div class="kgquiz-book-title">' + escHtml(b.title) + "</div>" +
+      '<div class="kgquiz-book-author">' + escHtml(b.author) + "</div>" +
+      '<div class="kgquiz-book-source">' + escHtml(sourceLabel) + "</div>" +
+      '<div class="kgquiz-book-why"><b>Why we recommend it:</b><br/>' + escHtml(why) + "</div>" +
+      '<div class="kgquiz-book-helps-label">What this book can help with</div>' +
+      '<ul class="kgquiz-book-helps">' + goals.slice(0, 3).map(function(g){ return "<li>" + escHtml(g) + "</li>"; }).join("") + "</ul>" +
+      "</div>";
+  }
+
+  function renderResultsBody(top5){
+    var profile = buildProfile();
+    var shown = displayMode === "one" ? top5.slice(0, 1) : (displayMode === "more" ? top5 : top5.slice(0, 3));
+    var gridClass = "kgquiz-results-grid" + (shown.length === 1 ? " kgquiz-grid-1" : "");
+
+    elResults.innerHTML =
+      '<div class="kgquiz-results-head">' +
+        "<h3>Your Reading Match</h3>" +
+        "<p>Based on your answers, we've found the books that best match what you're looking for.</p>" +
+      "</div>" +
+      '<div class="kgquiz-pref-row">' +
+        '<button class="kgquiz-pref-btn' + (displayMode === "one" ? " kgquiz-selected" : "") + '" data-mode="one" type="button">One book to start</button>' +
+        '<button class="kgquiz-pref-btn' + (displayMode === "top3" ? " kgquiz-selected" : "") + '" data-mode="top3" type="button">Top 3</button>' +
+        '<button class="kgquiz-pref-btn' + (displayMode === "more" ? " kgquiz-selected" : "") + '" data-mode="more" type="button">More options</button>' +
+      "</div>" +
+      '<div class="' + gridClass + '">' + shown.map(function(entry, i){ return bookCardHtml(entry, i + 1, profile); }).join("") + "</div>" +
+      '<div class="kgquiz-cta-box">' +
+        "<h4>Check Price &amp; Get These Books</h4>" +
+        "<p>Check the current market price and your Kitab Guru price — your top 3 matches go straight into the price calculator below.</p>" +
+        '<button class="btn-gold" id="kgquiz-checkout-btn" type="button">Check Price &amp; Get These Books →</button>' +
+      "</div>" +
+      '<button class="kgquiz-restart-btn" id="kgquiz-restart-btn" type="button">Retake the quiz</button>';
+
+    elResults.querySelectorAll(".kgquiz-pref-btn").forEach(function(btn){
+      btn.addEventListener("click", function(){
+        displayMode = btn.dataset.mode;
+        renderResultsBody(top5);
+      });
+    });
+    document.getElementById("kgquiz-checkout-btn").addEventListener("click", handleCheckout);
+    document.getElementById("kgquiz-restart-btn").addEventListener("click", restartQuiz);
+  }
+
+  function handleCheckout(){
+    var calc = document.getElementById("price-calculator");
+    if (calc) calc.scrollIntoView({ behavior:"smooth", block:"start" });
+
+    var books = lastTop3.map(function(entry){
+      return { title: entry.book.title, author: entry.book.author, isbn: entry.book.isbn, cover: coverUrl(entry.book.isbn) };
+    });
+
+    if (window.kgQuizIntegration && typeof window.kgQuizIntegration.addRecommendedBooksToCart === "function") {
+      window.kgQuizIntegration.addRecommendedBooksToCart(books);
+    }
+  }
+
+  function restartQuiz(){
+    state = { answers:{}, history:[] };
+    elResults.classList.add("kgquiz-hidden");
+    elResults.innerHTML = "";
+    elIntro.classList.remove("kgquiz-hidden");
+    elCard.classList.add("kgquiz-hidden");
+    window.scrollTo({ top: root.getBoundingClientRect().top + window.pageYOffset - 90, behavior:"smooth" });
   }
 })();
 </script>
