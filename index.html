@@ -4634,7 +4634,13 @@ function toggleFaq(el){
     var isbn13 = ids.filter(function(id){ return id.type === "ISBN_13"; })[0];
     var isbn10 = ids.filter(function(id){ return id.type === "ISBN_10"; })[0];
     var isbn = (isbn13 && isbn13.identifier) || (isbn10 && isbn10.identifier) || "";
-    if (!isbn || !vi.title) return null;
+    // A book with no cover image at all shouldn't be recommended in the
+    // first place -- the branded placeholder exists as a safety net for a
+    // cover URL that 404s at load time (network flakiness), not as a
+    // routine substitute for books Google/Open Library simply never had
+    // cover art for.
+    var hasCover = !!(vi.imageLinks && (vi.imageLinks.thumbnail || vi.imageLinks.smallThumbnail));
+    if (!isbn || !vi.title || !hasCover) return null;
     // These flag likely junk WITHOUT dropping the candidate outright --
     // scoreExternalBook applies a heavy penalty instead. Hard-excluding
     // them was tried first and caused a real problem: for some queries,
@@ -4701,7 +4707,10 @@ function toggleFaq(el){
     var isbns = doc.isbn || [];
     var isbn13 = isbns.filter(function(i){ return i.length === 13; })[0];
     var isbn = isbn13 || isbns[0] || "";
-    if (!isbn || !doc.title) return null;
+    // Same reasoning as bookFromGoogleItem: only recommend books we
+    // already know have real cover art, rather than routinely leaning on
+    // the branded placeholder for books that simply have none on file.
+    if (!isbn || !doc.title || !doc.cover_i) return null;
     var subjects = (doc.subject || []).slice(0,8).join(" ");
     var textBlob = ((doc.title||"") + " " + subjects).toLowerCase();
     return {
@@ -5034,8 +5043,14 @@ function toggleFaq(el){
     var calc = document.getElementById("price-calculator");
     if (calc) calc.scrollIntoView({ behavior:"smooth", block:"start" });
 
+    // Reuse the exact cover URL already shown (and known-good) on the
+    // results card -- recomputing a fresh Open-Library-by-ISBN guess here
+    // instead (as this used to do) ignored that verified source-specific
+    // cover, and could 404 even when the results card's own image loaded
+    // fine. Only the local-library emergency fallback has no .cover of its
+    // own, so it's still the right default for that one case.
     var books = lastTop3.map(function(entry){
-      return { title: entry.book.title, author: entry.book.author, isbn: entry.book.isbn, cover: coverUrl(entry.book.isbn) };
+      return { title: entry.book.title, author: entry.book.author, isbn: entry.book.isbn, cover: entry.book.cover || coverUrl(entry.book.isbn) };
     });
 
     if (window.kgQuizIntegration && typeof window.kgQuizIntegration.addRecommendedBooksToCart === "function") {
