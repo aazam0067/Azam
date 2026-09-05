@@ -4504,8 +4504,14 @@ function toggleFaq(el){
   // both to build the Google Books/Open Library query AND to score an
   // external result's free-text categories/description against the
   // quiz profile, so local and external candidates rank on one scale.
+  // Visitor requirement: recommendations should be recent, nothing more
+  // than ~10 years old (unless the visitor's own "era" answer explicitly
+  // asked for classics). Computed once so discoverExternalBooks' hard
+  // filter and scoreExternalBook's soft fallback penalty agree exactly.
+  var RECENCY_CUTOFF_YEAR = new Date().getFullYear() - 10;
+
   var TAG_KEYWORDS = {
-    fiction:["fiction","novel"], nonfiction:["nonfiction"], textbook:["textbook","course"],
+    fiction:["novel","fiction"], nonfiction:["nonfiction"], textbook:["textbook","course"],
     "self-development":["self help","self-improvement","personal development"],
     discipline:["discipline","self-discipline","willpower"], habits:["habits","habit"],
     productivity:["productivity","efficiency"], focus:["focus","concentration","deep work"],
@@ -4540,29 +4546,44 @@ function toggleFaq(el){
     ]);
   }
 
-  // Turns the accumulated profile weights into one short search query --
-  // just the top few most-influential concepts plus the chosen shelf, so
-  // a single request stays focused instead of a giant keyword dump.
-  function buildSearchQuery(profile, answers){
-    // A weak signal padded in just to fill 5 slots can drag in a
-    // thematically orthogonal keyword (e.g. a throwaway "relax and
-    // escape" pick contributing a low-weight "light-hearted" alongside a
-    // much stronger, deliberate "dark & intense" pick) and produce a
-    // genuinely self-contradictory query ("dark ... humor"). Require a
-    // real minimum weight before a signal earns a place in the query.
+  // A weak signal padded in just to fill N slots can drag in a
+  // thematically orthogonal keyword (e.g. a throwaway "relax and escape"
+  // pick contributing a low-weight "light-hearted" alongside a much
+  // stronger, deliberate "dark & intense" pick) and produce a genuinely
+  // self-contradictory query ("dark ... humor"). Require a real minimum
+  // weight before a signal earns a place in the query.
+  function topProfileTerms(profile, maxTerms){
     var topKeys = Object.keys(profile)
       .filter(function(k){ return profile[k] >= 6; })
       .sort(function(a,b){ return profile[b]-profile[a]; })
-      .slice(0,5);
+      .slice(0, maxTerms);
     var terms = [];
     topKeys.forEach(function(k){
       var kws = TAG_KEYWORDS[k];
       if (kws && kws[0] && terms.indexOf(kws[0]) === -1) terms.push(kws[0]);
     });
+    return terms;
+  }
+
+  // Turns the accumulated profile weights into one short search query --
+  // just the top few most-influential concepts plus the chosen shelf, so
+  // a single request stays focused instead of a giant keyword dump.
+  function buildSearchQuery(profile, answers){
+    var terms = topProfileTerms(profile, 5);
     if (!terms.length) terms.push("popular books");
     var shelfWord = answers.category === "fiction" ? "fiction" : (answers.category === "textbook" ? "textbook" : "nonfiction");
     if (terms.indexOf(shelfWord) === -1) terms.push(shelfWord);
     return terms.join(" ");
+  }
+
+  // Open Library's search matches more strictly (closer to requiring every
+  // term) than Google Books' -- confirmed directly: the same 5-term query
+  // that gives Google Books plenty of candidates can return Open Library
+  // almost nothing, while just its top 2-3 terms return several. Give it a
+  // shorter, more focused query rather than reusing Google's full one.
+  function buildOpenLibraryQuery(profile){
+    var terms = topProfileTerms(profile, 2);
+    return terms.length ? terms.join(" ") : "popular books";
   }
 
   // Real trade/academic publishers, checked as case-insensitive substrings
@@ -4624,6 +4645,7 @@ function toggleFaq(el){
     // keeps them in the pool (so the fallback stays rare) while still
     // keeping them out of an actual Top 3 whenever anything better exists.
     var fullTitle = vi.title + (vi.subtitle ? ": " + vi.subtitle : "");
+    var lowerTitle = (vi.title || "").toLowerCase();
     var lowQuality =
       // Unusually long title+subtitle: a reliable signal of a keyword-
       // stuffed self-published listing (e.g. "Self-Discipline & Time
@@ -4632,20 +4654,44 @@ function toggleFaq(el){
       // A tiny page count (when Google actually reports one) usually
       // means a pamphlet/sample rather than a real book.
       (vi.pageCount && vi.pageCount > 0 && vi.pageCount < 40) ||
-      // Annual industry directories for AUTHORS submitting manuscripts
-      // (not books for readers) rank surprisingly high on genre keyword
-      // searches -- their categories are inconsistent (seen tagged
-      // Education, Business & Economics, Computers...) but the title
-      // pattern is reliable.
-      /writer'?s (market|digest)|literary market place/i.test(vi.title || "");
+      // Annual industry directories for AUTHORS submitting manuscripts, not
+      // books for readers (e.g. "Writer's Market", "Children's Writer's &
+      // Illustrator's Market") -- their own marketing copy is full of "how
+      // to"/"guide"/"practical" language, which makes them false-positive
+      // magnets for exactly the profile signals a real reader's answers
+      // produce. Matched as "writer"+"market" both present anywhere in the
+      // title, not a narrow adjacent-word pattern -- the exact phrasing
+      // varies too much across editions ("Writer's & Illustrator's Market",
+      // "Novel & Short Story Writer's Market") for a stricter regex to
+      // reliably catch every variant.
+      (lowerTitle.indexOf("writer") !== -1 && lowerTitle.indexOf("market") !== -1) ||
+      lowerTitle.indexOf("literary market place") !== -1 ||
+      // Writing-prompt collections and "guide to the top N books" listicle
+      // books aren't something to read for their own sake either.
+      /writing prompts|fiction prompts|guide to the top \d+/i.test(lowerTitle) ||
+      // Bulk public-domain reprint omnibuses (bundling everything one
+      // long-dead author wrote into one generic listing) are a different
+      // kind of automated-catalog noise, not a considered recommendation.
+      /ultimate collection/i.test(lowerTitle) ||
+      // Reference/study material ABOUT a book or author, or industry
+      // guides for writers seeking literary agents -- neither is itself
+      // something to read for pleasure or self-development.
+      /study guide for|literary agents?|readers'? advisory/i.test(lowerTitle);
     var categories = (vi.categories || []).join(" ");
     var textBlob = ((vi.title||"") + " " + (vi.subtitle||"") + " " + categories + " " + (vi.description||"")).toLowerCase();
+    var rawThumb = vi.imageLinks && (vi.imageLinks.thumbnail || vi.imageLinks.smallThumbnail);
+    // Google's default thumbnail is a tiny 128px-wide image with a page-curl
+    // graphic baked in (zoom=1&edge=curl) -- bumping to zoom=3 and dropping
+    // edge=curl returns a ~575px image from the exact same endpoint, no
+    // extra request. Confirmed directly: consistently available whenever
+    // the default thumbnail is.
+    var cover = rawThumb ? rawThumb.replace(/^http:/,"https:").replace(/&zoom=\d+/,"&zoom=3").replace(/&edge=curl/,"") : "";
     return {
       title: vi.title, author: (vi.authors||[])[0] || "", isbn: isbn,
       year: parseInt((vi.publishedDate||"").slice(0,4),10) || null,
       category: guessCategory(textBlob), genre: (vi.categories||[])[0] || "General",
       difficulty: guessDifficulty(textBlob), audience: guessAudience(textBlob),
-      cover: (vi.imageLinks && (vi.imageLinks.thumbnail || vi.imageLinks.smallThumbnail) || "").replace(/^http:/,"https:"),
+      cover: cover,
       publisher: vi.publisher || "", description: vi.description || "",
       source: "Google Books", _textBlob: textBlob, _lowQuality: lowQuality
     };
@@ -4663,7 +4709,7 @@ function toggleFaq(el){
       year: doc.first_publish_year || null,
       category: guessCategory(textBlob), genre: (doc.subject||[])[0] || "General",
       difficulty: guessDifficulty(textBlob), audience: guessAudience(textBlob),
-      cover: doc.cover_i ? ("https://covers.openlibrary.org/b/id/" + doc.cover_i + "-M.jpg") : "",
+      cover: doc.cover_i ? ("https://covers.openlibrary.org/b/id/" + doc.cover_i + "-L.jpg") : "",
       publisher: "", description: "",
       source: "Open Library", _textBlob: textBlob
     };
@@ -4708,19 +4754,44 @@ function toggleFaq(el){
     if ((!answers.audience || answers.audience === "general") && book.audience === "young-adult") score -= 4;
     if (isKnownPublisher(book.publisher)) score += 8;
     if (book._lowQuality) score -= 30;
+    // Recommendations should be recent (visitor requirement: nothing more
+    // than ~10 years old, unless they explicitly asked for classics). This
+    // is usually enforced as a hard filter in discoverExternalBooks; this
+    // penalty only matters in the rare case that filter had to fall back
+    // to including older books because too few recent ones existed at
+    // all -- it keeps recent candidates ranked first even in that mix.
+    if (answers.era !== "era-classic" && book.year && book.year < RECENCY_CUTOFF_YEAR) score -= 15;
     return { book:book, score:score, matchedKeys:matchedKeys };
+  }
+
+  // Strips a leading year and non-alphanumerics so different annual
+  // editions of the same underlying work collapse to one key (e.g. "2002
+  // Children's Writer's Market" and "2007 Children's Writer's &
+  // Illustrator's Market" both become "childrens writers illustrators
+  // market") -- these have distinct ISBNs per year, so ISBN-only dedup
+  // doesn't catch them, and without this a search can otherwise return
+  // the "same" book three years in a row as if that were 3 varied picks.
+  function normalizedTitleKey(title){
+    return String(title || "").toLowerCase().replace(/^\d{4}\s+/, "").replace(/[^a-z0-9]+/g, " ").trim();
   }
 
   // A book already in the local library shouldn't also show up a second
   // time as an "external" result -- de-dupe by ISBN (falling back to
-  // title+author) and keep whichever scored entry is higher.
+  // title+author), then again by normalized title, keeping whichever
+  // scored entry is higher each time.
   function dedupeScored(scoredList){
-    var byKey = {};
+    var byIsbn = {};
     scoredList.forEach(function(entry){
       var key = entry.book.isbn || ((entry.book.title + "|" + entry.book.author).toLowerCase());
-      if (!byKey[key] || byKey[key].score < entry.score) byKey[key] = entry;
+      if (!byIsbn[key] || byIsbn[key].score < entry.score) byIsbn[key] = entry;
     });
-    return Object.keys(byKey).map(function(k){ return byKey[k]; });
+    var byTitle = {};
+    Object.keys(byIsbn).forEach(function(k){
+      var entry = byIsbn[k];
+      var titleKey = normalizedTitleKey(entry.book.title);
+      if (!byTitle[titleKey] || byTitle[titleKey].score < entry.score) byTitle[titleKey] = entry;
+    });
+    return Object.keys(byTitle).map(function(k){ return byTitle[k]; });
   }
 
   // In-memory cache so retaking the quiz (or re-rendering results) with an
@@ -4754,14 +4825,35 @@ function toggleFaq(el){
     // annual "Writer's Market" directories dominating a genre search), and
     // those still need Open Library's different catalog to have real
     // alternatives to rank ahead of the junk.
-    var goodCount = results.filter(function(b){ return !b._lowQuality; }).length;
+    var goodCount = results.filter(function(b){
+      if (b._lowQuality) return false;
+      if (answers.era !== "era-classic" && b.year && b.year < RECENCY_CUTOFF_YEAR) return false;
+      return true;
+    }).length;
     var rawOlCount = 0;
     if (goodCount < 6) {
       try {
-        var olResults = await searchOpenLibraryBooks(query, 40);
+        var olResults = await searchOpenLibraryBooks(buildOpenLibraryQuery(profile), 40);
         rawOlCount = olResults.length;
         results = results.concat(olResults);
       } catch (e) { console.info("[Find Your Next Book] Open Library discovery failed:", e); }
+    }
+
+    // Recommendations should be recent -- exclude anything more than 10
+    // years old, unless the visitor specifically asked for classics (that
+    // question exists precisely to let a visitor opt into older/timeless
+    // works on purpose). A book with no known publication year is kept
+    // rather than assumed old, since Google/Open Library don't always
+    // report one even for brand-new titles. Enforced strictly only when
+    // enough recent candidates actually exist (confirmed directly: for
+    // some topics -- romance, health -- the top-40 relevance results can
+    // contain almost nothing both recent AND ISBN'd); when they don't,
+    // older candidates are kept rather than collapsing the pool towards
+    // the local-library fallback, and scoreExternalBook's own recency
+    // penalty still keeps whatever recent ones exist ranked first.
+    if (answers.era !== "era-classic") {
+      var recentResults = results.filter(function(b){ return !b.year || b.year >= RECENCY_CUTOFF_YEAR; });
+      if (recentResults.length >= 3) results = recentResults;
     }
 
     var scored = dedupeScored(results.map(function(b){ return scoreExternalBook(b, profile, answers); }));
@@ -4866,20 +4958,36 @@ function toggleFaq(el){
     renderResultsBody(top5);
   }
 
+  // A "-L.jpg"/zoom=3 request 404ing doesn't mean the book has no cover at
+  // all -- Open Library and Google Books both sometimes have a smaller
+  // size cached for a book that lacks the larger one. Try that smaller
+  // size before giving up to the generic branded placeholder.
+  function secondaryCoverFor(book, primaryCover){
+    if (!primaryCover) return "";
+    if (book.source === "Open Library" && primaryCover.indexOf("-L.jpg") !== -1) return primaryCover.replace("-L.jpg", "-M.jpg");
+    if (book.source === "Google Books" && primaryCover.indexOf("zoom=3") !== -1) return primaryCover.replace("zoom=3", "zoom=1");
+    return "";
+  }
+
   function bookCardHtml(entry, rank, profile){
     var b = entry.book;
     // External sources hand us a real cover URL directly; local library
     // entries only carry an ISBN, so derive the Open Library cover from
-    // that instead. Either way, a broken/missing image falls back to the
-    // branded placeholder rather than showing nothing.
+    // that instead. Either way, a broken/missing image falls back through
+    // a smaller size, then the branded placeholder, rather than showing
+    // nothing.
     var primaryCover = b.cover || coverUrl(b.isbn);
+    var secondaryCover = secondaryCoverFor(b, primaryCover);
     var fallback = brandedFallbackCover(b.title);
+    var onErrorJs = secondaryCover
+      ? "this.onerror=function(){this.onerror=null;this.src=\'" + fallback + "\';};this.src=\'" + secondaryCover + "\';"
+      : "this.onerror=null;this.src=\'" + fallback + "\';";
     var why = whyText(entry.matchedKeys, profile);
     var goals = (b.goals && b.goals.length) ? b.goals : autoGoals(entry.matchedKeys, profile);
     var sourceLabel = b.source || "Kitab Guru Library";
     return '<div class="kgquiz-book-card">' +
       '<div class="kgquiz-book-rank">#' + rank + ' Match</div>' +
-      '<div class="kgquiz-book-cover-wrap"><img alt="' + escHtml(b.title) + ' cover" onerror="this.onerror=null;this.src=\'' + fallback + '\';" src="' + primaryCover + '"/></div>' +
+      '<div class="kgquiz-book-cover-wrap"><img alt="' + escHtml(b.title) + ' cover" onerror="' + onErrorJs + '" src="' + primaryCover + '"/></div>' +
       '<div class="kgquiz-book-title">' + escHtml(b.title) + "</div>" +
       '<div class="kgquiz-book-author">' + escHtml(b.author) + "</div>" +
       '<div class="kgquiz-book-source">' + escHtml(sourceLabel) + "</div>" +
