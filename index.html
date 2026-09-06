@@ -9551,6 +9551,7 @@ function toggleFaq(el){
 .kg-scroll-btn{position:fixed;right:calc(18px + env(safe-area-inset-right,0px));bottom:calc(18px + env(safe-area-inset-bottom,0px));z-index:1250;width:46px;height:46px;border-radius:50%;background:rgba(23,23,23,.92);border:1.5px solid rgba(255,217,61,.35);color:var(--gold);display:flex;align-items:center;justify-content:center;font-size:1.15rem;cursor:pointer;box-shadow:0 10px 26px rgba(0,0,0,.4);backdrop-filter:blur(12px);transition:opacity .2s,transform .2s,border-color .2s,background .2s;opacity:0;pointer-events:none;transform:translateY(8px);font-family:inherit;}
 .kg-scroll-btn.kg-visible{opacity:1;pointer-events:auto;transform:none;}
 .kg-scroll-btn:hover{border-color:var(--gold);background:rgba(255,217,61,.14);}
+body.kg-modal-open .kg-mobile-menu-btn,body.kg-modal-open .kg-scroll-btn{display:none!important;}
 
 @media(max-width:768px){
   .hamburger{display:none!important;}
@@ -9653,12 +9654,14 @@ function toggleFaq(el){
     expertLastFocus = document.activeElement;
     expertOverlay.classList.add('kg-open');
     document.body.style.overflow = 'hidden';
+    document.body.classList.add('kg-modal-open');
     if (expertClose) expertClose.focus();
   }
   function closeExpertModal(){
     if (!expertOverlay) return;
     expertOverlay.classList.remove('kg-open');
     document.body.style.overflow = '';
+    document.body.classList.remove('kg-modal-open');
     if (expertLastFocus && expertLastFocus.focus) expertLastFocus.focus();
   }
   window.kgOpenExpertModal = openExpertModal;
