@@ -735,6 +735,19 @@ html{scroll-behavior:smooth;}
 .kgquiz-book-helps{list-style:none;font-size:.8rem;color:rgba(255,255,255,.65);line-height:1.7;}
 .kgquiz-book-helps li{padding-left:16px;position:relative;}
 .kgquiz-book-helps li:before{content:'✓';position:absolute;left:0;color:var(--gold);}
+.kgquiz-book-helps-empty{font-size:.8rem;color:rgba(255,255,255,.4);font-style:italic;margin:0;}
+.kgquiz-book-select-row{display:flex;align-items:center;gap:9px;font-size:.78rem;color:rgba(255,255,255,.6);margin-bottom:14px;cursor:pointer;user-select:none;}
+.kgquiz-book-select-row input{width:17px;height:17px;accent-color:var(--gold);cursor:pointer;flex-shrink:0;}
+.kgquiz-book-matched-label{font-size:.7rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:rgba(255,217,61,.75);margin-bottom:8px;}
+.kgquiz-book-matched{list-style:none;font-size:.8rem;color:rgba(255,255,255,.7);line-height:1.7;margin-bottom:16px;}
+.kgquiz-book-matched li{padding-left:16px;position:relative;}
+.kgquiz-book-matched li:before{content:'✓';position:absolute;left:0;color:var(--gold);}
+.kgquiz-more-btn{display:block;margin:0 auto 22px;background:rgba(255,217,61,.08);border:1.5px solid rgba(255,217,61,.3);color:var(--gold);border-radius:50px;padding:12px 26px;font-size:.85rem;font-weight:700;cursor:pointer;transition:border-color .18s,background .18s,transform .18s;font-family:inherit;}
+.kgquiz-more-btn:hover{background:rgba(255,217,61,.14);transform:translateY(-1px);}
+.kgquiz-exhausted-msg{text-align:center;color:rgba(255,255,255,.45);font-size:.85rem;margin:0 0 22px;font-style:italic;}
+.kgquiz-secondary-actions{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-bottom:28px;}
+.kgquiz-secondary-btn{background:none;border:1px solid rgba(255,255,255,.15);color:rgba(255,255,255,.65);border-radius:50px;padding:10px 20px;font-size:.8rem;font-weight:600;cursor:pointer;transition:border-color .18s,color .18s;font-family:inherit;}
+.kgquiz-secondary-btn:hover{border-color:rgba(255,255,255,.35);color:#fff;}
 .kgquiz-cta-box{text-align:center;background:rgba(255,217,61,.06);border:1px solid rgba(255,217,61,.2);border-radius:20px;padding:32px;}
 .kgquiz-cta-box h4{font-family:'Playfair Display',serif;font-size:1.3rem;color:#fff;margin-bottom:8px;}
 .kgquiz-cta-box p{color:rgba(255,255,255,.6);font-size:.88rem;margin:0 auto 20px;max-width:440px;}
@@ -745,6 +758,8 @@ html{scroll-behavior:smooth;}
   .kgquiz-results-grid{grid-template-columns:1fr;}
   .kgquiz-card,.kgquiz-intro-card{padding:24px;}
   .kgquiz-question{font-size:1.25rem;}
+  .kgquiz-secondary-actions{flex-direction:column;align-items:stretch;}
+  .kgquiz-secondary-btn,.kgquiz-more-btn{padding:14px 20px;}
 }
 </style>
 <section class="section kgquiz-section" id="book-quiz" style="background:#0d0d0d;">
@@ -806,6 +821,10 @@ select.kgcalc-select{appearance:none;-webkit-appearance:none;background-image:ur
 .kgcalc-status{font-size:.88rem;color:rgba(255,255,255,.6);margin:18px 0 0;min-height:0;}
 .kgcalc-status.kgcalc-status-error{color:#ff8a80;}
 .kgcalc-status:empty{display:none;}
+.kgcalc-auto-lookup-banner{display:flex;align-items:center;gap:12px;background:rgba(255,217,61,.08);border:1.5px solid rgba(255,217,61,.3);border-radius:14px;padding:16px 20px;margin-bottom:20px;font-size:.92rem;font-weight:600;color:var(--gold);}
+.kgcalc-auto-lookup-spinner{width:18px;height:18px;border-radius:50%;border:2.5px solid rgba(255,217,61,.25);border-top-color:var(--gold);flex-shrink:0;animation:kgcalc-spin .8s linear infinite;}
+@keyframes kgcalc-spin{to{transform:rotate(360deg);}}
+.kgcalc-search-wrap-locked{opacity:.4;pointer-events:none;}
 .kgcalc-disclaimer{font-size:.72rem;color:rgba(255,255,255,.4);line-height:1.6;margin:22px 0 0;padding-top:18px;border-top:1px solid rgba(255,255,255,.07);}
 
 .kgcalc-price-card{margin-top:8px;}
@@ -899,6 +918,8 @@ select.kgcalc-select{appearance:none;-webkit-appearance:none;background-image:ur
 </div>
 <p class="kgcalc-country-lock-note kgcalc-hidden" id="kgcalc-country-lock-note"></p>
 </div>
+
+<div aria-live="polite" class="kgcalc-auto-lookup-banner kgcalc-hidden" id="kgcalc-auto-lookup-banner" role="status"><span class="kgcalc-auto-lookup-spinner"></span><span id="kgcalc-auto-lookup-text"></span></div>
 
 <div class="kgcalc-field kgcalc-hidden" id="kgcalc-search-wrap">
 <label class="kgcalc-label" data-i18n="calc.search_label" for="kgcalc-search">2. Search for a book</label>
@@ -2075,6 +2096,40 @@ section[id]{scroll-margin-top:72px;}
       "calc.order_id_hint":"WhatsApp and Email fill this in for you automatically. For Instagram, Messenger, or LinkedIn, just paste it into your message.",
       "calc.choose_channel_title":"Choose a Channel to Place Your Order","calc.start_new_search":"Start a new search",
       "calc.copy_toast":"Order ID copied — paste it into your message.",
+      "calc.auto_lookup_banner":"Checking prices for your {n} recommended books…",
+      "quiz.include_in_price_check":"Include in price check","quiz.matched_because_label":"Matched because",
+      "quiz.learn_label":"What You'll Learn","quiz.learn_unavailable":"Detailed info for this book wasn't available from our sources.",
+      "quiz.cta_btn_n":"Check Price & Get These {n} Books →","quiz.more_options_btn":"More Options →",
+      "quiz.more_options_exhausted":"We don't have any more strong matches for these preferences.",
+      "quiz.show_different_btn":"Show Me Different Books","quiz.change_prefs_btn":"Change Preferences",
+      "quiz.no_different_books":"You've seen our strongest matches for these preferences — try Change Preferences for a new angle.",
+
+      "quiz.q.business_focus.text":"What aspect of business interests you most?","quiz.q.business_focus.hint":"Pick up to 2.",
+      "quiz.q.business_focus.opt.business-idea":"Starting a business / finding an idea",
+      "quiz.q.business_focus.opt.startup-execution":"Startup execution & building a product",
+      "quiz.q.business_focus.opt.marketing":"Marketing & growth","quiz.q.business_focus.opt.sales":"Sales",
+      "quiz.q.business_focus.opt.biz-leadership":"Leadership & management",
+      "quiz.q.business_focus.opt.founder-mindset":"Entrepreneurship mindset & psychology",
+      "quiz.q.business_focus.opt.scaling-finance":"Finance & scaling a business",
+
+      "quiz.q.psychology_focus.text":"Which area of psychology are you most curious about?","quiz.q.psychology_focus.hint":"Pick up to 2.",
+      "quiz.q.psychology_focus.opt.psych-relationships":"Relationships & social behavior",
+      "quiz.q.psychology_focus.opt.psych-behavior":"Habits, behavior & motivation",
+      "quiz.q.psychology_focus.opt.psych-trauma":"Trauma & emotional healing",
+      "quiz.q.psychology_focus.opt.psych-cognitive":"Cognitive psychology & decision-making",
+      "quiz.q.psychology_focus.opt.psych-mentalhealth":"Mental health & anxiety",
+
+      "quiz.q.history_focus.text":"What kind of history interests you most?","quiz.q.history_focus.hint":"Pick up to 2.",
+      "quiz.q.history_focus.opt.history-ancient":"Ancient & classical history",
+      "quiz.q.history_focus.opt.history-modern":"Modern & contemporary history",
+      "quiz.q.history_focus.opt.history-political-military":"Political & military history",
+      "quiz.q.history_focus.opt.history-social-cultural":"Social & cultural history",
+
+      "quiz.q.spirituality_focus.text":"What kind of spiritual interest speaks to you most?","quiz.q.spirituality_focus.hint":"Pick up to 2.",
+      "quiz.q.spirituality_focus.opt.eastern-mindfulness":"Mindfulness & meditation",
+      "quiz.q.spirituality_focus.opt.religious-practice":"Religious or faith-based practice",
+      "quiz.q.spirituality_focus.opt.purpose-meaning":"Purpose & meaning in life",
+      "quiz.q.spirituality_focus.opt.stoicism":"Stoicism & inner resilience",
 
       "footer.copyright":"© 2026 Kitab Guru · Get Ebooks on Demand · All rights reserved."
     },
@@ -6256,7 +6311,9 @@ function toggleFaq(el){
     results: document.getElementById('kgcalc-results'),
     priceWrap: document.getElementById('kgcalc-price-wrap'),
     cart: document.getElementById('kgcalc-cart'),
-    status: document.getElementById('kgcalc-status')
+    status: document.getElementById('kgcalc-status'),
+    autoLookupBanner: document.getElementById('kgcalc-auto-lookup-banner'),
+    autoLookupText: document.getElementById('kgcalc-auto-lookup-text')
   };
   if (!el.countryInput) return; // calculator not on this page
 
@@ -6359,6 +6416,31 @@ function toggleFaq(el){
   function setStatus(msg, isError){
     el.status.textContent = msg || '';
     el.status.classList.toggle('kgcalc-status-error', !!isError);
+  }
+
+  // Shown only while the "Find Your Next Book" quiz's recommended books
+  // are being auto-priced one by one -- a small inline status text alone
+  // wasn't prominent enough (easy to miss on mobile without scrolling),
+  // and letting the manual "Search for a book" field stay active at the
+  // same time let a visitor start a conflicting search mid-lookup. This
+  // banner sits ABOVE the search field and cart, and the search field
+  // itself is visually disabled for the duration.
+  function setAutoLookupBanner(msg){
+    if (!el.autoLookupBanner) return;
+    if (msg) {
+      el.autoLookupText.textContent = msg;
+      el.autoLookupBanner.classList.remove('kgcalc-hidden');
+    } else {
+      el.autoLookupBanner.classList.add('kgcalc-hidden');
+      el.autoLookupText.textContent = '';
+    }
+  }
+
+  function setSearchWrapLocked(locked){
+    if (!el.searchWrap) return;
+    el.searchWrap.classList.toggle('kgcalc-search-wrap-locked', !!locked);
+    if (el.search) el.search.disabled = !!locked;
+    if (el.searchBtn) el.searchBtn.disabled = !!locked;
   }
 
   let lastSearchDocs = [];
@@ -7521,27 +7603,39 @@ function toggleFaq(el){
       return { needsCountry: false };
     },
     _addBooksNow: async function (books) {
-      for (var i = 0; i < books.length; i++) {
-        var b = books[i];
-        var book = {
-          title: b.title,
-          author: b.author || '',
-          isbn: b.isbn || '',
-          isbns: b.isbn ? [b.isbn] : [],
-          cover: b.cover || ''
-        };
-        setStatus(window.kgI18n.t('calc.checking_price'));
-        var priceResult = await fetchPrice(book, selectedCountry);
-        var prices = null;
-        if (priceResult && priceResult.ok) {
-          var retail = priceResult.retailPrice;
-          var kgPrice = +(retail * 0.20).toFixed(2);
-          var savings = +(retail * 0.80).toFixed(2);
-          prices = { retail: retail, kgPrice: kgPrice, savings: savings, discountPct: 80 };
+      // A single prominent banner for the WHOLE automatic lookup (not a
+      // per-book status line that's easy to miss on mobile), and the
+      // manual "Search for a book" field is visibly disabled for the
+      // duration so a visitor can't start a conflicting search mid-lookup.
+      // try/finally guarantees both are restored even if fetchPrice throws.
+      var n = books.length;
+      setSearchWrapLocked(true);
+      setAutoLookupBanner(window.kgI18n.tf('calc.auto_lookup_banner', { n: n }));
+      try {
+        for (var i = 0; i < books.length; i++) {
+          var b = books[i];
+          var book = {
+            title: b.title,
+            author: b.author || '',
+            isbn: b.isbn || '',
+            isbns: b.isbn ? [b.isbn] : [],
+            cover: b.cover || ''
+          };
+          var priceResult = await fetchPrice(book, selectedCountry);
+          var prices = null;
+          if (priceResult && priceResult.ok) {
+            var retail = priceResult.retailPrice;
+            var kgPrice = +(retail * 0.20).toFixed(2);
+            var savings = +(retail * 0.80).toFixed(2);
+            prices = { retail: retail, kgPrice: kgPrice, savings: savings, discountPct: 80 };
+          }
+          addToCart(book, priceResult, prices);
         }
-        addToCart(book, priceResult, prices);
+      } finally {
+        setAutoLookupBanner('');
+        setSearchWrapLocked(false);
+        setStatus('');
       }
-      setStatus('');
     },
     // Lets the quiz discover books beyond its own local database using the
     // SAME Google Books key rotation / quota fallback the calculator's own
@@ -7642,10 +7736,10 @@ function toggleFaq(el){
       tags:["business","leadership","career","big-picture","diff-medium"],
       goals:["Understanding what separates great companies","Applying disciplined leadership principles","Thinking long-term about growth"] },
     { title:"Zero to One", author:"Peter Thiel", isbn:"9780804139298", year:2014, category:"nonfiction", genre:"Business", subgenre:"Startups", difficulty:"intermediate", audience:"general",
-      tags:["business","career","big-picture","diff-medium","business-economics"],
+      tags:["business","career","big-picture","diff-medium","business-economics","business-idea","founder-mindset"],
       goals:["Thinking about building something genuinely new","Understanding startup strategy","Challenging conventional business thinking"] },
     { title:"The Lean Startup", author:"Eric Ries", isbn:"9780307887894", year:2011, category:"nonfiction", genre:"Business", subgenre:"Startups", difficulty:"intermediate", audience:"general",
-      tags:["business","career","actionable","diff-medium","business-economics"],
+      tags:["business","career","actionable","diff-medium","business-economics","startup-execution"],
       goals:["Testing ideas before committing fully","Building a product customers actually want","Reducing wasted effort in early-stage work"] },
     { title:"The Hard Thing About Hard Things", author:"Ben Horowitz", isbn:"9780062273208", year:2014, category:"nonfiction", genre:"Business", difficulty:"advanced", audience:"general",
       tags:["business","leadership","career","dark-intense","diff-hard"],
@@ -7664,7 +7758,7 @@ function toggleFaq(el){
 
     // ---- PSYCHOLOGY ----
     { title:"Thinking, Fast and Slow", author:"Daniel Kahneman", isbn:"9780374533557", year:2011, category:"nonfiction", genre:"Psychology", difficulty:"advanced", audience:"general",
-      tags:["psychology","big-picture","science-tech","diff-hard"],
+      tags:["psychology","big-picture","science-tech","diff-hard","psych-cognitive"],
       goals:["Understanding how you actually make decisions","Spotting your own cognitive biases","Thinking more clearly under uncertainty"] },
     { title:"Influence", author:"Robert B. Cialdini", isbn:"9780061241895", year:1984, category:"nonfiction", genre:"Psychology", difficulty:"intermediate", audience:"general",
       tags:["psychology","communication","business","actionable","diff-medium"],
@@ -7676,7 +7770,7 @@ function toggleFaq(el){
       tags:["psychology","business-economics","science-tech","thought-provoking","diff-medium"],
       goals:["Understanding why people make irrational choices","Applying behavioral insight to daily decisions","Seeing your own blind spots"] },
     { title:"Emotional Intelligence", author:"Daniel Goleman", isbn:"9780553383713", year:1995, category:"nonfiction", genre:"Psychology", difficulty:"intermediate", audience:"general",
-      tags:["psychology","relationships","confidence","leadership","diff-medium"],
+      tags:["psychology","relationships","confidence","leadership","diff-medium","psych-relationships"],
       goals:["Understanding and managing your emotions","Improving relationships through empathy","Building stronger interpersonal skills"] },
     { title:"Quiet", author:"Susan Cain", isbn:"9780307352149", year:2012, category:"nonfiction", genre:"Psychology", difficulty:"beginner", audience:"general",
       tags:["psychology","confidence","relationships","thought-provoking","diff-easy"],
@@ -7861,6 +7955,52 @@ function toggleFaq(el){
       tags:["fiction","science-fiction","fast-paced","light-hearted","diff-easy"],
       goals:["A fast, fun survival story","A science-driven, problem-solving adventure","An accessible, entertaining sci-fi read"] },
 
+    // ---- BUSINESS SUB-INTENTS (added for the business_focus branch question,
+    // so "startup execution" and "leadership" don't collapse to the same
+    // three generic Business books) ----
+    { title:"Measure What Matters", author:"John Doerr", isbn:"9780525538349", year:2018, category:"nonfiction", genre:"Business", subgenre:"Execution", difficulty:"intermediate", audience:"general",
+      tags:["business","startup-execution","actionable","diff-medium"],
+      goals:["Setting and tracking goals with OKRs","Turning strategy into measurable execution","Keeping a team focused on what matters most"] },
+    { title:"No Rules Rules", author:"Reed Hastings & Erin Meyer", isbn:"9780753553657", year:2020, category:"nonfiction", genre:"Business", subgenre:"Scaling", difficulty:"intermediate", audience:"general",
+      tags:["business","scaling","biz-leadership","big-picture","diff-medium"],
+      goals:["Understanding how to scale culture as a company grows","Rethinking control vs. freedom in management","Learning from Netflix's approach to talent density"] },
+    { title:"The Ride of a Lifetime", author:"Robert Iger", isbn:"9780593170984", year:2019, category:"nonfiction", genre:"Business", subgenre:"Leadership", difficulty:"beginner", audience:"general",
+      tags:["business","biz-leadership","career","actionable","diff-easy"],
+      goals:["Seeing real-world executive leadership decisions","Learning principles for leading through change","Understanding large-scale business strategy"] },
+    { title:"Think Again", author:"Adam Grant", isbn:"9780593298749", year:2021, category:"nonfiction", genre:"Psychology", subgenre:"Decision-Making", difficulty:"beginner", audience:"general",
+      tags:["founder-mindset","psych-cognitive","big-picture","diff-easy"],
+      goals:["Learning to rethink your own assumptions","Making better decisions under uncertainty","Staying open-minded while building something new"] },
+
+    // ---- PSYCHOLOGY SUB-INTENTS ----
+    { title:"Stolen Focus", author:"Johann Hari", isbn:"0593138538", year:2022, category:"nonfiction", genre:"Psychology", subgenre:"Behavior", difficulty:"beginner", audience:"general",
+      tags:["psych-behavior","psychology","actionable","diff-easy"],
+      goals:["Understanding what's destroying your attention span","Practical ways to reclaim focus","Seeing the systemic causes behind distraction"] },
+    { title:"The Anxious Generation", author:"Jonathan Haidt", isbn:"0241647665", year:2024, category:"nonfiction", genre:"Psychology", subgenre:"Mental Health", difficulty:"beginner", audience:"general",
+      tags:["psych-mentalhealth","psychology","big-picture","diff-easy"],
+      goals:["Understanding rising anxiety in the smartphone era","Seeing the data behind mental health trends","Practical ideas for a healthier relationship with technology"] },
+    { title:"Originals", author:"Adam Grant", isbn:"0753556987", year:2016, category:"nonfiction", genre:"Psychology", subgenre:"Behavior", difficulty:"beginner", audience:"general",
+      tags:["psych-behavior","psych-cognitive","founder-mindset","actionable","diff-easy"],
+      goals:["Understanding how original thinkers actually operate","Learning to champion new ideas effectively","Building confidence to challenge the status quo"] },
+
+    // ---- HISTORY SUB-INTENTS ----
+    { title:"The Splendid and the Vile", author:"Erik Larson", isbn:"9780385348713", year:2020, category:"nonfiction", genre:"History", subgenre:"Modern/Political", difficulty:"intermediate", audience:"general",
+      tags:["history-modern","history-political-military","history-topic","diff-medium"],
+      goals:["A vivid account of Churchill's first year as PM","Understanding WWII leadership under pressure","Narrative history that reads like a thriller"] },
+    { title:"How the Word Is Passed", author:"Clint Smith", isbn:"9780316492935", year:2021, category:"nonfiction", genre:"History", subgenre:"Social/Cultural", difficulty:"intermediate", audience:"general",
+      tags:["history-social-cultural","history-topic","thought-provoking","diff-medium"],
+      goals:["Understanding how slavery's history is remembered today","A personal, place-by-place journey through American history","Seeing history's direct link to the present"] },
+    { title:"The Dawn of Everything", author:"David Graeber & David Wengrow", isbn:"9780374157357", year:2021, category:"nonfiction", genre:"History", subgenre:"Ancient/Social", difficulty:"advanced", audience:"general",
+      tags:["history-ancient","history-social-cultural","big-picture","diff-hard"],
+      goals:["Rethinking the standard narrative of human history","Exploring early human societies and social structures","Engaging with a genuinely new take on ancient history"] },
+
+    // ---- SPIRITUALITY SUB-INTENTS ----
+    { title:"Think Like a Monk", author:"Jay Shetty", isbn:"9781982134488", year:2020, category:"nonfiction", genre:"Religion & Spirituality", subgenre:"Purpose", difficulty:"beginner", audience:"general",
+      tags:["purpose-meaning","eastern-mindfulness","practical-guide","actionable","diff-easy"],
+      goals:["Finding a stronger sense of daily purpose","Practical monk-inspired habits for calm and focus","Letting go of comparison and external validation"] },
+    { title:"The Book of Joy", author:"Dalai Lama & Desmond Tutu", isbn:"9780399185045", year:2016, category:"nonfiction", genre:"Religion & Spirituality", subgenre:"Interfaith", difficulty:"beginner", audience:"general",
+      tags:["religious-practice","purpose-meaning","comforting","diff-easy"],
+      goals:["Two spiritual leaders' conversation on lasting joy","Finding meaning through hardship, across two faith traditions","Practical spiritual reflections on happiness"] },
+
     // ---- YOUNG ADULT ----
     { title:"The Hunger Games", author:"Suzanne Collins", isbn:"9780439023481", year:2008, category:"fiction", genre:"Young Adult", subgenre:"Dystopian", difficulty:"beginner", audience:"young-adult",
       tags:["fiction","science-fiction","fast-paced","dark-intense","diff-easy"],
@@ -7923,6 +8063,51 @@ function toggleFaq(el){
         { label:"Science", value:"science", w:{ "science-topic":8 } },
         { label:"Personal finance", value:"finance", w:{ money:8 } },
         { label:"Fiction & stories", value:"fiction-topic", w:{ fiction:6 } }
+      ]},
+
+    // --- topic sub-intent branches ---
+    // These exist because a broad topic checkbox ("Business", "Psychology",
+    // "History", "Spirituality") alone is nowhere near specific enough to
+    // pick 3 genuinely different books -- "you selected Business, so here
+    // are three Business books" is exactly the complaint this fixes. Each
+    // of these carries a much higher weight (14) than the broad topic
+    // checkbox that unlocked it (8), so the SPECIFIC sub-intent -- not the
+    // broad shelf -- dominates scoring and drives which book wins.
+    { id:"business_focus", text:"What aspect of business interests you most?", hint:"Pick up to 2.", multi:true, maxSelect:2,
+      showIf:function(a){ return has(a,"topics","business"); },
+      options:[
+        { label:"Starting a business / finding an idea", value:"business-idea", w:{ "business-idea":14 } },
+        { label:"Startup execution & building a product", value:"startup-execution", w:{ "startup-execution":14 } },
+        { label:"Marketing & growth", value:"marketing", w:{ marketing:14 } },
+        { label:"Sales", value:"sales", w:{ sales:14 } },
+        { label:"Leadership & management", value:"biz-leadership", w:{ leadership:14 } },
+        { label:"Entrepreneurship mindset & psychology", value:"founder-mindset", w:{ "founder-mindset":14 } },
+        { label:"Finance & scaling a business", value:"scaling-finance", w:{ scaling:12, "business-finance":10 } }
+      ]},
+    { id:"psychology_focus", text:"Which area of psychology are you most curious about?", hint:"Pick up to 2.", multi:true, maxSelect:2,
+      showIf:function(a){ return has(a,"topics","psychology"); },
+      options:[
+        { label:"Relationships & social behavior", value:"psych-relationships", w:{ "psych-relationships":14 } },
+        { label:"Habits, behavior & motivation", value:"psych-behavior", w:{ "psych-behavior":14 } },
+        { label:"Trauma & emotional healing", value:"psych-trauma", w:{ "psych-trauma":14 } },
+        { label:"Cognitive psychology & decision-making", value:"psych-cognitive", w:{ "psych-cognitive":14 } },
+        { label:"Mental health & anxiety", value:"psych-mentalhealth", w:{ "psych-mentalhealth":14 } }
+      ]},
+    { id:"history_focus", text:"What kind of history interests you most?", hint:"Pick up to 2.", multi:true, maxSelect:2,
+      showIf:function(a){ return has(a,"topics","history"); },
+      options:[
+        { label:"Ancient & classical history", value:"history-ancient", w:{ "history-ancient":14 } },
+        { label:"Modern & contemporary history", value:"history-modern", w:{ "history-modern":14 } },
+        { label:"Political & military history", value:"history-political-military", w:{ "history-political-military":14 } },
+        { label:"Social & cultural history", value:"history-social-cultural", w:{ "history-social-cultural":14 } }
+      ]},
+    { id:"spirituality_focus", text:"What kind of spiritual interest speaks to you most?", hint:"Pick up to 2.", multi:true, maxSelect:2,
+      showIf:function(a){ return has(a,"topics","spirituality") && !has(a,"purpose","philosophy"); },
+      options:[
+        { label:"Mindfulness & meditation", value:"eastern-mindfulness", w:{ "eastern-mindfulness":14 } },
+        { label:"Religious or faith-based practice", value:"religious-practice", w:{ "religious-practice":14 } },
+        { label:"Purpose & meaning in life", value:"purpose-meaning", w:{ "purpose-meaning":14 } },
+        { label:"Stoicism & inner resilience", value:"stoicism", w:{ stoicism:14 } }
       ]},
 
     // --- fiction branch ---
@@ -8220,6 +8405,20 @@ function toggleFaq(el){
       .filter(Boolean);
   }
 
+  // Graduated recency preference: prefer 2016+ over older, prefer 2020+
+  // over 2016-2019, prefer 2023+ over 2020-2022 -- rather than treating
+  // "2016" and "2025" as equally acceptable just because both clear one
+  // hard cutoff. Never applied when the visitor explicitly asked for
+  // classics (era-classic), and never penalizes a book with no known year
+  // (unverified, not old).
+  function recencyBonus(year, answers){
+    if (!year || (answers && answers.era === "era-classic")) return 0;
+    if (year >= 2023) return 8;
+    if (year >= 2020) return 5;
+    if (year >= 2016) return 2;
+    return 0;
+  }
+
   function scoreBook(book, profile, answers){
     var keys = bookMatchableKeys(book);
     var score = 0;
@@ -8235,25 +8434,72 @@ function toggleFaq(el){
     // era bonus, computed from year rather than a stored tag
     if (answers.era === "era-modern" && book.year >= 2010) score += 5;
     if (answers.era === "era-classic" && book.year <= 1980) score += 5;
+    score += recencyBonus(book.year, answers);
     // audience bonus
     if (answers.audience === "young-adult" && book.audience === "young-adult") score += 6;
     if ((!answers.audience || answers.audience === "general") && book.audience === "young-adult") score -= 4;
     return { book:book, score:score, matchedKeys:matchedKeys };
   }
 
-  function pickTopN(scored, n){
-    var pool = scored.slice().sort(function(a,b){ return b.score - a.score; });
+  // A stable identity for a book regardless of source (ISBN when we have
+  // one, otherwise title+author) -- used to dedupe, to exclude
+  // already-shown books from "Show Different Books", and to track which
+  // cards are selected for checkout.
+  function bookIdentityKey(book){
+    return String(book.isbn || ((book.title||"") + "|" + (book.author||""))).toLowerCase();
+  }
+
+  // Picks the top N by score, same as before, but now also spreads picks
+  // across AUTHORS as well as genres -- three books that are all "highly
+  // relevant" but happen to be the same author (or three different books
+  // that all landed in the same genre bucket) isn't the diversity a real
+  // advisor would give. Falls back gracefully (genre-only, then
+  // score-only) rather than leaving a slot empty when the pool is thin.
+  // `opts.exclude` (a Set of bookIdentityKey values) lets "Show Different
+  // Books" pull fresh picks without repeating anything already on screen.
+  function pickTopN(scored, n, opts){
+    opts = opts || {};
+    var exclude = opts.exclude || null;
+    var pool = scored.slice()
+      .filter(function(e){ return !exclude || !exclude.has(bookIdentityKey(e.book)); })
+      .sort(function(a,b){ return b.score - a.score; });
     var picks = [];
     var usedGenres = {};
+    var usedAuthors = {};
     while (picks.length < n && pool.length) {
       var idx = -1;
-      for (var i = 0; i < pool.length; i++) {
-        if (!usedGenres[pool[i].book.genre]) { idx = i; break; }
+      // Diversity is a TIE-BREAKER among comparably-relevant candidates,
+      // never a reason to reach past a clearly stronger match just because
+      // a much weaker one happens to have a "fresh" genre (confirmed
+      // directly: an unbounded scan let a barely-relevant book leapfrog a
+      // genuinely strong one purely for genre variety). Only candidates
+      // within this relative window of the current best remaining score
+      // are eligible for the fresh-genre/fresh-author preference; anything
+      // weaker than that is "too big a relevance gap to trade for variety".
+      var bestRemaining = pool[0].score;
+      var threshold = bestRemaining - Math.max(15, Math.abs(bestRemaining) * 0.3);
+      var windowEnd = 0;
+      while (windowEnd < pool.length && pool[windowEnd].score >= threshold) windowEnd++;
+      // Pass 1: fresh genre AND fresh author, within the window.
+      for (var i = 0; i < windowEnd; i++) {
+        var g = pool[i].book.genre, au = (pool[i].book.author || "").toLowerCase();
+        if (!usedGenres[g] && (!au || !usedAuthors[au])) { idx = i; break; }
       }
+      // Pass 2: relax genre, still avoid a repeated author -- still within the window.
+      if (idx === -1) {
+        for (var j = 0; j < windowEnd; j++) {
+          var au2 = (pool[j].book.author || "").toLowerCase();
+          if (!au2 || !usedAuthors[au2]) { idx = j; break; }
+        }
+      }
+      // Pass 3: nothing diverse within a comparable relevance range --
+      // take the single best-scored remaining candidate.
       if (idx === -1) idx = 0;
       var chosen = pool.splice(idx, 1)[0];
       picks.push(chosen);
       usedGenres[chosen.book.genre] = true;
+      var chosenAuthor = (chosen.book.author || "").toLowerCase();
+      if (chosenAuthor) usedAuthors[chosenAuthor] = true;
     }
     return picks;
   }
@@ -8285,7 +8531,18 @@ function toggleFaq(el){
     "self-development":["self help","self-improvement","personal development"],
     discipline:["discipline","self-discipline","willpower"], habits:["habits","habit"],
     productivity:["productivity","efficiency"], focus:["focus","concentration","deep work"],
-    confidence:["confidence","self-esteem"], money:["money","personal finance","wealth"],
+    // Same reasoning as "money" below: "confidence" alone matched
+    // "Confidence Man" (a political biography, nothing to do with
+    // self-confidence) during testing.
+    confidence:["self-confidence","building confidence","self-esteem","confidence"],
+    // "money" alone is dangerously generic -- it matches true-crime and
+    // political-finance books just as readily as personal-finance advice
+    // (confirmed directly: "Dark Money", about political dark-money
+    // influence, and "Killers of the Flower Moon" both scored as "money"
+    // matches for a personal-finance profile). "Personal finance" leads
+    // instead, both for query-building (topProfileTerms uses kws[0]) and
+    // for matching -- a bare "money" is still checked, just last.
+    money:["personal finance","wealth building","money management","money"],
     relationships:["relationships","love","marriage"], communication:["communication"],
     leadership:["leadership","management"], career:["career","business"],
     actionable:["practical","how to","guide"], "big-picture":["concepts","big picture","philosophy"],
@@ -8301,12 +8558,42 @@ function toggleFaq(el){
     existentialism:["existentialism","existential"], ethics:["ethics","morality"],
     spirituality:["spirituality","spiritual"], philosophy:["philosophy"],
     "business-economics":["business","economics"], "science-tech":["science","technology"],
-    "history-social-science":["history","social science"], "language-literature":["language","literature","writing"],
+    "history-social-science":["history","social science"],
+    // A bare "language" pulled in foreign-language-learning textbooks
+    // (Genki, Integrated Chinese) for a visitor who picked "Language &
+    // Literature" meaning literary studies/writing, not language
+    // acquisition -- lead with the more specific phrases instead.
+    "language-literature":["literary studies","writing craft","literature","language"],
     "general-knowledge":["general knowledge","popular science"],
     psychology:["psychology"], "history-topic":["history"], "science-topic":["science"],
     comforting:["comfort","healing"], business:["business"], health:["health","wellness"],
     "textbook-style":["textbook","reference"], "popular-overview":["introduction","beginner's guide"],
-    "classic-text":["classic"], "practical-guide":["practical guide"]
+    "classic-text":["classic"], "practical-guide":["practical guide"],
+    // Business sub-intents (see business_focus question) -- deliberately
+    // specific search phrases so "startup execution" and "marketing" pull
+    // genuinely different external candidates rather than both collapsing
+    // to a generic "business" search.
+    "business-idea":["business idea","entrepreneurship","startup idea"],
+    "startup-execution":["startup","building a startup","product development"],
+    marketing:["marketing","growth marketing","branding"],
+    sales:["sales","selling"],
+    "founder-mindset":["entrepreneur mindset","founder","entrepreneurship psychology"],
+    scaling:["scaling a business","business growth"],
+    "business-finance":["startup finance","business finance"],
+    // Psychology sub-intents (see psychology_focus question)
+    "psych-relationships":["relationships psychology","social psychology"],
+    "psych-behavior":["behavioral psychology","habits","motivation"],
+    "psych-trauma":["trauma","healing","emotional healing"],
+    "psych-cognitive":["cognitive psychology","decision making","behavioral economics"],
+    "psych-mentalhealth":["mental health","anxiety","anxious"],
+    // History sub-intents (see history_focus question)
+    "history-ancient":["ancient history","classical history","antiquity"],
+    "history-modern":["modern history","contemporary history","20th century"],
+    "history-political-military":["political history","military history","war history"],
+    "history-social-cultural":["social history","cultural history"],
+    // Spirituality sub-intents not already covered by stoicism/eastern-mindfulness above
+    "religious-practice":["religion","faith","spiritual practice"],
+    "purpose-meaning":["purpose","meaning","meaningful life"]
   };
 
   function withTimeout(promise, ms){
@@ -8386,7 +8673,11 @@ function toggleFaq(el){
     return "nonfiction";
   }
   function guessAudience(text){
-    return /juvenile|young adult|children/.test(text.toLowerCase()) ? "young-adult" : "general";
+    // Broadened after finding a real miss during testing: "The Confidence
+    // Code for Girls" (clearly a teen-targeted book) matched none of the
+    // original three patterns and slipped past the "General adult reads
+    // only" exclusion.
+    return /juvenile|young adult|\bya\b|children|teen|tween|for girls|for boys|middle grade|middle-grade/.test(text.toLowerCase()) ? "young-adult" : "general";
   }
   function guessDifficulty(text){
     var t = text.toLowerCase();
@@ -8452,9 +8743,23 @@ function toggleFaq(el){
       // Reference/study material ABOUT a book or author, or industry
       // guides for writers seeking literary agents -- neither is itself
       // something to read for pleasure or self-development.
-      /study guide for|literary agents?|readers'? advisory/i.test(lowerTitle);
+      /study guide for|literary agents?|readers'? advisory/i.test(lowerTitle) ||
+      // K-12 classroom workbooks/practice books (e.g. "Nonfiction Reading
+      // Practice, Grade 4") -- real products, but never what an adult
+      // visitor asking for a book recommendation is looking for.
+      /\bgrade\s?\d|\bgrades\s?\d|workbook|worksheets?\b/i.test(lowerTitle);
     var categories = (vi.categories || []).join(" ");
-    var textBlob = ((vi.title||"") + " " + (vi.subtitle||"") + " " + categories + " " + (vi.description||"")).toLowerCase();
+    // Two blobs, not one: a keyword found in the book's own TITLE or
+    // Google's own CATEGORY classification is a strong, reliable signal
+    // that the book is actually about that thing. A keyword found only
+    // in the free-text description is much weaker -- a long marketing
+    // description for an unrelated book (a workbook, an academic paper
+    // collection) can easily mention "leadership" or "practical" in
+    // passing without the book being remotely about it. scoreExternalBook
+    // weights these very differently so a book that only "mentions" a
+    // topic doesn't outrank one that's actually classified under it.
+    var titleCategoryBlob = ((vi.title||"") + " " + (vi.subtitle||"") + " " + categories).toLowerCase();
+    var textBlob = (titleCategoryBlob + " " + (vi.description||"")).toLowerCase();
     var rawThumb = vi.imageLinks && (vi.imageLinks.thumbnail || vi.imageLinks.smallThumbnail);
     // Google's default thumbnail is a tiny 128px-wide image with a page-curl
     // graphic baked in (zoom=1&edge=curl) -- bumping to zoom=3 and dropping
@@ -8469,7 +8774,7 @@ function toggleFaq(el){
       difficulty: guessDifficulty(textBlob), audience: guessAudience(textBlob),
       cover: cover,
       publisher: vi.publisher || "", description: vi.description || "",
-      source: "Google Books", _textBlob: textBlob, _lowQuality: lowQuality
+      source: "Google Books", _textBlob: textBlob, _titleCategoryBlob: titleCategoryBlob, _lowQuality: lowQuality
     };
   }
 
@@ -8490,7 +8795,7 @@ function toggleFaq(el){
       difficulty: guessDifficulty(textBlob), audience: guessAudience(textBlob),
       cover: doc.cover_i ? ("https://covers.openlibrary.org/b/id/" + doc.cover_i + "-L.jpg") : "",
       publisher: "", description: "",
-      source: "Open Library", _textBlob: textBlob
+      source: "Open Library", _textBlob: textBlob, _titleCategoryBlob: textBlob
     };
   }
 
@@ -8517,18 +8822,55 @@ function toggleFaq(el){
     [book.category, genreSlug].filter(Boolean).forEach(function(k){
       if (profile[k] && matchedKeys.indexOf(k) === -1) { score += profile[k]; matchedKeys.push(k); }
     });
+    // A keyword found in the book's own TITLE or CATEGORY classification
+    // (titleCategoryBlob) is a reliable signal the book is actually about
+    // that thing -- full credit. A keyword found only in the free-text
+    // DESCRIPTION is much weaker: a long marketing description can mention
+    // "leadership" or "practical" in passing without the book being about
+    // it at all (confirmed directly: this is exactly how an unrelated
+    // education-research monograph or a grade-school workbook was scoring
+    // high enough to outrank genuinely relevant books for a business
+    // query). Quarter credit for a description-only hit keeps it in the
+    // pool rather than excluding it outright, but a book that's only
+    // "mentioned in passing" can no longer out-rank one that's actually
+    // classified under the topic.
+    var strongBlob = book._titleCategoryBlob || book._textBlob;
+    var strongMatchedKeys = matchedKeys.slice(); // category/genreSlug matches above count as strong too
     Object.keys(profile).forEach(function(k){
       if (matchedKeys.indexOf(k) !== -1) return;
       var kws = TAG_KEYWORDS[k];
       if (!kws) return;
-      var hit = kws.some(function(kw){ return book._textBlob.indexOf(kw) !== -1; });
-      if (hit) { score += profile[k]; matchedKeys.push(k); }
+      var strongHit = kws.some(function(kw){ return strongBlob.indexOf(kw) !== -1; });
+      var weakHit = !strongHit && kws.some(function(kw){ return book._textBlob.indexOf(kw) !== -1; });
+      if (strongHit) { score += profile[k]; matchedKeys.push(k); strongMatchedKeys.push(k); }
+      else if (weakHit) { score += profile[k] * 0.25; matchedKeys.push(k); }
     });
+    // "Specific relevance" gate: the broad shelf match alone (fiction/
+    // nonfiction/textbook, worth 8-14 points) is nearly a freebie --
+    // Google's category guesser defaults to "nonfiction" for almost
+    // anything that isn't clearly fiction, so an unrelated education-
+    // research monograph or a grade-school workbook can ride that shelf
+    // match to a high score even though it has nothing to do with what
+    // the visitor actually asked for (confirmed directly: this is exactly
+    // how both slipped into a Top 3 for a business-specific query). When
+    // the visitor expressed genuine SPECIFIC intent (any profile key
+    // weighted >=10 beyond the generic shelf itself), require at least
+    // one of those specific keys to have hit this book's own title/
+    // category -- not just the shelf, and not just a description mention
+    // -- or apply a real penalty. A real penalty rather than exclusion,
+    // so a book still fills a slot if nothing more specific exists at all.
+    var specificHighWeightKeys = Object.keys(profile).filter(function(k){
+      return profile[k] >= 10 && !GENERIC_WHY_KEYS[k];
+    });
+    if (specificHighWeightKeys.length && !specificHighWeightKeys.some(function(k){ return strongMatchedKeys.indexOf(k) !== -1; })) {
+      score -= 22;
+    }
     if (answers.category && answers.category !== "any" && answers.category === book.category) score += 6;
     var diffMap = { "diff-easy":"beginner", "diff-medium":"intermediate", "diff-hard":"advanced" };
     if (answers.difficulty && diffMap[answers.difficulty] === book.difficulty) score += 5;
     if (answers.era === "era-modern" && book.year && book.year >= 2010) score += 5;
     if (answers.era === "era-classic" && book.year && book.year <= 1980) score += 5;
+    score += recencyBonus(book.year, answers);
     if (answers.audience === "young-adult" && book.audience === "young-adult") score += 6;
     if ((!answers.audience || answers.audience === "general") && book.audience === "young-adult") score -= 4;
     if (isKnownPublisher(book.publisher)) score += 8;
@@ -8612,7 +8954,7 @@ function toggleFaq(el){
     var rawOlCount = 0;
     if (goodCount < 6) {
       try {
-        var olResults = await searchOpenLibraryBooks(buildOpenLibraryQuery(profile), 40);
+        var olResults = await searchOpenLibraryBooks(buildOpenLibraryQuery(profile), 60);
         rawOlCount = olResults.length;
         results = results.concat(olResults);
       } catch (e) { console.info("[Find Your Next Book] Open Library discovery failed:", e); }
@@ -8643,14 +8985,80 @@ function toggleFaq(el){
     return scored;
   }
 
+  // ------------------------------------------------------------------
+  // Per-book DISTINCTIVE explanations (not just globally-top-weighted).
+  //
+  // The old whyText/autoGoals both sorted a book's matchedKeys purely by
+  // the visitor's PROFILE weight -- a property of the quiz answers, not
+  // of the book. Since every book in a Top 3 already shares the dominant
+  // 1-2 signals (that's *why* they all scored highly), sorting by profile
+  // weight alone made almost every card highlight the same 2-3 phrases,
+  // producing near-identical "why we recommend it" text across all three
+  // -- exactly the complaint this fixes.
+  //
+  // Fix: rank each book's matched keys by a combination of (a) how
+  // RELEVANT the signal is (profile weight) and (b) how DISTINCTIVE it is
+  // -- i.e. how few of the OTHER books currently on screen also matched
+  // it. A key every sibling shares is heavily discounted; a key unique to
+  // this one book is boosted. Same signal set, siblings-aware ranking.
+  // ------------------------------------------------------------------
+  function siblingKeyFrequency(entries){
+    var freq = {};
+    entries.forEach(function(e){
+      var seen = {};
+      (e.matchedKeys || []).forEach(function(k){
+        if (seen[k]) return;
+        seen[k] = true;
+        freq[k] = (freq[k] || 0) + 1;
+      });
+    });
+    return freq;
+  }
+
+  function distinctiveKeysFor(entry, profile, freq, excludeGeneric){
+    var keys = (entry.matchedKeys || []).filter(function(k){
+      return !excludeGeneric || !GENERIC_WHY_KEYS[k];
+    });
+    return keys.slice().sort(function(a, b){
+      var wa = profile[a] || 1, wb = profile[b] || 1;
+      var fa = freq[a] || 1, fb = freq[b] || 1;
+      // Dividing weight by frequency^1.4 means a key shared by all 3
+      // siblings (freq=3) drops far behind the same-weight key only this
+      // book matched (freq=1), while a much stronger shared signal can
+      // still out-rank a weak unique one -- relevance still matters, it's
+      // just no longer the ONLY thing that matters.
+      return (wb / Math.pow(fb, 1.4)) - (wa / Math.pow(fa, 1.4));
+    });
+  }
+
+  function stripHtmlTags(s){ return String(s || "").replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim(); }
+
+  // A clean, book-specific sentence lifted from the book's own metadata
+  // (Google Books' description field) rather than invented -- cut at a
+  // sentence boundary so it reads naturally instead of trailing off
+  // mid-clause. Returns "" when there's nothing reliable to quote from,
+  // so callers can fall back to tag-phrase reasoning instead of a blank.
+  function bookSpecificSnippet(book, maxLen){
+    var clean = stripHtmlTags(book.description);
+    if (!clean) return "";
+    var window = clean.slice(0, maxLen + 60);
+    var m = window.match(/^(.{25,}?[.!?])\s/);
+    var snippet = m ? m[1] : window.slice(0, maxLen).replace(/\s+\S*$/, "");
+    snippet = snippet.trim();
+    // Reject a snippet that's really just the title restated (near-zero
+    // information) or too short to be a real sentence.
+    if (snippet.length < 25) return "";
+    return snippet;
+  }
+
   // External books don't come with hand-written "goals" bullets like the
-  // local library does -- generate them from the same matched profile
-  // signals used for the "why we recommend it" text, so they stay
-  // explainable rather than invented.
-  function autoGoals(matchedKeys, profile){
-    var top = matchedKeys.slice().sort(function(a,b){ return (profile[b]||0) - (profile[a]||0); });
+  // local library does -- generate them from the SAME distinctive signals
+  // used for "why we recommend it", so each book's list differs from its
+  // siblings' instead of all converging on the top 3 profile-wide signals.
+  function autoGoals(entry, profile, freq){
+    var top = distinctiveKeysFor(entry, profile, freq, false);
     var out = [];
-    for (var i = 0; i < top.length && out.length < 3; i++) {
+    for (var i = 0; i < top.length && out.length < 5; i++) {
       var phrase = WHY_PHRASES[top[i]];
       if (phrase && out.indexOf(phrase) === -1) out.push(phrase.charAt(0).toUpperCase() + phrase.slice(1));
     }
@@ -8674,7 +9082,16 @@ function toggleFaq(el){
     "history-social-science":"history and society", "language-literature":"language and writing craft", "general-knowledge":"broad general knowledge",
     psychology:"how the mind works", "history-topic":"history", "science-topic":"science", comforting:"comfort and reassurance",
     business:"business strategy and ideas", health:"health and wellbeing", "textbook-style":"a structured, reference-style format",
-    "popular-overview":"an accessible, readable overview", "classic-text":"a classic primary text", "practical-guide":"a modern, practical guide"
+    "popular-overview":"an accessible, readable overview", "classic-text":"a classic primary text", "practical-guide":"a modern, practical guide",
+    "business-idea":"finding and validating a business idea", "startup-execution":"turning an idea into a working product",
+    marketing:"marketing and growth", sales:"selling effectively", "founder-mindset":"the psychology of building something of your own",
+    scaling:"scaling a business beyond the early stage", "business-finance":"the financial side of building a business",
+    "psych-relationships":"the psychology of relationships and social behavior", "psych-behavior":"understanding habits and what drives your behavior",
+    "psych-trauma":"processing difficult experiences and emotional healing", "psych-cognitive":"how your mind actually makes decisions",
+    "psych-mentalhealth":"understanding anxiety and mental health",
+    "history-ancient":"ancient and classical history", "history-modern":"modern and contemporary history",
+    "history-political-military":"political and military history", "history-social-cultural":"social and cultural history",
+    "religious-practice":"religious or faith-based practice", "purpose-meaning":"finding purpose and meaning"
   };
 
   // "fiction"/"nonfiction"/"textbook" are almost always the single biggest
@@ -8685,29 +9102,101 @@ function toggleFaq(el){
   // category if nothing more specific matched.
   var GENERIC_WHY_KEYS = { fiction:1, nonfiction:1, textbook:1 };
 
-  function whyText(matchedKeys, profile){
-    var specific = matchedKeys.filter(function(k){ return !GENERIC_WHY_KEYS[k]; });
-    var top = specific.slice().sort(function(a,b){ return (profile[b]||0) - (profile[a]||0); });
+  // Two-clause explanation, book-specific rather than templated the same
+  // way for every card:
+  //   1. "You told us you want {distinctive signal(s) for THIS book}."
+  //   2. A book-specific reason -- quoted from the book's own description
+  //      when we have one (external/Google Books results), or the book's
+  //      own subgenre/curated goal when we don't (local library, Open
+  //      Library results without a description) -- never invented.
+  function whyText(entry, profile, freq){
+    var book = entry.book;
+    var top = distinctiveKeysFor(entry, profile, freq, true);
     var phrases = [];
     for (var i = 0; i < top.length && phrases.length < 2; i++) {
       if (WHY_PHRASES[top[i]] && phrases.indexOf(WHY_PHRASES[top[i]]) === -1) phrases.push(WHY_PHRASES[top[i]]);
     }
-    if (phrases.length < 2) {
-      var fallback = matchedKeys.slice().sort(function(a,b){ return (profile[b]||0) - (profile[a]||0); });
+    if (!phrases.length) {
+      var fallback = distinctiveKeysFor(entry, profile, freq, false);
       for (var j = 0; j < fallback.length && phrases.length < 2; j++) {
         if (WHY_PHRASES[fallback[j]] && phrases.indexOf(WHY_PHRASES[fallback[j]]) === -1) phrases.push(WHY_PHRASES[fallback[j]]);
       }
     }
-    if (!phrases.length) return "Your answers suggest this book is a solid overall match for what you're looking for.";
-    return "Your answers suggest you're looking for " + phrases.join(" and ") + ".";
+    var clause1 = phrases.length
+      ? "You told us you want " + phrases.join(" and ") + "."
+      : "Based on your answers, this book is a strong overall match.";
+
+    // Book-specific second clause. Prefer a real sentence from the book's
+    // own description; then the book's own subgenre; then a curated goal
+    // (local library); only fall back to a generic phrase if none of
+    // those exist.
+    var snippet = bookSpecificSnippet(book, 130);
+    var clause2;
+    if (snippet) {
+      clause2 = "This one in particular: " + snippet + (/[.!?]$/.test(snippet) ? "" : ".");
+    } else if (book.subgenre) {
+      clause2 = "This book specifically focuses on " + book.subgenre.toLowerCase() + " rather than the topic in general.";
+    } else if (book.goals && book.goals.length) {
+      clause2 = "This one specifically helps with " + book.goals[0].toLowerCase() + ".";
+    } else if (phrases.length > 1) {
+      clause2 = "It stands out from the others here for its take on " + phrases[1] + ".";
+    } else {
+      clause2 = "";
+    }
+    return clause1 + (clause2 ? " " + clause2 : "");
+  }
+
+  // "MATCHED BECAUSE" -- a compact, per-book list of 1-3 of the visitor's
+  // OWN quiz answers (their actual option label, not a synthesized tag
+  // phrase) that most specifically drove this book's score, ranked the
+  // same distinctive-first way so it varies card to card instead of
+  // repeating the same three reasons under every book.
+  function matchedBecause(entry, profile, freq, answerLabelsByKey){
+    var top = distinctiveKeysFor(entry, profile, freq, true);
+    var out = [];
+    for (var i = 0; i < top.length && out.length < 3; i++) {
+      var label = answerLabelsByKey[top[i]];
+      if (label && out.indexOf(label) === -1) out.push(label);
+    }
+    if (out.length < 2) {
+      var fallback = distinctiveKeysFor(entry, profile, freq, false);
+      for (var j = 0; j < fallback.length && out.length < 3; j++) {
+        var lbl = answerLabelsByKey[fallback[j]];
+        if (lbl && out.indexOf(lbl) === -1) out.push(lbl);
+      }
+    }
+    return out;
+  }
+
+  // Maps every tag weight a visitor's actual answers contributed back to
+  // the human-readable option label that produced it (e.g. "marketing" ->
+  // "Marketing & growth"), so matchedBecause can show the visitor's own
+  // words instead of an internal tag name.
+  function buildAnswerLabelsByKey(){
+    var map = {};
+    activeQuestions().forEach(function(q){
+      var ans = state.answers[q.id];
+      if (ans == null) return;
+      var chosen = q.multi ? ans : [ans];
+      chosen.forEach(function(val){
+        var opt = q.options.filter(function(o){ return o.value === val; })[0];
+        if (!opt || !opt.w) return;
+        Object.keys(opt.w).forEach(function(k){ if (!map[k]) map[k] = opt.label; });
+      });
+    });
+    return map;
   }
 
   // ============================================================
   // 5. RESULTS UI
   // ============================================================
-  var lastTop3 = [];
-  var lastTop5Cache = null;
+  var lastTop3 = [];        // the original Top 3, kept for reference/reset
+  var lastTop5Cache = null; // the CURRENTLY DISPLAYED list (top3, plus any More-Options expansion) -- also what a language switch re-renders
+  var fullPool = [];        // full scored+deduped candidate pool from the last discovery run, so More Options / Show Different Books can pull fresh picks without re-fetching
+  var shownBookKeys = {};   // every book identity key shown so far this results session (top3 + every expansion) -- never repeated
+  var selectedForCheckout = {}; // identity keys currently checked for the price CTA
   var displayMode = "top3";
+  var moreOptionsExhausted = false;
 
   async function renderResults(){
     elCard.classList.add("kgquiz-hidden");
@@ -8730,13 +9219,22 @@ function toggleFaq(el){
       var localScored = BOOKS.map(function(b){ return scoreBook(b, profile, state.answers); });
       pool = dedupeScored(pool.concat(localScored));
     }
+    fullPool = pool;
 
-    var top5 = pickTopN(pool, 5);
-    lastTop3 = top5.slice(0, 3);
-    lastTop5Cache = top5;
-    displayMode = state.answers.result_pref || "top3";
+    var top3 = pickTopN(pool, 3);
+    lastTop3 = top3;
+    shownBookKeys = {};
+    selectedForCheckout = {};
+    top3.forEach(function(e){
+      var k = bookIdentityKey(e.book);
+      shownBookKeys[k] = true;
+      selectedForCheckout[k] = true; // the original Top 3 goes to the price check by default
+    });
+    lastTop5Cache = top3.slice();
+    displayMode = state.answers.result_pref === "one" ? "one" : "top3";
+    moreOptionsExhausted = false;
 
-    renderResultsBody(top5);
+    renderResultsBody(lastTop5Cache);
   }
 
   // A "-L.jpg"/zoom=3 request 404ing doesn't mean the book has no cover at
@@ -8750,8 +9248,9 @@ function toggleFaq(el){
     return "";
   }
 
-  function bookCardHtml(entry, rank, profile){
+  function bookCardHtml(entry, rank, profile, freq, answerLabelsByKey){
     var b = entry.book;
+    var key = bookIdentityKey(b);
     // External sources hand us a real cover URL directly; local library
     // entries only carry an ISBN, so derive the Open Library cover from
     // that instead. Either way, a broken/missing image falls back through
@@ -8763,27 +9262,38 @@ function toggleFaq(el){
     var onErrorJs = secondaryCover
       ? "this.onerror=function(){this.onerror=null;this.src=\'" + fallback + "\';};this.src=\'" + secondaryCover + "\';"
       : "this.onerror=null;this.src=\'" + fallback + "\';";
-    var why = whyText(entry.matchedKeys, profile);
-    var goals = (b.goals && b.goals.length) ? b.goals : autoGoals(entry.matchedKeys, profile);
+    var why = whyText(entry, profile, freq);
+    var matched = matchedBecause(entry, profile, freq, answerLabelsByKey);
+    var goals = (b.goals && b.goals.length) ? b.goals : autoGoals(entry, profile, freq);
     var i18n = window.kgI18n;
     var sourceLabel = b.source || (i18n ? i18n.t("quiz.source_local") : "Kitab Guru Library");
     var matchLabel = i18n ? i18n.tf("quiz.match_rank", { n: rank }) : ("#" + rank + " Match");
+    var isSelected = !!selectedForCheckout[key];
     return '<div class="kgquiz-book-card">' +
+      '<label class="kgquiz-book-select-row"><input class="kgquiz-book-select" data-key="' + escHtml(key) + '" type="checkbox"' + (isSelected ? " checked" : "") + '/> <span>' + (i18n ? i18n.t("quiz.include_in_price_check") : "Include in price check") + '</span></label>' +
       '<div class="kgquiz-book-rank">' + escHtml(matchLabel) + '</div>' +
       '<div class="kgquiz-book-cover-wrap"><img alt="' + escHtml(b.title) + ' cover" onerror="' + onErrorJs + '" src="' + primaryCover + '"/></div>' +
       '<div class="kgquiz-book-title">' + escHtml(b.title) + "</div>" +
       '<div class="kgquiz-book-author">' + escHtml(b.author) + "</div>" +
       '<div class="kgquiz-book-source">' + escHtml(sourceLabel) + "</div>" +
       '<div class="kgquiz-book-why"><b>' + (i18n ? i18n.t("quiz.why_label") : "Why we recommend it:") + '</b><br/>' + escHtml(why) + "</div>" +
-      '<div class="kgquiz-book-helps-label">' + (i18n ? i18n.t("quiz.helps_label") : "What this book can help with") + '</div>' +
-      '<ul class="kgquiz-book-helps">' + goals.slice(0, 3).map(function(g){ return "<li>" + escHtml(g) + "</li>"; }).join("") + "</ul>" +
+      (matched.length ? '<div class="kgquiz-book-matched-label">' + (i18n ? i18n.t("quiz.matched_because_label") : "Matched because") + '</div>' +
+        '<ul class="kgquiz-book-matched">' + matched.map(function(m){ return "<li>" + escHtml(m) + "</li>"; }).join("") + "</ul>" : "") +
+      '<div class="kgquiz-book-helps-label">' + (i18n ? i18n.t("quiz.learn_label") : "What You'll Learn") + '</div>' +
+      (goals.length
+        ? '<ul class="kgquiz-book-helps">' + goals.slice(0, 5).map(function(g){ return "<li>" + escHtml(g) + "</li>"; }).join("") + "</ul>"
+        : '<p class="kgquiz-book-helps-empty">' + (i18n ? i18n.t("quiz.learn_unavailable") : "Detailed info for this book wasn't available from our sources.") + "</p>") +
       "</div>";
   }
 
-  function renderResultsBody(top5){
+  function renderResultsBody(shownList){
+    lastTop5Cache = shownList;
     var profile = buildProfile();
-    var shown = displayMode === "one" ? top5.slice(0, 1) : (displayMode === "more" ? top5 : top5.slice(0, 3));
+    var answerLabelsByKey = buildAnswerLabelsByKey();
+    var shown = displayMode === "one" ? shownList.slice(0, 1) : shownList;
+    var freq = siblingKeyFrequency(shown);
     var gridClass = "kgquiz-results-grid" + (shown.length === 1 ? " kgquiz-grid-1" : "");
+    var canShowMore = displayMode !== "one" && !moreOptionsExhausted;
 
     var i18n = window.kgI18n;
     elResults.innerHTML =
@@ -8793,30 +9303,128 @@ function toggleFaq(el){
       "</div>" +
       '<div class="kgquiz-pref-row">' +
         '<button class="kgquiz-pref-btn' + (displayMode === "one" ? " kgquiz-selected" : "") + '" data-mode="one" type="button">' + (i18n ? i18n.t("quiz.pref_one") : "One book to start") + '</button>' +
-        '<button class="kgquiz-pref-btn' + (displayMode === "top3" ? " kgquiz-selected" : "") + '" data-mode="top3" type="button">' + (i18n ? i18n.t("quiz.pref_top3") : "Top 3") + '</button>' +
-        '<button class="kgquiz-pref-btn' + (displayMode === "more" ? " kgquiz-selected" : "") + '" data-mode="more" type="button">' + (i18n ? i18n.t("quiz.pref_more") : "More options") + '</button>' +
+        '<button class="kgquiz-pref-btn' + (displayMode !== "one" ? " kgquiz-selected" : "") + '" data-mode="top3" type="button">' + (i18n ? i18n.t("quiz.pref_top3") : "Top 3") + '</button>' +
       "</div>" +
-      '<div class="' + gridClass + '">' + shown.map(function(entry, i){ return bookCardHtml(entry, i + 1, profile); }).join("") + "</div>" +
+      '<div class="' + gridClass + '">' + shown.map(function(entry, i){ return bookCardHtml(entry, i + 1, profile, freq, answerLabelsByKey); }).join("") + "</div>" +
+      (canShowMore
+        ? '<button class="kgquiz-more-btn" id="kgquiz-more-btn" type="button">' + (i18n ? i18n.t("quiz.more_options_btn") : "More Options →") + "</button>"
+        : (displayMode !== "one" && moreOptionsExhausted ? '<p class="kgquiz-exhausted-msg">' + (i18n ? i18n.t("quiz.more_options_exhausted") : "We don't have any more strong matches for these preferences.") + "</p>" : "")) +
+      '<div class="kgquiz-secondary-actions">' +
+        '<button class="kgquiz-secondary-btn" id="kgquiz-different-btn" type="button">' + (i18n ? i18n.t("quiz.show_different_btn") : "Show Me Different Books") + '</button>' +
+        '<button class="kgquiz-secondary-btn" id="kgquiz-change-prefs-btn" type="button">' + (i18n ? i18n.t("quiz.change_prefs_btn") : "Change Preferences") + '</button>' +
+      "</div>" +
       '<div class="kgquiz-cta-box">' +
         "<h4>" + (i18n ? i18n.t("quiz.cta_title") : "Check Price &amp; Get These Books") + "</h4>" +
-        "<p>" + (i18n ? i18n.t("quiz.cta_sub") : "Check the current market price and your Kitab Guru price — your top 3 matches go straight into the price calculator below.") + "</p>" +
-        '<button class="btn-gold" id="kgquiz-checkout-btn" type="button">' + (i18n ? i18n.t("quiz.cta_btn") : "Check Price &amp; Get These Books →") + '</button>' +
+        "<p>" + (i18n ? i18n.t("quiz.cta_sub") : "Check the current market price and your Kitab Guru price — the books you've selected above go straight into the price calculator below.") + "</p>" +
+        '<button class="btn-gold" id="kgquiz-checkout-btn" type="button">' + checkoutBtnLabel() + '</button>' +
       "</div>" +
       '<button class="kgquiz-restart-btn" id="kgquiz-restart-btn" type="button">' + (i18n ? i18n.t("quiz.restart_btn") : "Retake the quiz") + '</button>';
 
     elResults.querySelectorAll(".kgquiz-pref-btn").forEach(function(btn){
       btn.addEventListener("click", function(){
-        displayMode = btn.dataset.mode;
-        renderResultsBody(top5);
+        displayMode = btn.dataset.mode === "one" ? "one" : "top3";
+        renderResultsBody(lastTop5Cache);
       });
     });
+    elResults.querySelectorAll(".kgquiz-book-select").forEach(function(cb){
+      cb.addEventListener("change", function(){
+        if (cb.checked) selectedForCheckout[cb.dataset.key] = true; else delete selectedForCheckout[cb.dataset.key];
+        var btn = document.getElementById("kgquiz-checkout-btn");
+        if (btn) btn.textContent = checkoutBtnLabel();
+      });
+    });
+    var moreBtn = document.getElementById("kgquiz-more-btn");
+    if (moreBtn) moreBtn.addEventListener("click", handleMoreOptions);
+    document.getElementById("kgquiz-different-btn").addEventListener("click", handleShowDifferentBooks);
+    document.getElementById("kgquiz-change-prefs-btn").addEventListener("click", handleChangePreferences);
     document.getElementById("kgquiz-checkout-btn").addEventListener("click", handleCheckout);
     document.getElementById("kgquiz-restart-btn").addEventListener("click", restartQuiz);
+  }
+
+  function checkoutBtnLabel(){
+    var n = Object.keys(selectedForCheckout).length;
+    var i18n = window.kgI18n;
+    if (!n) return i18n ? i18n.t("quiz.cta_btn") : "Check Price & Get These Books →";
+    return i18n ? i18n.tf("quiz.cta_btn_n", { n: n }) : ("Check Price & Get " + n + (n === 1 ? " Book" : " Books") + " →");
+  }
+
+  // "More Options" -- pulls MORE books beyond what's currently on screen
+  // (never repeating anything already shown), appends them to the grid.
+  // This is deliberately an APPEND, not a replace: the visitor's original
+  // Top 3 stays put and stays selected for checkout; the newly-appended
+  // books start unselected until the visitor actively picks one.
+  function handleMoreOptions(){
+    var profile = buildProfile();
+    var excludeSet = new Set(Object.keys(shownBookKeys));
+    var more = pickTopN(fullPool, 5, { exclude: excludeSet });
+    if (!more.length) {
+      moreOptionsExhausted = true;
+      renderResultsBody(lastTop5Cache);
+      return;
+    }
+    more.forEach(function(e){ shownBookKeys[bookIdentityKey(e.book)] = true; });
+    if (more.length < 5) moreOptionsExhausted = true;
+    renderResultsBody(lastTop5Cache.concat(more));
+  }
+
+  // "Show Me Different Books" -- keeps the SAME quiz answers/profile but
+  // REPLACES the current set with a fresh one, excluding every book shown
+  // so far this results session. Different from "More Options": this
+  // swaps out what's shown rather than adding to it.
+  function handleShowDifferentBooks(){
+    var excludeSet = new Set(Object.keys(shownBookKeys));
+    var fresh = pickTopN(fullPool, 3, { exclude: excludeSet });
+    if (!fresh.length) {
+      var i18n = window.kgI18n;
+      var msg = document.createElement("p");
+      msg.className = "kgquiz-exhausted-msg";
+      msg.textContent = i18n ? i18n.t("quiz.no_different_books") : "You've seen our strongest matches for these preferences -- try Change Preferences for a new angle.";
+      var grid = elResults.querySelector(".kgquiz-results-grid");
+      if (grid) grid.parentNode.insertBefore(msg, grid.nextSibling);
+      return;
+    }
+    lastTop3 = fresh;
+    selectedForCheckout = {};
+    fresh.forEach(function(e){
+      var k = bookIdentityKey(e.book);
+      shownBookKeys[k] = true;
+      selectedForCheckout[k] = true;
+    });
+    moreOptionsExhausted = false;
+    displayMode = displayMode === "one" ? "one" : "top3";
+    renderResultsBody(fresh);
+  }
+
+  // "Change Preferences" -- keeps every existing answer (so the visitor
+  // isn't forced through the whole quiz again) but sends them back into
+  // the question flow to review/edit anything they want to change.
+  // renderQuestion() already pre-selects state.answers[q.id] for whichever
+  // question is on screen, so anything left untouched just needs a tap on
+  // Next; reaching the end recomputes recommendations from the (possibly
+  // updated) answers automatically via the normal goNext -> renderResults
+  // path -- no separate recompute step needed.
+  function handleChangePreferences(){
+    state.history = [];
+    elResults.classList.add("kgquiz-hidden");
+    elCard.classList.remove("kgquiz-hidden");
+    renderQuestion();
+    window.scrollTo({ top: root.getBoundingClientRect().top + window.pageYOffset - 90, behavior:"smooth" });
   }
 
   function handleCheckout(){
     var calc = document.getElementById("price-calculator");
     if (calc) calc.scrollIntoView({ behavior:"smooth", block:"start" });
+
+    // The selected set is the source of truth (section 13): whatever the
+    // visitor currently has checked, whether that's still the original
+    // Top 3 or a mix that includes More-Options picks. Fall back to the
+    // original Top 3 only if nothing at all is selected (shouldn't happen
+    // in normal use, but never send an empty order).
+    var selectedKeys = Object.keys(selectedForCheckout);
+    var pool = lastTop5Cache && lastTop5Cache.length ? lastTop5Cache : lastTop3;
+    var chosenEntries = selectedKeys.length
+      ? pool.filter(function(e){ return selectedForCheckout[bookIdentityKey(e.book)]; })
+      : lastTop3;
 
     // Reuse the exact cover URL already shown (and known-good) on the
     // results card -- recomputing a fresh Open-Library-by-ISBN guess here
@@ -8824,7 +9432,7 @@ function toggleFaq(el){
     // cover, and could 404 even when the results card's own image loaded
     // fine. Only the local-library emergency fallback has no .cover of its
     // own, so it's still the right default for that one case.
-    var books = lastTop3.map(function(entry){
+    var books = chosenEntries.map(function(entry){
       return { title: entry.book.title, author: entry.book.author, isbn: entry.book.isbn, cover: entry.book.cover || coverUrl(entry.book.isbn) };
     });
 
@@ -8836,6 +9444,11 @@ function toggleFaq(el){
   function restartQuiz(){
     state = { answers:{}, history:[] };
     lastTop5Cache = null;
+    lastTop3 = [];
+    fullPool = [];
+    shownBookKeys = {};
+    selectedForCheckout = {};
+    moreOptionsExhausted = false;
     elResults.classList.add("kgquiz-hidden");
     elResults.innerHTML = "";
     elIntro.classList.remove("kgquiz-hidden");
