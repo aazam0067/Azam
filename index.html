@@ -753,6 +753,11 @@ html{scroll-behavior:smooth;}
 .kgquiz-cta-box p{color:rgba(255,255,255,.6);font-size:.88rem;margin:0 auto 20px;max-width:440px;}
 .kgquiz-restart-btn{display:block;margin:18px auto 0;background:none;border:none;color:rgba(255,255,255,.4);font-size:.8rem;text-decoration:underline;cursor:pointer;font-family:inherit;}
 
+.kgquiz-expert-cta{text-align:center;margin-top:22px;padding-top:22px;border-top:1px solid rgba(255,255,255,.08);}
+.kgquiz-expert-cta p{color:rgba(255,255,255,.5);font-size:.85rem;margin-bottom:12px;}
+.kgquiz-expert-cta-btn{background:none;border:1.5px solid rgba(255,255,255,.2);color:rgba(255,255,255,.85);border-radius:50px;padding:11px 24px;font-size:.82rem;font-weight:700;letter-spacing:.02em;cursor:pointer;transition:border-color .18s,color .18s,background .18s;font-family:inherit;}
+.kgquiz-expert-cta-btn:hover{border-color:var(--gold);color:var(--gold);background:rgba(255,217,61,.06);}
+
 @media(max-width:720px){
   .kgquiz-options{grid-template-columns:1fr;}
   .kgquiz-results-grid{grid-template-columns:1fr;}
@@ -760,6 +765,7 @@ html{scroll-behavior:smooth;}
   .kgquiz-question{font-size:1.25rem;}
   .kgquiz-secondary-actions{flex-direction:column;align-items:stretch;}
   .kgquiz-secondary-btn,.kgquiz-more-btn{padding:14px 20px;}
+  .kgquiz-expert-cta-btn{width:100%;padding:14px 20px;}
 }
 </style>
 <section class="section kgquiz-section" id="book-quiz" style="background:#0d0d0d;">
@@ -2103,6 +2109,10 @@ section[id]{scroll-margin-top:72px;}
       "quiz.more_options_exhausted":"We don't have any more strong matches for these preferences.",
       "quiz.show_different_btn":"Show Me Different Books","quiz.change_prefs_btn":"Change Preferences",
       "quiz.no_different_books":"You've seen our strongest matches for these preferences — try Change Preferences for a new angle.",
+      "quiz.expert_cta_sub":"Not finding exactly what you're looking for?","quiz.expert_cta_btn":"Talk to a Book Expert",
+      "quiz.expert_modal_title":"Talk to a Book Expert","quiz.expert_modal_body":"Talk to a Kitab Guru book expert and we'll help you find the right books based on your interests, goals, subject, level, language, or any specific requirement.",
+      "quiz.expert_modal_whatsapp_sub":"Chat with us","quiz.expert_modal_instagram_sub":"Message us","quiz.expert_modal_email_sub":"Email us","quiz.expert_modal_linkedin_sub":"Connect with us",
+      "quiz.expert_modal_close":"Close",
 
       "quiz.q.business_focus.text":"What aspect of business interests you most?","quiz.q.business_focus.hint":"Pick up to 2.",
       "quiz.q.business_focus.opt.business-idea":"Starting a business / finding an idea",
@@ -9318,6 +9328,10 @@ function toggleFaq(el){
         "<p>" + (i18n ? i18n.t("quiz.cta_sub") : "Check the current market price and your Kitab Guru price — the books you've selected above go straight into the price calculator below.") + "</p>" +
         '<button class="btn-gold" id="kgquiz-checkout-btn" type="button">' + checkoutBtnLabel() + '</button>' +
       "</div>" +
+      '<div class="kgquiz-expert-cta">' +
+        "<p>" + (i18n ? i18n.t("quiz.expert_cta_sub") : "Not finding exactly what you're looking for?") + "</p>" +
+        '<button class="kgquiz-expert-cta-btn" id="kgquiz-expert-btn" type="button">' + (i18n ? i18n.t("quiz.expert_cta_btn") : "Talk to a Book Expert") + '</button>' +
+      "</div>" +
       '<button class="kgquiz-restart-btn" id="kgquiz-restart-btn" type="button">' + (i18n ? i18n.t("quiz.restart_btn") : "Retake the quiz") + '</button>';
 
     elResults.querySelectorAll(".kgquiz-pref-btn").forEach(function(btn){
@@ -9339,6 +9353,10 @@ function toggleFaq(el){
     document.getElementById("kgquiz-change-prefs-btn").addEventListener("click", handleChangePreferences);
     document.getElementById("kgquiz-checkout-btn").addEventListener("click", handleCheckout);
     document.getElementById("kgquiz-restart-btn").addEventListener("click", restartQuiz);
+    var expertBtn = document.getElementById("kgquiz-expert-btn");
+    if (expertBtn) expertBtn.addEventListener("click", function(){
+      if (window.kgOpenExpertModal) window.kgOpenExpertModal();
+    });
   }
 
   function checkoutBtnLabel(){
@@ -9507,6 +9525,149 @@ function toggleFaq(el){
       event.preventDefault();
       if (typeof closeMob === 'function') closeMob();
     }
+  });
+})();
+</script>
+
+<style id="kg-ux-v1-styles">
+.kg-expert-modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);backdrop-filter:blur(4px);z-index:2000;align-items:center;justify-content:center;padding:20px;}
+.kg-expert-modal-overlay.kg-open{display:flex;}
+.kg-expert-modal{position:relative;width:100%;max-width:440px;max-height:88vh;overflow-y:auto;background:#171717;border:1px solid rgba(255,217,61,.18);border-radius:22px;padding:32px 28px;box-shadow:0 30px 80px rgba(0,0,0,.5);}
+.kg-expert-modal-close{position:absolute;top:16px;right:16px;width:34px;height:34px;border-radius:50%;border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.04);color:rgba(255,255,255,.7);font-size:1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:border-color .18s,color .18s;}
+.kg-expert-modal-close:hover{border-color:var(--gold);color:var(--gold);}
+.kg-expert-modal h3{font-family:'Playfair Display',serif;font-size:1.4rem;color:#fff;margin:0 26px 12px 0;}
+.kg-expert-modal p{color:rgba(255,255,255,.62);font-size:.9rem;line-height:1.6;margin-bottom:24px;}
+.kg-expert-modal-channels{display:flex;flex-direction:column;gap:10px;}
+.kg-expert-channel{display:flex;align-items:center;gap:14px;padding:14px 16px;border:1px solid rgba(255,255,255,.1);border-radius:14px;text-decoration:none;transition:border-color .18s,background .18s,transform .15s;}
+.kg-expert-channel:hover{border-color:rgba(255,217,61,.4);background:rgba(255,217,61,.05);transform:translateY(-1px);}
+.kg-expert-channel-icon{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.kg-expert-channel-label{font-size:.92rem;font-weight:700;color:#fff;}
+.kg-expert-channel-sub{font-size:.78rem;color:rgba(255,255,255,.45);}
+
+.kg-mobile-menu-btn{display:none;position:fixed;right:calc(18px + env(safe-area-inset-right,0px));bottom:calc(18px + env(safe-area-inset-bottom,0px));z-index:1300;align-items:center;gap:8px;background:var(--gold);color:var(--ink);border:none;border-radius:50px;padding:15px 22px;font-size:.82rem;font-weight:800;letter-spacing:.06em;cursor:pointer;box-shadow:0 12px 30px rgba(255,217,61,.35);transition:transform .18s,box-shadow .18s;font-family:inherit;}
+.kg-mobile-menu-btn:active{transform:scale(.96);}
+.kg-mobile-menu-btn-icon{font-size:1.05rem;line-height:1;}
+
+.kg-scroll-btn{position:fixed;right:calc(18px + env(safe-area-inset-right,0px));bottom:calc(18px + env(safe-area-inset-bottom,0px));z-index:1250;width:46px;height:46px;border-radius:50%;background:rgba(23,23,23,.92);border:1.5px solid rgba(255,217,61,.35);color:var(--gold);display:flex;align-items:center;justify-content:center;font-size:1.15rem;cursor:pointer;box-shadow:0 10px 26px rgba(0,0,0,.4);backdrop-filter:blur(12px);transition:opacity .2s,transform .2s,border-color .2s,background .2s;opacity:0;pointer-events:none;transform:translateY(8px);font-family:inherit;}
+.kg-scroll-btn.kg-visible{opacity:1;pointer-events:auto;transform:none;}
+.kg-scroll-btn:hover{border-color:var(--gold);background:rgba(255,217,61,.14);}
+
+@media(max-width:768px){
+  .hamburger{display:none!important;}
+  .kg-mobile-menu-btn{display:flex;}
+  .kg-scroll-btn{bottom:calc(84px + env(safe-area-inset-bottom,0px));width:44px;height:44px;font-size:1.05rem;}
+}
+</style>
+
+<div class="kg-expert-modal-overlay" id="kgExpertModalOverlay">
+<div aria-labelledby="kgExpertModalTitle" aria-modal="true" class="kg-expert-modal" role="dialog">
+<button aria-label="Close" class="kg-expert-modal-close" id="kgExpertModalClose" type="button">✕</button>
+<h3 data-i18n="quiz.expert_modal_title" id="kgExpertModalTitle">Talk to a Book Expert</h3>
+<p data-i18n="quiz.expert_modal_body">Talk to a Kitab Guru book expert and we'll help you find the right books based on your interests, goals, subject, level, language, or any specific requirement.</p>
+<div class="kg-expert-modal-channels">
+<a class="kg-expert-channel" href="https://wa.me/917301914787" rel="noopener" target="_blank">
+<div class="kg-expert-channel-icon" style="background:rgba(37,211,102,.12);"><svg fill="#25D366" height="20" viewbox="0 0 24 24" width="20"><path d="M20.52 3.48A11.93 11.93 0 0 0 12 0C5.37 0 0 5.37 0 12c0 2.11.55 4.16 1.6 5.97L0 24l6.22-1.57A11.93 11.93 0 0 0 12 24c6.63 0 12-5.37 12-12 0-3.2-1.25-6.22-3.48-8.52zm-8.52 18.4a9.88 9.88 0 0 1-5.06-1.39l-.36-.22-3.69.93.97-3.59-.24-.37A9.85 9.85 0 0 1 2.1 12c0-5.46 4.44-9.9 9.9-9.9 2.64 0 5.13 1.03 6.99 2.9a9.86 9.86 0 0 1 2.91 7c0 5.46-4.44 9.88-9.9 9.88zm5.42-7.4c-.3-.15-1.76-.87-2.03-.97-.27-.1-.47-.15-.67.15-.2.3-.77.97-.94 1.17-.17.2-.35.22-.65.07a8.16 8.16 0 0 1-2.4-1.48 9 9 0 0 1-1.66-2.07c-.17-.3-.02-.46.13-.61.13-.13.3-.35.45-.52.15-.17.2-.3.3-.5.1-.2.05-.37-.02-.52-.07-.15-.67-1.6-.92-2.2-.24-.57-.48-.5-.67-.5h-.57c-.2 0-.52.07-.79.37-.27.3-1.03 1.01-1.03 2.46 0 1.45 1.06 2.86 1.2 3.06.15.2 2.07 3.16 5.02 4.44.7.3 1.25.48 1.67.61.7.22 1.34.19 1.85.12.56-.08 1.74-.71 1.98-1.4.24-.69.24-1.28.17-1.4-.07-.12-.27-.2-.57-.35z"></path></svg></div>
+<div><div class="kg-expert-channel-label">WhatsApp</div><div class="kg-expert-channel-sub" data-i18n="quiz.expert_modal_whatsapp_sub">Chat with us</div></div>
+</a>
+<a class="kg-expert-channel" href="https://instagram.com/kitabguru0067" rel="noopener" target="_blank">
+<div class="kg-expert-channel-icon" style="background:rgba(214,36,159,.1);"><svg height="20" viewbox="0 0 24 24" width="20"><defs><lineargradient id="ig-expert" x1="0%" x2="100%" y1="100%" y2="0%"><stop offset="0%" stop-color="#fd5949"></stop><stop offset="50%" stop-color="#d6249f"></stop><stop offset="100%" stop-color="#285AEB"></stop></lineargradient></defs><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 1 0 0 12.324 6.162 6.162 0 0 0 0-12.324zM12 16a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm6.406-11.845a1.44 1.44 0 1 0 0 2.881 1.44 1.44 0 0 0 0-2.881z" fill="url(#ig-expert)"></path></svg></div>
+<div><div class="kg-expert-channel-label">Instagram</div><div class="kg-expert-channel-sub" data-i18n="quiz.expert_modal_instagram_sub">Message us</div></div>
+</a>
+<a class="kg-expert-channel" href="mailto:ebooks@kitabguru.com">
+<div class="kg-expert-channel-icon" style="background:rgba(255,217,61,.12);"><svg fill="none" height="20" stroke="#FFD93D" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewbox="0 0 24 24" width="20"><rect height="16" rx="2" width="20" x="2" y="4"></rect><path d="M2 6l10 7 10-7"></path></svg></div>
+<div><div class="kg-expert-channel-label">Email</div><div class="kg-expert-channel-sub" data-i18n="quiz.expert_modal_email_sub">Email us</div></div>
+</a>
+<a class="kg-expert-channel" href="https://linkedin.com/company/kitabguru0067" rel="noopener" target="_blank">
+<div class="kg-expert-channel-icon" style="background:rgba(10,102,194,.12);"><svg fill="#0A66C2" height="20" viewbox="0 0 24 24" width="20"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"></path></svg></div>
+<div><div class="kg-expert-channel-label">LinkedIn</div><div class="kg-expert-channel-sub" data-i18n="quiz.expert_modal_linkedin_sub">Connect with us</div></div>
+</a>
+</div>
+</div>
+</div>
+
+<button aria-controls="mobileMenu" aria-expanded="false" aria-label="Open menu" class="kg-mobile-menu-btn" id="kgMobMenuBtn" type="button">
+<span class="kg-mobile-menu-btn-icon" aria-hidden="true">☰</span><span id="kgMobMenuBtnLabel">MENU</span>
+</button>
+
+<button aria-label="Scroll to bottom of page" class="kg-scroll-btn" id="kgScrollBtn" type="button">↓</button>
+
+<script id="kg-ux-v1-script">
+(function(){
+  // Mobile MENU button (bottom-right) reuses the existing hamburger toggle
+  // and the existing #mobileMenu contents/functionality — no second nav.
+  var ham = document.getElementById('hamburger');
+  var mob = document.getElementById('mobileMenu');
+  var mobBtn = document.getElementById('kgMobMenuBtn');
+  var mobBtnLabel = document.getElementById('kgMobMenuBtnLabel');
+  function setMobBtnState(open){
+    if (!mobBtn) return;
+    mobBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    if (mobBtnLabel) mobBtnLabel.textContent = open ? 'CLOSE' : 'MENU';
+  }
+  if (mobBtn && ham && mob) {
+    mobBtn.addEventListener('click', function(){
+      ham.classList.toggle('open');
+      mob.classList.toggle('open');
+      setMobBtnState(mob.classList.contains('open'));
+    });
+    // Stay in sync when the menu is closed some other way (a nav link's closeMob()).
+    new MutationObserver(function(){ setMobBtnState(mob.classList.contains('open')); })
+      .observe(mob, { attributes: true, attributeFilter: ['class'] });
+  }
+
+  // Floating scroll button: UP arrow + scroll-to-top when down the page,
+  // DOWN arrow + scroll-to-bottom when at/near the top.
+  var scrollBtn = document.getElementById('kgScrollBtn');
+  if (scrollBtn) {
+    var ticking = false;
+    function updateScrollBtn(){
+      ticking = false;
+      var y = window.pageYOffset || document.documentElement.scrollTop;
+      var nearTop = y < 400;
+      scrollBtn.textContent = nearTop ? '↓' : '↑';
+      scrollBtn.setAttribute('aria-label', nearTop ? 'Scroll to bottom of page' : 'Scroll to top of page');
+      scrollBtn.dataset.dir = nearTop ? 'down' : 'up';
+      scrollBtn.classList.toggle('kg-visible', document.documentElement.scrollHeight > window.innerHeight * 1.4);
+    }
+    window.addEventListener('scroll', function(){
+      if (!ticking) { ticking = true; window.requestAnimationFrame(updateScrollBtn); }
+    }, { passive: true });
+    window.addEventListener('resize', updateScrollBtn);
+    scrollBtn.addEventListener('click', function(){
+      if (scrollBtn.dataset.dir === 'down') {
+        window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'smooth' });
+      } else {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    });
+    updateScrollBtn();
+  }
+
+  // "Talk to a Book Expert" modal — reuses the site's existing contact
+  // channels (WhatsApp/Instagram/Email/LinkedIn), no new destinations.
+  var expertOverlay = document.getElementById('kgExpertModalOverlay');
+  var expertClose = document.getElementById('kgExpertModalClose');
+  var expertLastFocus = null;
+  function openExpertModal(){
+    if (!expertOverlay) return;
+    expertLastFocus = document.activeElement;
+    expertOverlay.classList.add('kg-open');
+    document.body.style.overflow = 'hidden';
+    if (expertClose) expertClose.focus();
+  }
+  function closeExpertModal(){
+    if (!expertOverlay) return;
+    expertOverlay.classList.remove('kg-open');
+    document.body.style.overflow = '';
+    if (expertLastFocus && expertLastFocus.focus) expertLastFocus.focus();
+  }
+  window.kgOpenExpertModal = openExpertModal;
+  if (expertClose) expertClose.addEventListener('click', closeExpertModal);
+  if (expertOverlay) expertOverlay.addEventListener('click', function(e){
+    if (e.target === expertOverlay) closeExpertModal();
+  });
+  document.addEventListener('keydown', function(e){
+    if (e.key === 'Escape' && expertOverlay && expertOverlay.classList.contains('kg-open')) closeExpertModal();
   });
 })();
 </script>
