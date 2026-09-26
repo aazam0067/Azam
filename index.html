@@ -472,6 +472,14 @@ html{scroll-behavior:smooth;}
 .hero-search-note{margin:13px 0 0;color:rgba(255,255,255,.54);font-size:.72rem;letter-spacing:.04em;}
 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;}
 .hero-quiz-cta{margin-top:17px!important;}
+.hero-calculator-panel{display:none;position:relative;width:min(760px,100%);margin:22px auto 0;padding:22px;border:1px solid rgba(255,217,61,.28);border-radius:20px;background:rgba(13,13,13,.94);text-align:left;box-shadow:0 24px 65px rgba(0,0,0,.38);}
+.hero-calculator-panel.is-open{display:block;animation:heroCalcIn .28s ease both;}
+.hero-calculator-heading{padding:0 42px 17px 0;color:#fff;font:700 1.05rem 'Inter',sans-serif;}
+.hero-calculator-panel .kgcalc-card{margin:0;max-width:none;padding:0;background:transparent;border:0;box-shadow:none;}
+.hero-calculator-panel .kgcalc-disclaimer{margin-bottom:0;}
+.hero-calculator-close{position:absolute;right:16px;top:14px;width:32px;height:32px;border:1px solid rgba(255,255,255,.14);border-radius:50%;background:rgba(255,255,255,.05);color:#fff;font-size:1.25rem;line-height:1;cursor:pointer;}
+.hero-calculator-close:hover{border-color:var(--gold);color:var(--gold);}
+@keyframes heroCalcIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:none}}
 @media(max-width:640px){
   .hero-h1{font-size:clamp(2.25rem,11vw,3.4rem)!important;}
   .hero-h1 .accent{font-size:.52em;margin-top:9px;}
@@ -489,7 +497,7 @@ html{scroll-behavior:smooth;}
 <span class="nav-brand-text">Kitab Guru</span>
 </a>
 <div class="nav-links">
-<a data-i18n="nav.services" href="#services">Services</a><a data-i18n="nav.explore" href="#book-wall">Explore</a><a data-i18n="nav.quiz" href="#book-quiz">Find Your Book</a><a data-i18n="nav.calculator" href="#price-calculator">Price Calculator</a><a data-i18n="nav.reviews" href="#reviews">Reviews</a><a data-i18n="nav.about" href="#about">About Us</a><a data-i18n="nav.faq" href="#faq">FAQ</a><a data-i18n="nav.contact" href="#contact">Contact</a></div>
+<a data-i18n="nav.services" href="#services">Services</a><a data-i18n="nav.explore" href="#book-wall">Explore</a><a data-i18n="nav.quiz" href="#book-quiz">Find Your Book</a><a data-i18n="nav.reviews" href="#reviews">Reviews</a><a data-i18n="nav.about" href="#about">About Us</a><a data-i18n="nav.faq" href="#faq">FAQ</a><a data-i18n="nav.contact" href="#contact">Contact</a></div>
 <div class="kglang" id="kglang">
 <button aria-expanded="false" aria-label="Select language" class="kglang-btn" id="kglangBtn" type="button"><span id="kglangBtnLabel">EN</span> <svg fill="none" height="10" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24" width="10"><polyline points="6 9 12 15 18 9"></polyline></svg></button>
 <div class="kglang-panel kglang-hidden" id="kglangPanel">
@@ -515,7 +523,7 @@ html{scroll-behavior:smooth;}
 </div>
 </div>
 </div>
-<a data-i18n="nav.services" href="#services" onclick="closeMob()">Services</a><a data-i18n="nav.explore" href="#book-wall" onclick="closeMob()">Explore</a><a data-i18n="nav.quiz" href="#book-quiz" onclick="closeMob()">Find Your Book</a><a data-i18n="nav.calculator" href="#price-calculator" onclick="closeMob()">Price Calculator</a><a data-i18n="nav.reviews" href="#reviews" onclick="closeMob()">Reviews</a><a data-i18n="nav.about" href="#about" onclick="closeMob()">About Us</a><a data-i18n="nav.faq" href="#faq" onclick="closeMob()">FAQ</a><a data-i18n="nav.contact" href="#contact" onclick="closeMob()">Contact</a></div>
+<a data-i18n="nav.services" href="#services" onclick="closeMob()">Services</a><a data-i18n="nav.explore" href="#book-wall" onclick="closeMob()">Explore</a><a data-i18n="nav.quiz" href="#book-quiz" onclick="closeMob()">Find Your Book</a><a data-i18n="nav.reviews" href="#reviews" onclick="closeMob()">Reviews</a><a data-i18n="nav.about" href="#about" onclick="closeMob()">About Us</a><a data-i18n="nav.faq" href="#faq" onclick="closeMob()">FAQ</a><a data-i18n="nav.contact" href="#contact" onclick="closeMob()">Contact</a></div>
 <!-- HERO -->
 <section class="hero" id="home">
 <div class="hero-bg-grid"></div>
@@ -534,6 +542,40 @@ html{scroll-behavior:smooth;}
 <button type="submit">Check Price <span aria-hidden="true">→</span></button>
 </form>
 <p class="hero-search-note">Instant estimate • No sign-up required</p>
+<div aria-live="polite" class="hero-calculator-panel" id="price-calculator">
+<button aria-label="Close price calculator" class="hero-calculator-close" id="hero-calculator-close" type="button">×</button>
+<div class="hero-calculator-heading">Complete your price check</div>
+<div class="kgcalc-card">
+
+<div class="kgcalc-field">
+<label class="kgcalc-label" data-i18n="calc.country_label" for="kgcalc-country-input">1. Your country</label>
+<div class="kgcalc-country-combo">
+<input autocomplete="off" class="kgcalc-select kgcalc-input" data-i18n-placeholder="calc.country_placeholder" id="kgcalc-country-input" placeholder="Search your country…" type="text"/>
+<ul class="kgcalc-results kgcalc-country-results kgcalc-hidden" id="kgcalc-country-results"></ul>
+</div>
+<p class="kgcalc-country-lock-note kgcalc-hidden" id="kgcalc-country-lock-note"></p>
+</div>
+
+<div aria-live="polite" class="kgcalc-auto-lookup-banner kgcalc-hidden" id="kgcalc-auto-lookup-banner" role="status"><span class="kgcalc-auto-lookup-spinner"></span><span id="kgcalc-auto-lookup-text"></span></div>
+
+<div class="kgcalc-field kgcalc-hidden" id="kgcalc-search-wrap">
+<label class="kgcalc-label" data-i18n="calc.search_label" for="kgcalc-search">2. Search for a book</label>
+<div class="kgcalc-search-row">
+<input autocomplete="off" class="kgcalc-select kgcalc-input" data-i18n-placeholder="calc.search_placeholder" id="kgcalc-search" placeholder="Title, author, or ISBN" type="text"/>
+<button class="btn-gold-sm" data-i18n="calc.search_btn" id="kgcalc-search-btn" type="button">Search</button>
+</div>
+<ul class="kgcalc-results" id="kgcalc-results"></ul>
+</div>
+
+<p aria-live="polite" class="kgcalc-status" id="kgcalc-status" role="status"></p>
+
+<div class="kgcalc-hidden" id="kgcalc-price-wrap"></div>
+
+<div class="kgcalc-hidden" id="kgcalc-cart"></div>
+
+<p class="kgcalc-disclaimer" data-i18n="calc.disclaimer">Kitab Guru pricing shown here is an estimated quote based on the selected market price and may require final confirmation with our team.</p>
+</div>
+</div>
 <a class="hero-quiz-cta" href="#book-quiz"><span class="hero-quiz-cta-q" data-i18n="hero.quiz_cta_q">Not sure what to read?</span><span class="hero-quiz-cta-link" data-i18n="hero.quiz_cta_link">Find Your Next Book →</span></a>
 </div>
 <div aria-label="A library and real book cover examples" class="hero-visual">
@@ -931,44 +973,6 @@ select.kgcalc-select{appearance:none;-webkit-appearance:none;background-image:ur
 }
 </style>
 <!-- BOOK PRICE CALCULATOR -->
-<section class="section kgcalc-section" id="price-calculator" style="background:#0d0d0d;">
-<div class="reveal kgcalc-head">
-<span class="section-tag" data-i18n="calc.tag">Instant Estimate</span>
-<h2 class="section-title" data-i18n="calc.title">Know Your Book Price.</h2>
-<p class="section-sub" data-i18n="calc.sub">Pick your country, search for the book you want, and see today's market price next to the Kitab Guru price — before you message us.</p>
-</div>
-
-<div class="kgcalc-card reveal">
-
-<div class="kgcalc-field">
-<label class="kgcalc-label" data-i18n="calc.country_label" for="kgcalc-country-input">1. Your country</label>
-<div class="kgcalc-country-combo">
-<input autocomplete="off" class="kgcalc-select kgcalc-input" data-i18n-placeholder="calc.country_placeholder" id="kgcalc-country-input" placeholder="Search your country…" type="text"/>
-<ul class="kgcalc-results kgcalc-country-results kgcalc-hidden" id="kgcalc-country-results"></ul>
-</div>
-<p class="kgcalc-country-lock-note kgcalc-hidden" id="kgcalc-country-lock-note"></p>
-</div>
-
-<div aria-live="polite" class="kgcalc-auto-lookup-banner kgcalc-hidden" id="kgcalc-auto-lookup-banner" role="status"><span class="kgcalc-auto-lookup-spinner"></span><span id="kgcalc-auto-lookup-text"></span></div>
-
-<div class="kgcalc-field kgcalc-hidden" id="kgcalc-search-wrap">
-<label class="kgcalc-label" data-i18n="calc.search_label" for="kgcalc-search">2. Search for a book</label>
-<div class="kgcalc-search-row">
-<input autocomplete="off" class="kgcalc-select kgcalc-input" data-i18n-placeholder="calc.search_placeholder" id="kgcalc-search" placeholder="Title, author, or ISBN" type="text"/>
-<button class="btn-gold-sm" data-i18n="calc.search_btn" id="kgcalc-search-btn" type="button">Search</button>
-</div>
-<ul class="kgcalc-results" id="kgcalc-results"></ul>
-</div>
-
-<p aria-live="polite" class="kgcalc-status" id="kgcalc-status" role="status"></p>
-
-<div class="kgcalc-hidden" id="kgcalc-price-wrap"></div>
-
-<div class="kgcalc-hidden" id="kgcalc-cart"></div>
-
-<p class="kgcalc-disclaimer" data-i18n="calc.disclaimer">Kitab Guru pricing shown here is an estimated quote based on the selected market price and may require final confirmation with our team.</p>
-</div>
-</section>
 <section class="section reviews-section" id="reviews">
 <div class="reveal">
 <span class="section-tag" data-i18n="reviews.tag">Social Proof</span>
@@ -9714,7 +9718,10 @@ body.kg-modal-open .kg-mobile-menu-btn,body.kg-modal-open .kg-scroll-btn{display
     var countryInput=document.getElementById('kgcalc-country-input');
     var status=document.getElementById('kgcalc-status');
     if(calculatorSearch)calculatorSearch.value=query;
-    if(calculator)calculator.scrollIntoView({behavior:'smooth',block:'start'});
+    if(calculator){
+      calculator.classList.add('is-open');
+      calculator.scrollIntoView({behavior:'smooth',block:'nearest'});
+    }
     window.setTimeout(function(){
       var countryNeeded=searchWrap&&searchWrap.classList.contains('kgcalc-hidden');
       if(countryNeeded){
@@ -9727,6 +9734,14 @@ body.kg-modal-open .kg-mobile-menu-btn,body.kg-modal-open .kg-scroll-btn{display
       }
     },650);
   });
+  var closeButton=document.getElementById('hero-calculator-close');
+  var calculatorPanel=document.getElementById('price-calculator');
+  if(closeButton&&calculatorPanel){
+    closeButton.addEventListener('click',function(){
+      calculatorPanel.classList.remove('is-open');
+      heroInput.focus();
+    });
+  }
 })();
 </script>
 </body>
