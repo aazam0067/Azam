@@ -480,6 +480,11 @@ html{scroll-behavior:smooth;}
 .kgcalc-book-confirmation{text-align:left;}
 .kgcalc-confirm-copy{margin:18px 0 12px;color:rgba(255,255,255,.72);font-size:.9rem;}
 .kgcalc-confirm-price-btn{width:auto;min-width:180px;border:0;cursor:pointer;padding:13px 20px;font-size:.88rem;}
+.kgcalc-load-more{display:block;margin:14px auto 2px;border:1px solid rgba(255,217,61,.5);border-radius:10px;background:rgba(255,217,61,.08);color:var(--gold);padding:11px 18px;font:700 .78rem 'Inter',sans-serif;cursor:pointer;}
+.kgcalc-load-more:hover{background:rgba(255,217,61,.14);}
+.kg-cart-toast{position:fixed;z-index:9999;left:50%;top:88px;transform:translate(-50%,-18px);display:flex;align-items:center;gap:10px;max-width:min(92vw,460px);padding:14px 18px;border:1px solid rgba(255,217,61,.55);border-radius:13px;background:#171717;color:#fff;box-shadow:0 18px 48px rgba(0,0,0,.5);font:700 .86rem 'Inter',sans-serif;opacity:0;pointer-events:none;transition:opacity .22s,transform .22s;}
+.kg-cart-toast::before{content:'✓';display:grid;place-items:center;width:24px;height:24px;border-radius:50%;background:var(--gold);color:#111;font-weight:900;}
+.kg-cart-toast.is-visible{opacity:1;transform:translate(-50%,0);}
 .hero-calculator-heading{padding:0 42px 17px 0;color:#fff;font:700 1.05rem 'Inter',sans-serif;}
 .hero-calculator-panel .kgcalc-card{margin:0;max-width:none;padding:0;background:transparent;border:0;box-shadow:none;}
 .hero-calculator-panel .kgcalc-disclaimer{margin-bottom:0;}
@@ -494,6 +499,7 @@ html{scroll-behavior:smooth;}
   .hero-book-search input{font-size:.88rem;padding:11px 3px;}
   .hero-book-search button{grid-column:1/-1;width:100%;padding:13px 16px;}
   .kgcalc-confirm-price-btn{width:100%;min-width:0;}
+  .kg-cart-toast{top:74px;}
 }
 </style></head>
 <body id="top">
@@ -6366,6 +6372,7 @@ function toggleFaq(el){
   let selectedCountry = null;
   let pendingPriceBook = null;
   let searchDebounce = null;
+  let searchRequestId = 0;
   let countryDebounce = null;
   // A customer buying more than one book adds each to this list instead of
   // getting a separate quote per book; each entry is { book, priceResult,
@@ -6513,28 +6520,68 @@ function toggleFaq(el){
 
   let lastSearchDocs = [];
 
-  async function runSearch(){
+  function rankSearchDocs(docs, query){
+    const q = query.toLowerCase();
+    return docs.map(function(doc, index){
+      const title = String(doc.title || '').toLowerCase();
+      const author = String((doc.author_name && doc.author_name[0]) || '').toLowerCase();
+      let score = 3;
+      if (title === q) score = 0;
+      else if (title.indexOf(q) === 0) score = 1;
+      else if (title.indexOf(q) !== -1) score = 2;
+      else if (author.indexOf(q) !== -1) score = 3;
+      return { doc: doc, score: score, index: index };
+    }).sort(function(a, b){ return a.score - b.score || a.index - b.index; })
+      .map(function(item){ return item.doc; });
+  }
+
+  function renderSearchDocs(docs, initialCount){
+    el.results.innerHTML = '';
+    const count = Math.min(initialCount, docs.length);
+    docs.slice(0, count).forEach(function(doc){ el.results.appendChild(renderResult(doc)); });
+    if (initialCount > 10 && docs.length > count) {
+      const li = document.createElement('li');
+      const more = document.createElement('button');
+      more.type = 'button';
+      more.className = 'kgcalc-load-more';
+      more.textContent = 'Load 50 More Books';
+      more.addEventListener('click', function(){
+        const nextCount = Math.min(count + 50, docs.length);
+        el.results.innerHTML = '';
+        docs.slice(0, nextCount).forEach(function(doc){ el.results.appendChild(renderResult(doc)); });
+        setStatus(nextCount + ' matching books shown.');
+      });
+      li.appendChild(more);
+      el.results.appendChild(li);
+    }
+  }
+
+  async function runSearch(options){
+    options = options || {};
     const q = el.search.value.trim();
     el.results.innerHTML = '';
-    if (!q) return;
-    setStatus(window.kgI18n.t('calc.searching'));
+    if (q.length < 2) { setStatus('Type at least 2 characters to search.'); return; }
+    const preview = !!options.preview;
+    const requestId = ++searchRequestId;
+    setStatus(preview ? 'Finding matching books…' : window.kgI18n.t('calc.searching'));
 
     try {
       const url = 'https://openlibrary.org/search.json?q=' + encodeURIComponent(q) +
-        '&fields=key,title,author_name,isbn,cover_i,edition_count&limit=8';
+        '&fields=key,title,author_name,isbn,cover_i,edition_count&limit=' + (preview ? '20' : '100');
       const res = await withTimeout(fetch(url), 8000);
+      if (requestId !== searchRequestId) return;
       if (!res.ok) throw new Error('search failed');
       const data = await res.json();
-      const docs = (data.docs || []).filter(function(d){ return d.title; });
+      const docs = rankSearchDocs((data.docs || []).filter(function(d){ return d.title; }), q);
 
       if (!docs.length) {
         setStatus("No books found. Try a different title, author, or ISBN.", true);
         return;
       }
-      setStatus('');
+      setStatus(preview ? 'Top 10 suggestions. Press Search Books for more.' : Math.min(50, docs.length) + ' matching books shown.');
       lastSearchDocs = docs;
-      docs.forEach(function(doc){ el.results.appendChild(renderResult(doc)); });
-      moveToStep(el.results);
+      renderSearchDocs(docs, preview ? 10 : 50);
+      if (!preview) moveToStep(el.results);
     } catch (e) {
       setStatus('Something went wrong searching. Please try again.', true);
     }
@@ -7015,11 +7062,11 @@ function toggleFaq(el){
     });
   }
 
-  el.searchBtn.addEventListener('click', runSearch);
-  el.search.addEventListener('keydown', function(e){ if (e.key === 'Enter') { e.preventDefault(); runSearch(); } });
+  el.searchBtn.addEventListener('click', function(){ runSearch({ preview: false }); });
+  el.search.addEventListener('keydown', function(e){ if (e.key === 'Enter') { e.preventDefault(); runSearch({ preview: false }); } });
   el.search.addEventListener('input', function(){
     clearTimeout(searchDebounce);
-    searchDebounce = setTimeout(runSearch, 500);
+    searchDebounce = setTimeout(function(){ runSearch({ preview: true }); }, 350);
   });
 
   // ── Book selected → confirm first, then ask for country ───────────
@@ -7072,7 +7119,7 @@ function toggleFaq(el){
       el.searchWrap.classList.remove('kgcalc-hidden');
       if (heading) heading.textContent = 'Search results';
       el.search.focus();
-      runSearch();
+      runSearch({ preview: false });
     });
   }
 
@@ -7097,14 +7144,17 @@ function toggleFaq(el){
     moveToStep(el.priceWrap);
   }
 
-  window.kgHeroBookSearch = function(query){
+  window.kgHeroBookSearch = function(query, options){
+    options = options || {};
     pendingPriceBook = null;
-    selectedCountry = null;
-    el.countryInput.value = '';
+    if (!cart.length) {
+      selectedCountry = null;
+      el.countryInput.value = '';
+    }
     if (el.countryWrap) el.countryWrap.classList.add('kgcalc-hidden');
     el.priceWrap.classList.add('kgcalc-hidden');
     el.priceWrap.innerHTML = '';
-    el.cart.classList.add('kgcalc-hidden');
+    if (!cart.length) el.cart.classList.add('kgcalc-hidden');
     el.results.innerHTML = '';
     el.search.value = query;
     el.searchWrap.classList.remove('kgcalc-hidden');
@@ -7112,7 +7162,7 @@ function toggleFaq(el){
     if (panel) panel.classList.add('hero-results-mode');
     const heading = document.getElementById('hero-calculator-heading');
     if (heading) heading.textContent = 'Search results';
-    runSearch();
+    runSearch({ preview: !!options.preview });
   };
 
   function formatMoney(amount, currencyCode){
@@ -7317,14 +7367,36 @@ function toggleFaq(el){
     el.priceWrap.innerHTML = '';
     el.search.value = '';
     el.results.innerHTML = '';
-    el.searchWrap.classList.remove('kgcalc-hidden');
+    el.searchWrap.classList.add('kgcalc-hidden');
     if (el.countryWrap) el.countryWrap.classList.add('kgcalc-hidden');
     const heading = document.getElementById('hero-calculator-heading');
-    if (heading) heading.textContent = 'Search for another book';
+    if (heading) heading.textContent = 'Your cart · Search for another book above';
     renderCartSummary();
     updateCountryLockState();
-    setStatus('Book added. Search for your next book.');
-    moveToStep(el.searchWrap, el.search);
+    setStatus(cart.length + (cart.length === 1 ? ' book is' : ' books are') + ' in your cart. Search for another book above.');
+    showCartToast('Book added to your cart. Search for another book.');
+    const heroInput = document.getElementById('hero-book-search-input');
+    if (heroInput) {
+      heroInput.value = '';
+      moveToStep(document.getElementById('hero-book-search-form'), heroInput);
+    }
+  }
+
+  let cartToastTimer = null;
+  function showCartToast(message){
+    let toast = document.getElementById('kg-cart-toast');
+    if (!toast) {
+      toast = document.createElement('div');
+      toast.id = 'kg-cart-toast';
+      toast.className = 'kg-cart-toast';
+      toast.setAttribute('role', 'status');
+      toast.setAttribute('aria-live', 'polite');
+      document.body.appendChild(toast);
+    }
+    toast.textContent = message;
+    toast.classList.add('is-visible');
+    clearTimeout(cartToastTimer);
+    cartToastTimer = setTimeout(function(){ toast.classList.remove('is-visible'); }, 3200);
   }
 
   // A shared order can only be priced in one currency, so once a book is
@@ -9833,6 +9905,17 @@ body.kg-modal-open .kg-mobile-menu-btn,body.kg-modal-open .kg-scroll-btn{display
       if(document.activeElement===heroInput)keepHeroSearchVisible();
     });
   }
+  var heroSearchDebounce=null;
+  heroInput.addEventListener('input',function(){
+    clearTimeout(heroSearchDebounce);
+    var query=heroInput.value.trim();
+    if(query.length<2)return;
+    heroSearchDebounce=setTimeout(function(){
+      var calculator=document.getElementById('price-calculator');
+      if(calculator)calculator.classList.add('is-open');
+      if(typeof window.kgHeroBookSearch==='function')window.kgHeroBookSearch(query,{preview:true});
+    },350);
+  });
   form.addEventListener('submit',function(event){
     event.preventDefault();
     var query=heroInput.value.trim();
@@ -9843,7 +9926,7 @@ body.kg-modal-open .kg-mobile-menu-btn,body.kg-modal-open .kg-scroll-btn{display
       calculator.scrollIntoView({behavior:'smooth',block:'nearest'});
     }
     if(typeof window.kgHeroBookSearch==='function'){
-      window.kgHeroBookSearch(query);
+      window.kgHeroBookSearch(query,{preview:false});
     }
   });
   var closeButton=document.getElementById('hero-calculator-close');
