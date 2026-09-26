@@ -474,6 +474,12 @@ html{scroll-behavior:smooth;}
 .hero-quiz-cta{margin-top:17px!important;}
 .hero-calculator-panel{display:none;position:relative;width:min(760px,100%);margin:22px auto 0;padding:22px;border:1px solid rgba(255,217,61,.28);border-radius:20px;background:rgba(13,13,13,.94);text-align:left;box-shadow:0 24px 65px rgba(0,0,0,.38);}
 .hero-calculator-panel.is-open{display:block;animation:heroCalcIn .28s ease both;}
+.hero-calculator-panel.hero-results-mode #kgcalc-search-wrap>.kgcalc-label,
+.hero-calculator-panel.hero-results-mode .kgcalc-search-row{display:none;}
+.hero-calculator-panel .kgcalc-country-results{position:static;top:auto;left:auto;right:auto;margin-top:8px;max-height:280px;}
+.kgcalc-book-confirmation{text-align:left;}
+.kgcalc-confirm-copy{margin:18px 0 12px;color:rgba(255,255,255,.72);font-size:.9rem;}
+.kgcalc-confirm-price-btn{width:100%;border:0;cursor:pointer;padding:14px 18px;font-size:.88rem;}
 .hero-calculator-heading{padding:0 42px 17px 0;color:#fff;font:700 1.05rem 'Inter',sans-serif;}
 .hero-calculator-panel .kgcalc-card{margin:0;max-width:none;padding:0;background:transparent;border:0;box-shadow:none;}
 .hero-calculator-panel .kgcalc-disclaimer{margin-bottom:0;}
@@ -544,11 +550,11 @@ html{scroll-behavior:smooth;}
 <p class="hero-search-note">Instant estimate • No sign-up required</p>
 <div aria-live="polite" class="hero-calculator-panel" id="price-calculator">
 <button aria-label="Close price calculator" class="hero-calculator-close" id="hero-calculator-close" type="button">×</button>
-<div class="hero-calculator-heading">Complete your price check</div>
+<div class="hero-calculator-heading" id="hero-calculator-heading">Search results</div>
 <div class="kgcalc-card">
 
-<div class="kgcalc-field">
-<label class="kgcalc-label" data-i18n="calc.country_label" for="kgcalc-country-input">1. Your country</label>
+<div class="kgcalc-field kgcalc-hidden" id="kgcalc-country-wrap">
+<label class="kgcalc-label" for="kgcalc-country-input">Select your country</label>
 <div class="kgcalc-country-combo">
 <input autocomplete="off" class="kgcalc-select kgcalc-input" data-i18n-placeholder="calc.country_placeholder" id="kgcalc-country-input" placeholder="Search your country…" type="text"/>
 <ul class="kgcalc-results kgcalc-country-results kgcalc-hidden" id="kgcalc-country-results"></ul>
@@ -6340,6 +6346,7 @@ function toggleFaq(el){
 
   // ── DOM refs ─────────────────────────────────────────────────────────
   const el = {
+    countryWrap: document.getElementById('kgcalc-country-wrap'),
     countryInput: document.getElementById('kgcalc-country-input'),
     countryResults: document.getElementById('kgcalc-country-results'),
     countryLockNote: document.getElementById('kgcalc-country-lock-note'),
@@ -6356,6 +6363,7 @@ function toggleFaq(el){
   if (!el.countryInput) return; // calculator not on this page
 
   let selectedCountry = null;
+  let pendingPriceBook = null;
   let searchDebounce = null;
   let countryDebounce = null;
   // A customer buying more than one book adds each to this list instead of
@@ -6419,6 +6427,12 @@ function toggleFaq(el){
     el.priceWrap.classList.add('kgcalc-hidden');
     el.priceWrap.innerHTML = '';
     setStatus('');
+
+    if (pendingPriceBook) {
+      pricePendingBook();
+      return;
+    }
+
     el.searchWrap.classList.remove('kgcalc-hidden');
 
     // If the "Find Your Next Book" quiz sent books over before a country was
@@ -6991,15 +7005,63 @@ function toggleFaq(el){
     searchDebounce = setTimeout(runSearch, 500);
   });
 
-  // ── Book selected → fetch price (with fallback chain + cache) ──────
-  async function selectBook(book){
+  // ── Book selected → confirm first, then ask for country ───────────
+  function selectBook(book){
+    pendingPriceBook = book;
     el.results.innerHTML = '';
     el.search.value = book.title;
+    el.searchWrap.classList.add('kgcalc-hidden');
+    if (el.countryWrap) el.countryWrap.classList.add('kgcalc-hidden');
+    setStatus('');
+
+    const wrap = el.priceWrap;
+    wrap.innerHTML = '';
+    wrap.classList.remove('kgcalc-hidden');
+
+    const card = document.createElement('div');
+    card.className = 'kgcalc-price-card kgcalc-book-confirmation';
+    card.innerHTML =
+      '<div class="kgcalc-book-row">' +
+        (book.cover ? '<img class="kgcalc-book-cover" src="' + escapeHtml(book.cover) + '" alt="' + escapeHtml(book.title) + ' cover"/>' : '') +
+        '<div><div class="kgcalc-book-title">' + escapeHtml(book.title) + '</div>' +
+        (book.author ? '<div class="kgcalc-book-author">' + escapeHtml(book.author) + '</div>' : '') +
+        (book.edition ? '<div class="kgcalc-book-meta"><span class="kgcalc-pill">' + escapeHtml(book.edition) + '</span></div>' : '') +
+        '</div></div>' +
+      '<p class="kgcalc-confirm-copy">Is this the book you want?</p>' +
+      '<button class="btn-gold-sm kgcalc-confirm-price-btn" id="kgcalc-confirm-price-btn" type="button">Check Price for This →</button>' +
+      '<button class="kgcalc-search-again" id="kgcalc-choose-different-book" type="button">Choose a different book</button>';
+    wrap.appendChild(card);
+
+    const heading = document.getElementById('hero-calculator-heading');
+    if (heading) heading.textContent = 'Confirm your book';
+
+    document.getElementById('kgcalc-confirm-price-btn').addEventListener('click', function(){
+      wrap.classList.add('kgcalc-hidden');
+      if (el.countryWrap) el.countryWrap.classList.remove('kgcalc-hidden');
+      if (heading) heading.textContent = 'Where are you buying from?';
+      setStatus('Select your country and we’ll load the price automatically.');
+      el.countryInput.value = '';
+      el.countryInput.focus();
+    });
+
+    document.getElementById('kgcalc-choose-different-book').addEventListener('click', function(){
+      pendingPriceBook = null;
+      wrap.classList.add('kgcalc-hidden');
+      el.searchWrap.classList.remove('kgcalc-hidden');
+      if (heading) heading.textContent = 'Search results';
+      el.search.focus();
+      runSearch();
+    });
+  }
+
+  async function pricePendingBook(){
+    const book = pendingPriceBook;
+    if (!book || !selectedCountry) return;
+    if (el.countryWrap) el.countryWrap.classList.add('kgcalc-hidden');
     setStatus(window.kgI18n.t('calc.checking_price'));
     el.priceWrap.classList.add('kgcalc-hidden');
 
     const priceResult = await fetchPrice(book, selectedCountry);
-
     if (!priceResult.ok) {
       setStatus('');
       renderNotFoundCard(book);
@@ -7007,8 +7069,28 @@ function toggleFaq(el){
     }
 
     setStatus('');
+    const heading = document.getElementById('hero-calculator-heading');
+    if (heading) heading.textContent = 'Your price estimate';
     renderPriceCard(book, priceResult);
   }
+
+  window.kgHeroBookSearch = function(query){
+    pendingPriceBook = null;
+    selectedCountry = null;
+    el.countryInput.value = '';
+    if (el.countryWrap) el.countryWrap.classList.add('kgcalc-hidden');
+    el.priceWrap.classList.add('kgcalc-hidden');
+    el.priceWrap.innerHTML = '';
+    el.cart.classList.add('kgcalc-hidden');
+    el.results.innerHTML = '';
+    el.search.value = query;
+    el.searchWrap.classList.remove('kgcalc-hidden');
+    const panel = document.getElementById('price-calculator');
+    if (panel) panel.classList.add('hero-results-mode');
+    const heading = document.getElementById('hero-calculator-heading');
+    if (heading) heading.textContent = 'Search results';
+    runSearch();
+  };
 
   function formatMoney(amount, currencyCode){
     const code = currencyCode || (selectedCountry && selectedCountry.currency);
@@ -9713,26 +9795,13 @@ body.kg-modal-open .kg-mobile-menu-btn,body.kg-modal-open .kg-scroll-btn{display
     var query=heroInput.value.trim();
     if(!query){heroInput.focus();return;}
     var calculator=document.getElementById('price-calculator');
-    var calculatorSearch=document.getElementById('kgcalc-search');
-    var searchWrap=document.getElementById('kgcalc-search-wrap');
-    var countryInput=document.getElementById('kgcalc-country-input');
-    var status=document.getElementById('kgcalc-status');
-    if(calculatorSearch)calculatorSearch.value=query;
     if(calculator){
       calculator.classList.add('is-open');
       calculator.scrollIntoView({behavior:'smooth',block:'nearest'});
     }
-    window.setTimeout(function(){
-      var countryNeeded=searchWrap&&searchWrap.classList.contains('kgcalc-hidden');
-      if(countryNeeded){
-        if(status)status.textContent='Select your country to continue with “'+query+'”.';
-        if(countryInput)countryInput.focus();
-      }else if(calculatorSearch){
-        calculatorSearch.focus();
-        var searchButton=document.getElementById('kgcalc-search-btn');
-        if(searchButton)searchButton.click();
-      }
-    },650);
+    if(typeof window.kgHeroBookSearch==='function'){
+      window.kgHeroBookSearch(query);
+    }
   });
   var closeButton=document.getElementById('hero-calculator-close');
   var calculatorPanel=document.getElementById('price-calculator');
