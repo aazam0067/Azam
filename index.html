@@ -945,6 +945,12 @@ select.kgcalc-select{appearance:none;-webkit-appearance:none;background-image:ur
 .kgcalc-add-cart-btn:hover{border-color:rgba(255,217,61,.4);}
 
 .kgcalc-quote-box{margin-top:24px;padding-top:22px;border-top:1px solid rgba(255,255,255,.08);text-align:center;}
+.kgcalc-request-heading{font-family:'Playfair Display',serif;font-size:1.35rem;font-weight:700;color:var(--wh);margin:0 0 10px;}
+.kgcalc-request-intro{max-width:620px;margin:0 auto 16px;color:rgba(255,255,255,.72);font-size:.88rem;line-height:1.65;}
+.kgcalc-request-notice{display:flex;align-items:flex-start;gap:11px;margin:0 auto 20px;padding:14px 16px;border:1px solid rgba(255,217,61,.3);border-radius:12px;background:rgba(255,217,61,.07);color:rgba(255,255,255,.78);font-size:.8rem;line-height:1.55;text-align:left;}
+.kgcalc-request-notice::before{content:'i';display:grid;place-items:center;flex:0 0 auto;width:22px;height:22px;border-radius:50%;background:var(--gold);color:#111;font-weight:900;font-style:normal;}
+.kgcalc-channel-help{font-size:.76rem;line-height:1.55;color:rgba(255,255,255,.5);margin:0 0 16px;}
+.kgcalc-channel-help strong{color:var(--gold);font-weight:600;}
 .kgcalc-quote-id{font-family:'Playfair Display',serif;font-size:1.15rem;font-weight:700;color:var(--gold);margin-bottom:6px;letter-spacing:.02em;}
 .kgcalc-quote-hint{font-size:.78rem;color:rgba(255,255,255,.5);margin-bottom:20px;}
 .kgcalc-contact-title{font-size:.95rem;font-weight:600;color:var(--wh);margin-bottom:14px;}
@@ -2110,7 +2116,7 @@ section[id]{scroll-margin-top:72px;}
       "calc.price_source":"Price source:","calc.view_source":"view source",
       "calc.add_more_book":"Add Book & Search Again","calc.search_different":"Search a different book",
       "calc.mini_note_html":"Not the right edition, or does the price/source look off? <a href=\"#contact\">Reach out to us</a> and we'll sort it out.",
-      "calc.search_another":"Search another book","calc.see_price":"Continue to Order",
+      "calc.search_another":"Search another book","calc.see_price":"Request This Book",
       "calc.your_order":"Your Order So Far","calc.book_one":"book","calc.book_many":"books",
       "calc.retail_total":"Retail Total","calc.kg_total":"Kitab Guru Total",
       "calc.clear_order":"Clear order to change country","calc.priced_in":"Your order is priced in",
@@ -7580,9 +7586,11 @@ function toggleFaq(el){
         '<div><span>' + window.kgI18n.t('calc.kg_total') + '</span><b>' + formatMoney(totals.kgTotal, totals.currency) + '</b></div>' +
       '</div>' +
       cartUnconfirmedNoteHtml(items, totals) +
-      '<div class="kgcalc-quote-id">' + window.kgI18n.t('calc.order_id_label') + ' ' + quoteId + '</div>' +
-      '<div class="kgcalc-quote-hint">' + window.kgI18n.t('calc.order_id_hint') + '</div>' +
-      '<div class="kgcalc-contact-title">' + window.kgI18n.t('calc.choose_channel_title') + '</div>' +
+      '<h3 class="kgcalc-request-heading">Choose how to request your books</h3>' +
+      '<p class="kgcalc-request-intro">Select one of the contact options below to message Kitab Guru. We will confirm availability, payment and delivery with you directly in that conversation.</p>' +
+      '<div class="kgcalc-request-notice">This website does not collect payment or deliver the eBooks automatically. Your eBooks will be delivered through the inbox or email you choose below.</div>' +
+      '<div class="kgcalc-contact-title">Where would you like to message us?</div>' +
+      '<p class="kgcalc-channel-help"><strong>WhatsApp and Email:</strong> your selected book details are filled in automatically.<br><strong>Messenger, Instagram and LinkedIn:</strong> send us the book names after the chat opens.</p>' +
       '<div class="kgcalc-contact-grid">' +
         contactButtonHtml('whatsapp', 'WhatsApp') +
         contactButtonHtml('facebook', 'Messenger') +
@@ -7594,7 +7602,7 @@ function toggleFaq(el){
       '<button class="kgcalc-search-again" id="kgcalc-cart-search-again" type="button">' + window.kgI18n.t('calc.start_new_search') + '</button>';
 
     el.cart.querySelectorAll('[data-contact]').forEach(function(btn){
-      btn.addEventListener('click', function(){ handleOrderContactClick(btn.dataset.contact, items, quoteId); });
+      btn.addEventListener('click', function(){ handleOrderContactClick(btn.dataset.contact, items, quoteId, totals); });
     });
     document.getElementById('kgcalc-cart-search-again').addEventListener('click', function(){
       lastOrderConfirmation = null;
@@ -7607,29 +7615,28 @@ function toggleFaq(el){
     el.cart.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }
 
-  function handleOrderContactClick(method, items, quoteId){
+  function handleOrderContactClick(method, items, quoteId, totals){
     currentQuote = { quoteId: quoteId, contactMethod: method };
     updateContactMethod(quoteId, method);
     const toast = document.getElementById('kgcalc-toast');
 
     if (method === 'whatsapp') {
       const titles = items.map(function(it){ return it.book.title; }).join(', ');
-      const msg = "Hi Kitab Guru, I'd like to order " + items.length + " books: " + titles + ". My Order ID is " + quoteId + ".";
+      const msg = "Hi Kitab Guru, I'd like to request " + items.length + " books: " + titles + ". The website showed a Kitab Guru total of " + formatMoney(totals.kgTotal, totals.currency) + ". Please confirm availability, payment and delivery.";
       window.open('https://wa.me/' + WHATSAPP_NUMBER + '?text=' + encodeURIComponent(msg), '_blank', 'noopener');
       return;
     }
     if (method === 'email') {
-      const subject = 'Order request — ' + items.length + ' books (' + quoteId + ')';
-      const body = "Hi Kitab Guru,\n\nI'd like to order " + items.length + " books:\n- " +
+      const subject = 'Book request — ' + items.length + ' books';
+      const body = "Hi Kitab Guru,\n\nI'd like to request " + items.length + " books:\n- " +
         items.map(function(it){ return it.book.title + (it.book.author ? ' by ' + it.book.author : ''); }).join('\n- ') +
-        "\n\nMy Order ID is " + quoteId + ".\n\nThanks!";
+        "\n\nThe website showed a Kitab Guru total of " + formatMoney(totals.kgTotal, totals.currency) + ". Please confirm availability, payment and delivery.\n\nThanks!";
       window.location.href = 'mailto:' + CONTACT_EMAIL + '?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body);
       return;
     }
 
     const url = method === 'facebook' ? FACEBOOK_URL : method === 'instagram' ? INSTAGRAM_URL : LINKEDIN_URL;
-    copyToClipboard(quoteId);
-    if (toast) toast.textContent = window.kgI18n.t('calc.copy_toast');
+    if (toast) toast.textContent = 'Chat opened — please send us the book names to place your request.';
     window.open(url, '_blank', 'noopener');
   }
 
@@ -7668,7 +7675,8 @@ function toggleFaq(el){
 
     saveQuote(currentQuote);
     renderQuoteBox(quoteId, book);
-    document.getElementById('kgcalc-quote-btn').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    const requestBox = document.getElementById('kgcalc-quote-box');
+    if (requestBox) requestBox.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
   // Renders the "Order ID + choose a channel" box under a single-book price
@@ -7682,9 +7690,11 @@ function toggleFaq(el){
     if (!box) return;
     box.classList.remove('kgcalc-hidden');
     box.innerHTML =
-      '<div class="kgcalc-quote-id">' + window.kgI18n.t('calc.order_id_label') + ' ' + quoteId + '</div>' +
-      '<div class="kgcalc-quote-hint">' + window.kgI18n.t('calc.order_id_hint') + '</div>' +
-      '<div class="kgcalc-contact-title">' + window.kgI18n.t('calc.choose_channel_title') + '</div>' +
+      '<h3 class="kgcalc-request-heading">How would you like to request this book?</h3>' +
+      '<p class="kgcalc-request-intro">Choose a contact option below to message Kitab Guru. We will confirm the book, payment and delivery with you directly in that conversation.</p>' +
+      '<div class="kgcalc-request-notice">This website does not collect payment or deliver the eBook automatically. Your eBook will be delivered through the inbox or email you choose below.</div>' +
+      '<div class="kgcalc-contact-title">Where would you like to message us?</div>' +
+      '<p class="kgcalc-channel-help"><strong>WhatsApp and Email:</strong> the book details are filled in automatically.<br><strong>Messenger, Instagram and LinkedIn:</strong> send us the book name after the chat opens.</p>' +
       '<div class="kgcalc-contact-grid">' +
         contactButtonHtml('whatsapp', 'WhatsApp') +
         contactButtonHtml('facebook', 'Messenger') +
@@ -7711,24 +7721,22 @@ function toggleFaq(el){
     const toast = document.getElementById('kgcalc-toast');
 
     if (method === 'whatsapp') {
-      const msg = "Hi Kitab Guru, I'd like to order " + book.title + ". My Order ID is " + currentQuote.quoteId + ".";
+      const msg = "Hi Kitab Guru, I'd like to request " + book.title + (book.author ? ' by ' + book.author : '') + ". The website showed a Kitab Guru price of " + formatMoney(currentQuote.kitabGuruPrice, currentQuote.currency) + ". Please confirm availability, payment and delivery.";
       window.open('https://wa.me/' + WHATSAPP_NUMBER + '?text=' + encodeURIComponent(msg), '_blank', 'noopener');
       return;
     }
     if (method === 'email') {
-      const subject = 'Order request — ' + book.title + ' (' + currentQuote.quoteId + ')';
-      const body = "Hi Kitab Guru,\n\nI'd like to order " + book.title + (book.author ? ' by ' + book.author : '') +
-        ".\nMy Order ID is " + currentQuote.quoteId + ".\n\nThanks!";
+      const subject = 'Book request — ' + book.title;
+      const body = "Hi Kitab Guru,\n\nI'd like to request " + book.title + (book.author ? ' by ' + book.author : '') +
+        ".\nThe website showed a Kitab Guru price of " + formatMoney(currentQuote.kitabGuruPrice, currentQuote.currency) + ". Please confirm availability, payment and delivery.\n\nThanks!";
       window.location.href = 'mailto:' + CONTACT_EMAIL + '?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body);
       return;
     }
 
-    // Facebook / Instagram / LinkedIn: no reliable pre-filled-message
-    // mechanism exists on these platforms via a plain link, so we copy the
-    // Order ID for the customer and open the existing social profile.
+    // Facebook / Instagram / LinkedIn do not support reliable pre-filled
+    // messages from a plain profile link, so explain the next action clearly.
     const url = method === 'facebook' ? FACEBOOK_URL : method === 'instagram' ? INSTAGRAM_URL : LINKEDIN_URL;
-    copyToClipboard(currentQuote.quoteId);
-    if (toast) toast.textContent = window.kgI18n.t('calc.copy_toast');
+    if (toast) toast.textContent = 'Chat opened — please send us the book name to place your request.';
     window.open(url, '_blank', 'noopener');
   }
 
