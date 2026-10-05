@@ -480,6 +480,14 @@ html{scroll-behavior:smooth;}
 .kgcalc-book-confirmation{text-align:left;}
 .kgcalc-confirm-copy{margin:18px 0 12px;color:rgba(255,255,255,.72);font-size:.9rem;}
 .kgcalc-confirm-price-btn{width:auto;min-width:180px;border:0;cursor:pointer;padding:13px 20px;font-size:.88rem;}
+.kgcalc-share-btn{display:inline-flex;align-items:center;justify-content:center;margin:10px 0 0;padding:11px 17px;border:1px solid rgba(255,217,61,.45);border-radius:10px;background:rgba(255,217,61,.08);color:var(--gold);font:700 .78rem 'Inter',sans-serif;cursor:pointer;}
+.kgcalc-share-btn:hover{background:rgba(255,217,61,.14);border-color:var(--gold);}
+.kgcalc-shared-list{list-style:none;margin:18px 0;padding:0;display:flex;flex-direction:column;gap:9px;}
+.kgcalc-shared-item{display:flex;align-items:center;gap:13px;padding:11px 13px;border:1px solid rgba(255,255,255,.09);border-radius:12px;background:rgba(255,255,255,.025);}
+.kgcalc-shared-item img{width:46px;height:68px;object-fit:cover;border-radius:4px;background:#222;flex:0 0 auto;}
+.kgcalc-shared-item-title{font-weight:700;color:#fff;font-size:.88rem;line-height:1.3;}
+.kgcalc-shared-item-author{color:rgba(255,255,255,.52);font-size:.76rem;margin-top:3px;}
+.kgcalc-shared-note{font-size:.82rem;line-height:1.6;color:rgba(255,255,255,.65);margin:0 0 12px;}
 .kgcalc-load-more{display:block;margin:14px auto 2px;border:1px solid rgba(255,217,61,.5);border-radius:10px;background:rgba(255,217,61,.08);color:var(--gold);padding:11px 18px;font:700 .78rem 'Inter',sans-serif;cursor:pointer;}
 .kgcalc-load-more:hover{background:rgba(255,217,61,.14);}
 .kg-cart-toast{position:fixed;z-index:9999;left:50%;top:88px;transform:translate(-50%,-18px);display:flex;align-items:center;gap:10px;max-width:min(92vw,460px);padding:14px 18px;border:1px solid rgba(255,217,61,.55);border-radius:13px;background:#171717;color:#fff;box-shadow:0 18px 48px rgba(0,0,0,.5);font:700 .86rem 'Inter',sans-serif;opacity:0;pointer-events:none;transition:opacity .22s,transform .22s;}
@@ -962,6 +970,10 @@ select.kgcalc-select{appearance:none;-webkit-appearance:none;background-image:ur
 
 .kgcalc-cart{margin-top:26px;padding-top:24px;border-top:1px solid rgba(255,255,255,.08);}
 .kgcalc-cart-head{font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:700;color:var(--wh);margin-bottom:16px;}
+.kgcalc-cart-selectbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:-4px 0 14px;padding:10px 12px;border-radius:10px;background:rgba(255,255,255,.04);font-size:.78rem;color:rgba(255,255,255,.68);}
+.kgcalc-select-all{display:inline-flex;align-items:center;gap:8px;color:var(--wh);font-weight:600;cursor:pointer;}
+.kgcalc-book-select{width:19px;height:19px;accent-color:var(--gold);cursor:pointer;flex:0 0 auto;}
+.kgcalc-cart-item.is-unselected{opacity:.5;background:rgba(255,255,255,.01);}
 .kgcalc-cart-list{list-style:none;margin:0 0 18px;padding:0;display:flex;flex-direction:column;gap:10px;}
 .kgcalc-cart-item{display:flex;align-items:center;gap:10px;padding:11px 13px;border:1px solid rgba(255,255,255,.08);border-radius:12px;background:rgba(255,255,255,.02);}
 .kgcalc-cart-item-cover{width:34px;height:50px;object-fit:cover;border-radius:4px;flex-shrink:0;background:#0d0d0d;border:1px solid rgba(255,255,255,.08);}
@@ -978,6 +990,8 @@ select.kgcalc-select{appearance:none;-webkit-appearance:none;background-image:ur
 .kgcalc-cart-totals b{font-family:'Playfair Display',serif;font-size:1.2rem;font-weight:700;color:var(--gold);letter-spacing:0;text-transform:none;}
 .kgcalc-cart-note{font-size:.78rem;color:rgba(255,255,255,.5);line-height:1.6;margin:0 0 18px;}
 .kgcalc-cart-finish-btn{width:100%;border:0;cursor:pointer;}
+.kgcalc-cart-finish-btn:disabled{opacity:.42;cursor:not-allowed;}
+.kgcalc-selection-help{margin:0 0 12px;text-align:center;font-size:.78rem;color:rgba(255,255,255,.58);}
 
 @media(max-width:600px){
 .kgcalc-section{padding:60px 5vw;}
@@ -6417,6 +6431,7 @@ function toggleFaq(el){
   // prices } where prices is null for a book whose price couldn't be
   // confirmed (it still joins the order, counted as 0 toward the total).
   let cart = [];
+  let bulkAddingBooks = false;
   let lastPriceCard = null;
   // Set once an order confirmation screen (Order ID + "choose a channel")
   // is showing, for either the single-book or multi-book path, so a
@@ -6424,6 +6439,81 @@ function toggleFaq(el){
   // a new Order ID or re-saving the quote. Cleared when the customer
   // leaves that screen (starts a new search).
   let lastOrderConfirmation = null;
+
+  // ── Shareable book links ────────────────────────────────────────────
+  const SHARE_BOOKS_PARAM = 'kgbooks';
+
+  function safeSharedCover(value){
+    const cover = String(value || '').replace(/^http:\/\//i, 'https://');
+    return /^https:\/\/(covers\.openlibrary\.org|books\.google\.|www\.google\.com\/books)/i.test(cover) ? cover.slice(0, 500) : '';
+  }
+
+  function cleanSharedBook(raw){
+    if (!raw || typeof raw !== 'object') return null;
+    const title = String(raw.title || '').trim().slice(0, 180);
+    if (!title) return null;
+    const isbn = String(raw.isbn || '').replace(/[^0-9Xx-]/g, '').slice(0, 32);
+    return {
+      title: title,
+      author: String(raw.author || '').trim().slice(0, 120),
+      isbn: isbn,
+      isbns: isbn ? [isbn] : [],
+      edition: String(raw.edition || '').trim().slice(0, 120),
+      exactEdition: !!raw.exactEdition,
+      cover: safeSharedCover(raw.cover)
+    };
+  }
+
+  function encodeSharedBooks(books){
+    const compact = books.slice(0, 12).map(function(book){
+      return { t:book.title, a:book.author || '', i:book.isbn || '', e:book.edition || '', x:!!book.exactEdition, c:safeSharedCover(book.cover) };
+    });
+    const utf8 = unescape(encodeURIComponent(JSON.stringify(compact)));
+    return btoa(utf8).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
+  }
+
+  function decodeSharedBooks(value){
+    try {
+      let encoded = String(value || '').replace(/-/g, '+').replace(/_/g, '/');
+      while (encoded.length % 4) encoded += '=';
+      const parsed = JSON.parse(decodeURIComponent(escape(atob(encoded))));
+      if (!Array.isArray(parsed)) return [];
+      return parsed.slice(0, 12).map(function(item){
+        return cleanSharedBook({ title:item.t, author:item.a, isbn:item.i, edition:item.e, exactEdition:item.x, cover:item.c });
+      }).filter(Boolean);
+    } catch (e) { return []; }
+  }
+
+  function currentShareBooks(){
+    const books = cart.map(function(item){ return item.book; });
+    if (pendingPriceBook) books.push(pendingPriceBook);
+    const seen = new Set();
+    return books.filter(function(book){
+      const key = (book.isbn || '') + '|' + String(book.title || '').toLowerCase();
+      if (seen.has(key)) return false;
+      seen.add(key); return true;
+    });
+  }
+
+  function updateShareUrl(explicitBooks){
+    try {
+      const books = explicitBooks || currentShareBooks();
+      const url = new URL(window.location.href);
+      if (books.length) url.searchParams.set(SHARE_BOOKS_PARAM, encodeSharedBooks(books));
+      else url.searchParams.delete(SHARE_BOOKS_PARAM);
+      history.replaceState(null, '', url.pathname + url.search + url.hash);
+    } catch (e) { /* sharing is optional; never interrupt pricing */ }
+  }
+
+  function copyCurrentShareLink(){
+    updateShareUrl();
+    const link = window.location.href;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(link).then(function(){ showCartToast('Share link copied.'); }).catch(function(){ showCartToast('Copy the book link from your address bar.'); });
+    } else {
+      showCartToast('Copy the book link from your address bar.');
+    }
+  }
 
   // ── Country combobox ─────────────────────────────────────────────────
   function renderCountryResults(query){
@@ -6479,8 +6569,6 @@ function toggleFaq(el){
       return;
     }
 
-    el.searchWrap.classList.remove('kgcalc-hidden');
-
     // If the "Find Your Next Book" quiz sent books over before a country was
     // picked (the quiz never asks for one), they've been waiting in
     // kgQuizIntegration.pendingBooks. Now that we have a country, price and
@@ -6489,7 +6577,10 @@ function toggleFaq(el){
       var pending = window.kgQuizIntegration.pendingBooks;
       window.kgQuizIntegration.pendingBooks = null;
       window.kgQuizIntegration._addBooksNow(pending);
+      return;
     }
+
+    el.searchWrap.classList.remove('kgcalc-hidden');
   }
 
   el.countryInput.addEventListener('input', function(){
@@ -7110,6 +7201,7 @@ function toggleFaq(el){
   // ── Book selected → confirm first, then ask for country ───────────
   function selectBook(book){
     pendingPriceBook = book;
+    updateShareUrl();
     el.results.innerHTML = '';
     el.search.value = book.title;
     el.searchWrap.classList.add('kgcalc-hidden');
@@ -7131,6 +7223,7 @@ function toggleFaq(el){
         '</div></div>' +
       '<p class="kgcalc-confirm-copy">Is this the book you want?</p>' +
       '<button class="btn-gold-sm kgcalc-confirm-price-btn" id="kgcalc-confirm-price-btn" type="button">Check Price →</button>' +
+      '<button class="kgcalc-share-btn" id="kgcalc-copy-share-link" type="button">Copy Share Link</button>' +
       '<button class="kgcalc-search-again" id="kgcalc-choose-different-book" type="button">Choose a different book</button>';
     wrap.appendChild(card);
     moveToStep(card);
@@ -7151,8 +7244,11 @@ function toggleFaq(el){
       moveToStep(el.countryWrap, el.countryInput);
     });
 
+    document.getElementById('kgcalc-copy-share-link').addEventListener('click', copyCurrentShareLink);
+
     document.getElementById('kgcalc-choose-different-book').addEventListener('click', function(){
       pendingPriceBook = null;
+      updateShareUrl();
       wrap.classList.add('kgcalc-hidden');
       el.searchWrap.classList.remove('kgcalc-hidden');
       if (heading) heading.textContent = 'Search results';
@@ -7185,6 +7281,7 @@ function toggleFaq(el){
   window.kgHeroBookSearch = function(query, options){
     options = options || {};
     pendingPriceBook = null;
+    updateShareUrl();
     if (!cart.length) {
       selectedCountry = null;
       el.countryInput.value = '';
@@ -7401,6 +7498,7 @@ function toggleFaq(el){
   function addToCart(book, priceResult, prices){
     cart.push({ book: book, priceResult: priceResult, prices: prices });
     pendingPriceBook = null;
+    updateShareUrl();
     el.priceWrap.classList.add('kgcalc-hidden');
     el.priceWrap.innerHTML = '';
     el.search.value = '';
@@ -7411,12 +7509,14 @@ function toggleFaq(el){
     if (heading) heading.textContent = 'Your cart · Search for another book above';
     renderCartSummary();
     updateCountryLockState();
-    setStatus(cart.length + (cart.length === 1 ? ' book is' : ' books are') + ' in your cart. Search for another book above.');
-    showCartToast('Book added to your cart. Search for another book.');
-    const heroInput = document.getElementById('hero-book-search-input');
-    if (heroInput) {
-      heroInput.value = '';
-      moveToStep(document.getElementById('hero-book-search-form'), heroInput);
+    if (!bulkAddingBooks) {
+      setStatus(cart.length + (cart.length === 1 ? ' book is' : ' books are') + ' in your cart. Search for another book above.');
+      showCartToast('Book added to your cart. Search for another book.');
+      const heroInput = document.getElementById('hero-book-search-input');
+      if (heroInput) {
+        heroInput.value = '';
+        moveToStep(document.getElementById('hero-book-search-form'), heroInput);
+      }
     }
   }
 
@@ -7454,6 +7554,7 @@ function toggleFaq(el){
       '. <button type="button" class="kgcalc-inline-link-btn" id="kgcalc-clear-cart-btn">' + window.kgI18n.t('calc.clear_order') + '</button>';
     document.getElementById('kgcalc-clear-cart-btn').addEventListener('click', function(){
       cart = [];
+      updateShareUrl();
       renderCartSummary();
       updateCountryLockState();
     });
@@ -7484,7 +7585,9 @@ function toggleFaq(el){
   function cartItemRowHtml(it, index, removable){
     const ok = it.priceResult && it.priceResult.ok;
     const cover = it.book.cover || CART_COVER_FALLBACK;
-    return '<li class="kgcalc-cart-item">' +
+    const selected = it.selected !== false;
+    return '<li class="kgcalc-cart-item' + (selected ? '' : ' is-unselected') + '">' +
+      (removable ? '<input class="kgcalc-book-select" type="checkbox" data-select-index="' + index + '" ' + (selected ? 'checked' : '') + ' aria-label="Select ' + escapeHtml(it.book.title) + '"/>' : '') +
       '<img alt="" class="kgcalc-cart-item-cover" onerror="this.onerror=null;this.src=\'' + CART_COVER_FALLBACK + '\';" src="' + cover + '"/>' +
       '<div class="kgcalc-cart-item-text">' +
         '<div class="kgcalc-cart-item-title">' + escapeHtml(it.book.title) + '</div>' +
@@ -7492,7 +7595,7 @@ function toggleFaq(el){
       '</div>' +
       '<div class="kgcalc-cart-item-price">' +
         (ok
-          ? formatMoney(it.prices.kgPrice, it.priceResult.currency) + '<span class="kgcalc-cart-item-retail">' + window.kgI18n.t('calc.retail_price') + ' ' + formatMoney(it.prices.retail, it.priceResult.currency) + '</span>'
+          ? '<span>Kitab Guru ' + formatMoney(it.prices.kgPrice, it.priceResult.currency) + '</span><span class="kgcalc-cart-item-retail">' + window.kgI18n.t('calc.retail_price') + ' ' + formatMoney(it.prices.retail, it.priceResult.currency) + '</span>'
           : '<span class="kgcalc-cart-item-unconfirmed">' + window.kgI18n.t('calc.cart_item_unconfirmed') + '</span>') +
       '</div>' +
       (removable ? '<button type="button" class="kgcalc-cart-remove" data-cart-index="' + index + '" aria-label="Remove ' + escapeHtml(it.book.title) + '">✕</button>' : '') +
@@ -7508,29 +7611,47 @@ function toggleFaq(el){
       el.cart.innerHTML = '';
       return;
     }
-    const totals = cartTotals(cart);
+    const selectedItems = cart.filter(function(it){ return it.selected !== false; });
+    const totals = cartTotals(selectedItems);
     const bookWord = cart.length === 1 ? window.kgI18n.t('calc.book_one') : window.kgI18n.t('calc.book_many');
+    const selectedWord = selectedItems.length === 1 ? window.kgI18n.t('calc.book_one') : window.kgI18n.t('calc.book_many');
     el.cart.classList.remove('kgcalc-hidden');
     el.cart.innerHTML =
       '<div class="kgcalc-cart-head">' + window.kgI18n.t('calc.your_order') + ' — ' + cart.length + ' ' + bookWord + '</div>' +
+      '<div class="kgcalc-cart-selectbar"><label class="kgcalc-select-all"><input class="kgcalc-book-select" id="kgcalc-select-all" type="checkbox" ' + (selectedItems.length === cart.length ? 'checked' : '') + '/> Select all books</label><span>' + selectedItems.length + ' of ' + cart.length + ' selected</span></div>' +
       '<ul class="kgcalc-cart-list">' + cart.map(function(it, i){ return cartItemRowHtml(it, i, true); }).join('') + '</ul>' +
       '<div class="kgcalc-cart-totals">' +
-        '<div><span>' + window.kgI18n.t('calc.retail_total') + '</span><b>' + formatMoney(totals.retailTotal, totals.currency) + '</b></div>' +
-        '<div><span>' + window.kgI18n.t('calc.kg_total') + '</span><b>' + formatMoney(totals.kgTotal, totals.currency) + '</b></div>' +
+        '<div><span>Selected retail total</span><b>' + formatMoney(totals.retailTotal, totals.currency) + '</b></div>' +
+        '<div><span>Selected Kitab Guru total</span><b>' + formatMoney(totals.kgTotal, totals.currency) + '</b></div>' +
       '</div>' +
-      cartUnconfirmedNoteHtml(cart, totals) +
-      '<button class="btn-gold kgcalc-cart-finish-btn" id="kgcalc-cart-finish-btn" type="button">' + window.kgI18n.t('calc.see_price') + ' ' + window.kgI18n.t('calc.for_word') + ' ' + cart.length + ' ' + bookWord + '</button>' +
+      cartUnconfirmedNoteHtml(selectedItems, totals) +
+      '<p class="kgcalc-selection-help">Untick any book you do not want before sending your request.</p>' +
+      '<button class="kgcalc-share-btn" id="kgcalc-cart-share-link" type="button">Copy Share Link</button>' +
+      '<button class="btn-gold kgcalc-cart-finish-btn" id="kgcalc-cart-finish-btn" type="button" ' + (selectedItems.length ? '' : 'disabled') + '>Request ' + selectedItems.length + ' Selected ' + selectedWord + '</button>' +
       '<button class="kgcalc-search-again" id="kgcalc-cart-search-more" type="button">' + window.kgI18n.t('calc.search_another') + '</button>';
 
     el.cart.querySelectorAll('[data-cart-index]').forEach(function(btn){
       btn.addEventListener('click', function(){
         cart.splice(parseInt(btn.dataset.cartIndex, 10), 1);
+        updateShareUrl();
         renderCartSummary();
         updateCountryLockState();
       });
     });
+    el.cart.querySelectorAll('[data-select-index]').forEach(function(input){
+      input.addEventListener('change', function(){
+        cart[parseInt(input.dataset.selectIndex, 10)].selected = input.checked;
+        renderCartSummary();
+      });
+    });
+    document.getElementById('kgcalc-select-all').addEventListener('change', function(event){
+      cart.forEach(function(it){ it.selected = event.target.checked; });
+      renderCartSummary();
+    });
+    document.getElementById('kgcalc-cart-share-link').addEventListener('click', copyCurrentShareLink);
     document.getElementById('kgcalc-cart-finish-btn').addEventListener('click', function(){
-      finalizeOrder(cart.slice());
+      const chosen = cart.filter(function(it){ return it.selected !== false; });
+      if (chosen.length) finalizeOrder(chosen);
     });
     document.getElementById('kgcalc-cart-search-more').addEventListener('click', function(){
       el.searchWrap.classList.remove('kgcalc-hidden');
@@ -7847,6 +7968,92 @@ function toggleFaq(el){
     });
   }
 
+  function renderSharedBookList(rawBooks){
+    const seen = new Set();
+    const books = rawBooks.map(cleanSharedBook).filter(function(book){
+      if (!book) return false;
+      const key = (book.isbn || '') + '|' + book.title.toLowerCase();
+      if (seen.has(key)) return false;
+      seen.add(key); return true;
+    }).slice(0, 12);
+    if (!books.length) return;
+
+    cart = [];
+    pendingPriceBook = null;
+    selectedCountry = null;
+    el.countryInput.value = '';
+    el.countryInput.disabled = false;
+    el.countryWrap.classList.add('kgcalc-hidden');
+    el.searchWrap.classList.add('kgcalc-hidden');
+    el.results.classList.add('kgcalc-hidden');
+    el.cart.classList.add('kgcalc-hidden');
+    const panel = document.getElementById('price-calculator');
+    if (panel) {
+      panel.classList.add('is-open', 'hero-results-mode');
+      const heading = panel.querySelector('.kgcalc-heading');
+      if (heading) heading.textContent = books.length === 1 ? 'Your book is ready' : 'Your books are ready';
+    }
+    el.priceWrap.classList.remove('kgcalc-hidden');
+    el.priceWrap.innerHTML =
+      '<div class="kgcalc-confirm-card">' +
+        '<div class="kgcalc-shared-note">This shared link already has ' + (books.length === 1 ? 'the book' : 'all ' + books.length + ' books') + '. Choose the button below, then select your country to see the price.</div>' +
+        '<div class="kgcalc-shared-list">' + books.map(function(book){
+          const cover = book.cover || CART_COVER_FALLBACK;
+          return '<div class="kgcalc-shared-item">' +
+            '<img alt="" src="' + cover + '" onerror="this.onerror=null;this.src=\'' + CART_COVER_FALLBACK + '\';"/>' +
+            '<div><div class="kgcalc-shared-item-title">' + escapeHtml(book.title) + '</div>' +
+            (book.author ? '<div class="kgcalc-shared-item-author">' + escapeHtml(book.author) + '</div>' : '') + '</div>' +
+          '</div>';
+        }).join('') + '</div>' +
+        '<button class="btn-gold kgcalc-confirm-price-btn" id="kgcalc-check-shared-books" type="button">' +
+          (books.length === 1 ? 'Check Price for This Book' : 'Check Prices for These ' + books.length + ' Books') + ' →</button>' +
+        '<button class="kgcalc-share-btn" id="kgcalc-copy-shared-link" type="button">Copy Share Link</button>' +
+      '</div>';
+    updateShareUrl(books);
+    document.getElementById('kgcalc-copy-shared-link').addEventListener('click', function(){
+      updateShareUrl(books);
+      const link = window.location.href;
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(link).then(function(){ showCartToast('Share link copied.'); }).catch(function(){ showCartToast('Copy the book link from your address bar.'); });
+      } else {
+        showCartToast('Copy the book link from your address bar.');
+      }
+    });
+    document.getElementById('kgcalc-check-shared-books').addEventListener('click', function(){
+      el.priceWrap.classList.add('kgcalc-hidden');
+      el.countryWrap.classList.remove('kgcalc-hidden');
+      window.kgQuizIntegration.pendingBooks = books;
+      const heading = panel && panel.querySelector('.kgcalc-heading');
+      if (heading) heading.textContent = 'Where are you buying from?';
+      setStatus('Select your country once and we’ll check ' + (books.length === 1 ? 'this book.' : 'all ' + books.length + ' books.'));
+      moveToStep(el.countryWrap, el.countryInput);
+    });
+    moveToStep(el.priceWrap);
+  }
+
+  function restoreSharedBooksFromUrl(){
+    let url;
+    try { url = new URL(window.location.href); } catch (e) { return; }
+    const value = url.searchParams.get(SHARE_BOOKS_PARAM);
+    if (!value) return;
+    const books = decodeSharedBooks(value);
+    if (!books.length) {
+      url.searchParams.delete(SHARE_BOOKS_PARAM);
+      history.replaceState(null, '', url.pathname + url.search + url.hash);
+      return;
+    }
+    const heroInput = document.getElementById('hero-book-search-input');
+    if (heroInput) heroInput.value = books.length === 1 ? books[0].title : books.length + ' shared books';
+    if (books.length === 1) {
+      const panel = document.getElementById('price-calculator');
+      if (panel) panel.classList.add('is-open');
+      selectBook(books[0]);
+      setTimeout(function(){ moveToStep(el.priceWrap); }, 150);
+    } else {
+      renderSharedBookList(books);
+    }
+  }
+
   // ── Bridge for the "Find Your Next Book" quiz ───────────────────────
   // The quiz builds its own recommendations from a local book database and
   // never touches country/price/cart logic directly — it just hands us
@@ -7872,6 +8079,7 @@ function toggleFaq(el){
       // duration so a visitor can't start a conflicting search mid-lookup.
       // try/finally guarantees both are restored even if fetchPrice throws.
       var n = books.length;
+      bulkAddingBooks = true;
       setSearchWrapLocked(true);
       setAutoLookupBanner(window.kgI18n.tf('calc.auto_lookup_banner', { n: n }));
       try {
@@ -7895,10 +8103,16 @@ function toggleFaq(el){
           addToCart(book, priceResult, prices);
         }
       } finally {
+        bulkAddingBooks = false;
         setAutoLookupBanner('');
         setSearchWrapLocked(false);
-        setStatus('');
       }
+      var calculatorPanel = document.getElementById('price-calculator');
+      var heading = calculatorPanel && calculatorPanel.querySelector('.kgcalc-heading');
+      if (heading) heading.textContent = 'Your price estimates';
+      setStatus('Prices checked for ' + n + (n === 1 ? ' book.' : ' books.'));
+      renderCartSummary();
+      moveToStep(el.cart);
     },
     // Lets the quiz discover books beyond its own local database using the
     // SAME Google Books key rotation / quota fallback the calculator's own
@@ -7917,6 +8131,8 @@ function toggleFaq(el){
       }
     }
   };
+
+  restoreSharedBooksFromUrl();
 
   // Re-render whatever's already on screen (cart, price/not-found card) so
   // a language switch mid-session doesn't leave already-rendered dynamic
