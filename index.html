@@ -1004,7 +1004,18 @@ select.kgcalc-select{appearance:none;-webkit-appearance:none;background-image:ur
 .kgcalc-result-cover{width:46px;height:68px;}
 .kgcalc-book-title{font-size:1.05rem;}
 .kgcalc-cart-totals{flex-direction:column;gap:12px;}
-.kgcalc-cart-item{flex-wrap:wrap;}
+.kgcalc-cart-item{display:grid;grid-template-columns:20px 42px minmax(0,1fr) 22px;grid-template-rows:auto auto;align-items:center;column-gap:9px;row-gap:5px;padding:12px 10px;}
+.kgcalc-cart-item .kgcalc-book-select{grid-column:1;grid-row:1/3;align-self:center;}
+.kgcalc-cart-item-cover{grid-column:2;grid-row:1/3;width:42px;height:62px;}
+.kgcalc-cart-item-text{grid-column:3;grid-row:1;align-self:end;width:100%;}
+.kgcalc-cart-item-title{line-height:1.3;overflow-wrap:anywhere;}
+.kgcalc-cart-item-price{grid-column:3/5;grid-row:2;align-self:start;text-align:left;display:flex;flex-wrap:wrap;align-items:baseline;gap:3px 8px;min-width:0;font-size:.82rem;}
+.kgcalc-cart-item-retail{display:inline;font-size:.68rem;white-space:normal;}
+.kgcalc-cart-item-unconfirmed{text-align:left;max-width:none;}
+.kgcalc-cart-remove{grid-column:4;grid-row:1;align-self:start;justify-self:end;}
+.kgcalc-selection-help{line-height:1.45;margin:0 0 14px;}
+.kgcalc-cart #kgcalc-cart-share-link,.kgcalc-cart .kgcalc-cart-finish-btn{display:flex;width:calc(100% - 46px);margin-left:0;margin-right:46px;box-sizing:border-box;min-height:48px;}
+.kgcalc-cart .kgcalc-cart-finish-btn{margin-top:10px;align-items:center;justify-content:center;padding-left:12px;padding-right:12px;line-height:1.25;}
 }
 </style>
 <!-- BOOK PRICE CALCULATOR -->
