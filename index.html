@@ -7789,9 +7789,12 @@ function toggleFaq(el){
     const y = d.getFullYear();
     const m = String(d.getMonth()+1).padStart(2,'0');
     const day = String(d.getDate()).padStart(2,'0');
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    let rand = '';
-    for (let i=0;i<5;i++) rand += chars[Math.floor(Math.random()*chars.length)];
+    if (!window.crypto || !window.crypto.getRandomValues) {
+      throw new Error('Secure quote ID generation is unavailable in this browser.');
+    }
+    const bytes = new Uint8Array(16);
+    window.crypto.getRandomValues(bytes);
+    const rand = Array.from(bytes, function(byte){ return byte.toString(16).padStart(2, '0'); }).join('').toUpperCase();
     return 'KG-' + y + m + day + '-' + rand;
   }
 
