@@ -315,55 +315,6 @@ function handleCheckRetailerPrice(data) {
   return jsonResponse(Object.assign({ ok: true }, hit));
 }
 
-// TEMPORARY — diagnostic only, not called by the site. Shows exactly what
-// the backend actually saw for a given ISBN, so a failure can be diagnosed
-// instead of guessed at. Safe to delete once TextbookX is confirmed working.
-function handleDebugRetailerPrice(data) {
-  const isbn = (data && data.isbn) || '9780573705144';
-  const url = 'https://www.textbookx.com/fastsearch2.php?s=' + encodeURIComponent(isbn) + '&product=book&act=new';
-  const hops = [];
-  let current = url;
-  let final = null;
-  for (let i = 0; i < 5; i++) {
-    let res;
-    try {
-      res = UrlFetchApp.fetch(current, {
-        muteHttpExceptions: true,
-        followRedirects: false,
-        headers: { 'User-Agent': RETAILER_USER_AGENT }
-      });
-    } catch (e) {
-      hops.push({ url: current, error: String(e) });
-      break;
-    }
-    const code = res.getResponseCode();
-    const headers = res.getHeaders();
-    hops.push({ url: current, code: code, location: headers['Location'] || headers['location'] || null });
-    if (code >= 300 && code < 400) {
-      const location = headers['Location'] || headers['location'];
-      if (!location) break;
-      current = resolveUrl_(current, location);
-      continue;
-    }
-    if (code === 200) final = { url: current, html: res.getContentText() };
-    break;
-  }
-  if (!final) return jsonResponse({ ok: false, stage: 'fetch failed or no redirect resolved', hops: hops });
-  const prices = extractPrices_(final.html);
-  const dollarIndex = final.html.indexOf('7.74');
-  return jsonResponse({
-    ok: true,
-    hops: hops,
-    finalUrl: final.url,
-    htmlLength: final.html.length,
-    matchedProductPage: final.url.indexOf('/book/') !== -1,
-    extractedPrices: prices,
-    knownPriceFound: dollarIndex !== -1,
-    knownPriceContext: dollarIndex !== -1 ? final.html.slice(Math.max(0, dollarIndex - 60), dollarIndex + 20) : null,
-    htmlSnippet: final.html.slice(0, 500)
-  });
-}
-
 // UrlFetchApp can follow redirects itself, but never tells you the URL it
 // landed on -- and that final URL IS the product page we need to link to
 // as the source. So redirects are followed by hand here instead, one hop
