@@ -5755,43 +5755,25 @@ function toggleFaq(el){
   // *project*, not per key — so several keys from several separate
   // projects each get their own 1000/day bucket. List every key here
   // (each from its own project); once one project's quota is exhausted
-  // for the day, requests automatically move on to the next key instead
-  // of failing. Keys from the SAME project would not add anything, since
-  // they'd share that one project's quota.
-  const GOOGLE_BOOKS_API_KEYS = [
-    'AIzaSyDYJoLR80oT9FtWITIIkIPFS7vCnUSQz7A',
-    'AIzaSyBKJubU1ubpVpjkCAS4rqDdL2nkLHpPvaA',
-    'AIzaSyAxYliNZFZetBxkMB0rviUlS9Qs4-r4YHk',
-    'AIzaSyDY9_l4lcMSXS38QXb90GqicGGKWu0nzaw'
-  ];
-  // Once a key's project quota is exhausted, it stays exhausted for the
-  // rest of the day — so advancing past it is a one-way move for the
-  // life of this page, rather than re-trying an already-dead key on
-  // every request.
-  let googleBooksKeyIndex = 0;
-  function currentGoogleBooksKey(){
-    return GOOGLE_BOOKS_API_KEYS[googleBooksKeyIndex] || null;
-  }
-  function advanceGoogleBooksKey(){
-    if (googleBooksKeyIndex < GOOGLE_BOOKS_API_KEYS.length - 1) {
-      googleBooksKeyIndex++;
-      logSourceIssue('Google Books', 'key ' + googleBooksKeyIndex + ' quota exhausted, switching to next key');
-      return true;
-    }
-    return false;
-  }
-  // Every Google Books request goes through here so quota rotation is in
-  // one place: append whichever key is currently active, and on a 429
-  // (quota exceeded) automatically retry with the next key instead of
-  // surfacing a failure the customer would see as "couldn't find a
-  // price." baseUrl must NOT already include a &key= param.
+  // Google Books requests are proxied through Apps Script.
+  // The API key is stored in Apps Script Script Properties, never in browser code.
   async function googleBooksFetch(baseUrl, timeoutMs){
-    for (;;) {
-      const key = currentGoogleBooksKey();
-      const url = baseUrl + (key ? '&key=' + encodeURIComponent(key) : '');
-      const res = await withTimeout(fetch(url), timeoutMs || 6000);
-      if (res.status === 429 && advanceGoogleBooksKey()) continue;
-      return res;
+    try {
+      const requestUrl = new URL(baseUrl);
+      const payload = {
+        action: 'googleBooksSearch',
+        query: requestUrl.searchParams.get('q') || '',
+        country: requestUrl.searchParams.get('country') || '',
+        maxResults: Number(requestUrl.searchParams.get('maxResults') || 8)
+      };
+      const data = await withTimeout(postToAppsScript(payload), timeoutMs || 8000);
+      if (!data || !data.ok || !data.data) {
+        return { ok: false, status: data && data.status ? data.status : 503, json: async function(){ return {}; } };
+      }
+      return { ok: true, status: 200, json: async function(){ return data.data; } };
+    } catch (e) {
+      logSourceIssue('Google Books proxy', e);
+      return { ok: false, status: 503, json: async function(){ return {}; } };
     }
   }
 
@@ -7804,9 +7786,12 @@ function toggleFaq(el){
     const y = d.getFullYear();
     const m = String(d.getMonth()+1).padStart(2,'0');
     const day = String(d.getDate()).padStart(2,'0');
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    let rand = '';
-    for (let i=0;i<5;i++) rand += chars[Math.floor(Math.random()*chars.length)];
+    if (!window.crypto || !window.crypto.getRandomValues) {
+      throw new Error('Secure quote ID generation is unavailable in this browser.');
+    }
+    const bytes = new Uint8Array(16);
+    window.crypto.getRandomValues(bytes);
+    const rand = Array.from(bytes, function(byte){ return byte.toString(16).padStart(2, '0'); }).join('').toUpperCase();
     return 'KG-' + y + m + day + '-' + rand;
   }
 

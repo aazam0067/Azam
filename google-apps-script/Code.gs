@@ -10,17 +10,65 @@
  * "PriceCache", and "Inquiries".
  *
  * SETUP: see SETUP.md in this same folder for step-by-step instructions.
- * This Sheet and Apps Script project should be created while logged into
- * eBooksWorld3622@gmail.com. You only need to edit SPREADSHEET_ID below —
- * NOTIFY_EMAIL is already set.
+ * Configure the spreadsheet ID, notification email, and Google Books API
+ * keys through Apps Script Script Properties; no values belong in this file.
  */
 
-// 1. Paste your Google Sheet ID here (the long string in the sheet's URL
-//    between /d/ and /edit).
-const SPREADSHEET_ID = '1LfDwX3TpEjxzZ3euCWJkBFas0DELaPOLqdHysTM4hE0';
+// Sensitive configuration is stored in Apps Script > Project Settings >
+// Script Properties. Never place spreadsheet IDs, notification addresses,
+// or API keys in this public repository.
+const SPREADSHEET_ID_PROPERTY = 'SPREADSHEET_ID';
+const NOTIFY_EMAIL_PROPERTY = 'NOTIFY_EMAIL';
+const GOOGLE_BOOKS_API_KEYS_PROPERTY = 'GOOGLE_BOOKS_API_KEYS';
 
-// 2. The email address that receives a notification for every new quote.
-const NOTIFY_EMAIL = 'eBooksWorld3622@gmail.com';
+function getRequiredScriptProperty_(name) {
+  const value = PropertiesService.getScriptProperties().getProperty(name);
+  if (!value || !String(value).trim()) throw new Error('Missing Script Property: ' + name);
+  return String(value).trim();
+}
+
+function getSpreadsheet_() {
+  return SpreadsheetApp.openById(getRequiredScriptProperty_(SPREADSHEET_ID_PROPERTY));
+}
+
+function cleanInputText_(value, maxLength) {
+  return String(value == null ? '' : value)
+    .replace(/[\x00-\x1F\x7F]/g, ' ')
+    .trim()
+    .slice(0, maxLength || 500);
+}
+
+// Google Sheets treats strings beginning with these characters as formulas.
+// Prefix an apostrophe so customer-controlled text is stored as plain text.
+function safeSheetText_(value, maxLength) {
+  const text = cleanInputText_(value, maxLength);
+  return /^[=+\-@\t\r]/.test(text) ? "'" + text : text;
+}
+
+function safeNonNegativeNumber_(value) {
+  if (value === '' || value == null) return '';
+  const number = Number(value);
+  return Number.isFinite(number) && number >= 0 ? number : '';
+}
+
+function normalizeIsbn_(value) {
+  return String(value || '').replace(/[\s-]/g, '').toUpperCase();
+}
+
+function isValidIsbn_(value) {
+  const isbn = normalizeIsbn_(value);
+  if (/^\d{13}$/.test(isbn)) {
+    let sum = 0;
+    for (let i = 0; i < 12; i++) sum += Number(isbn[i]) * (i % 2 ? 3 : 1);
+    return (10 - (sum % 10)) % 10 === Number(isbn[12]);
+  }
+  if (/^\d{9}[\dX]$/.test(isbn)) {
+    let sum = 0;
+    for (let i = 0; i < 10; i++) sum += (isbn[i] === 'X' ? 10 : Number(isbn[i])) * (10 - i);
+    return sum % 11 === 0;
+  }
+  return false;
+}
 
 // Name of the sheet/tab where quotes are stored.
 const SHEET_NAME = 'Quotes';
@@ -53,7 +101,12 @@ const INQUIRY_COLUMNS = [
 
 function doPost(e) {
   try {
-    const body = JSON.parse(e.postData.contents);
+    const rawBody = e && e.postData && e.postData.contents;
+    if (!rawBody || rawBody.length > 20000) return jsonResponse({ ok: false, error: 'Invalid request' });
+    const body = JSON.parse(rawBody);
+    if (!body || typeof body !== 'object' || Array.isArray(body)) {
+      return jsonResponse({ ok: false, error: 'Invalid request' });
+    }
     const action = body.action || 'saveQuote';
 
     if (action === 'saveQuote') return handleSaveQuote(body);
@@ -62,53 +115,97 @@ function doPost(e) {
     if (action === 'cachePrice') return handleCachePrice(body);
     if (action === 'logInquiry') return handleLogInquiry(body);
     if (action === 'checkRetailerPrice') return handleCheckRetailerPrice(body);
-    if (action === 'debugRetailerPrice') return handleDebugRetailerPrice(body);
+    if (action === 'googleBooksSearch') return handleGoogleBooksSearch(body);
 
     return jsonResponse({ ok: false, error: 'Unknown action' });
   } catch (err) {
-    return jsonResponse({ ok: false, error: String(err) });
+    console.error(err);
+    return jsonResponse({ ok: false, error: 'Request could not be processed' });
   }
 }
 
 function handleSaveQuote(data) {
-  const sheet = getSheet_();
-  const now = new Date();
+  const quoteId = cleanInputText_(data.quoteId, 80);
+  const country = cleanInputText_(data.country, 80);
+  const bookTitle = cleanInputText_(data.bookTitle, 300);
+  if (!quoteId || !country || !bookTitle) {
+    return jsonResponse({ ok: false, error: 'Quote ID, country and book title are required' });
+  }
 
-  sheet.appendRow([
-    data.quoteId || '',
-    Utilities.formatDate(now, 'Etc/UTC', 'yyyy-MM-dd'),
-    Utilities.formatDate(now, 'Etc/UTC', 'HH:mm:ss'),
-    now.toISOString(),
-    data.country || '',
-    data.currency || '',
-    data.bookTitle || '',
-    data.author || '',
-    data.isbn || '',
-    data.format || '',
-    data.retailPrice || '',
-    data.kitabGuruPrice || '',
-    data.discount || '',
-    data.priceSource || '',
-    data.sourceMarketplace || '',
-    data.referenceLink || '',
-    data.contactMethod || '',
-    'New'
-  ]);
+  const safeData = {
+    quoteId: quoteId,
+    country: country,
+    currency: cleanInputText_(data.currency, 8),
+    bookTitle: bookTitle,
+    author: cleanInputText_(data.author, 200),
+    isbn: cleanInputText_(data.isbn, 20),
+    format: cleanInputText_(data.format, 80),
+    retailPrice: safeNonNegativeNumber_(data.retailPrice),
+    kitabGuruPrice: safeNonNegativeNumber_(data.kitabGuruPrice),
+    discount: cleanInputText_(data.discount, 30),
+    priceSource: cleanInputText_(data.priceSource, 120),
+    sourceMarketplace: cleanInputText_(data.sourceMarketplace, 120),
+    referenceLink: cleanInputText_(data.referenceLink, 1000),
+    contactMethod: cleanInputText_(data.contactMethod, 30)
+  };
 
-  sendNotificationEmail_(data);
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(5000)) return jsonResponse({ ok: false, error: 'Please retry shortly' });
+  try {
+    const sheet = getSheet_();
+    const values = sheet.getDataRange().getValues();
+    const quoteIdCol = COLUMNS.indexOf('Quote ID');
+    for (let i = 1; i < values.length; i++) {
+      if (String(values[i][quoteIdCol]) === quoteId) {
+        return jsonResponse({ ok: true, quoteId: quoteId, duplicate: true });
+      }
+    }
 
-  return jsonResponse({ ok: true, quoteId: data.quoteId });
+    const now = new Date();
+    sheet.appendRow([
+      safeSheetText_(safeData.quoteId, 80),
+      Utilities.formatDate(now, 'Etc/UTC', 'yyyy-MM-dd'),
+      Utilities.formatDate(now, 'Etc/UTC', 'HH:mm:ss'),
+      now.toISOString(),
+      safeSheetText_(safeData.country, 80),
+      safeSheetText_(safeData.currency, 8),
+      safeSheetText_(safeData.bookTitle, 300),
+      safeSheetText_(safeData.author, 200),
+      safeSheetText_(safeData.isbn, 20),
+      safeSheetText_(safeData.format, 80),
+      safeData.retailPrice,
+      safeData.kitabGuruPrice,
+      safeSheetText_(safeData.discount, 30),
+      safeSheetText_(safeData.priceSource, 120),
+      safeSheetText_(safeData.sourceMarketplace, 120),
+      safeSheetText_(safeData.referenceLink, 1000),
+      safeSheetText_(safeData.contactMethod, 30),
+      'New'
+    ]);
+  } finally {
+    lock.releaseLock();
+  }
+
+  sendNotificationEmail_(safeData);
+  return jsonResponse({ ok: true, quoteId: quoteId });
 }
 
 function handleUpdateContactMethod(data) {
+  const quoteId = cleanInputText_(data.quoteId, 80);
+  const method = cleanInputText_(data.contactMethod, 30).toLowerCase();
+  const allowedMethods = ['whatsapp', 'email', 'facebook', 'instagram', 'linkedin'];
+  if (!quoteId || allowedMethods.indexOf(method) === -1) {
+    return jsonResponse({ ok: false, error: 'Invalid quote or contact method' });
+  }
+
   const sheet = getSheet_();
   const values = sheet.getDataRange().getValues();
   const quoteIdCol = COLUMNS.indexOf('Quote ID');
   const contactCol = COLUMNS.indexOf('Contact Method');
 
   for (let i = 1; i < values.length; i++) {
-    if (values[i][quoteIdCol] === data.quoteId) {
-      sheet.getRange(i + 1, contactCol + 1).setValue(data.contactMethod || '');
+    if (String(values[i][quoteIdCol]) === quoteId) {
+      sheet.getRange(i + 1, contactCol + 1).setValue(method);
       return jsonResponse({ ok: true });
     }
   }
@@ -116,20 +213,26 @@ function handleUpdateContactMethod(data) {
 }
 
 function handleLogInquiry(data) {
+  const country = cleanInputText_(data.country, 80);
+  const bookTitle = cleanInputText_(data.bookTitle, 300);
+  if (!country || !bookTitle) {
+    return jsonResponse({ ok: false, error: 'Country and book title are required' });
+  }
+
   const sheet = getInquirySheet_();
   sheet.appendRow([
     new Date().toISOString(),
-    data.country || '',
-    data.bookTitle || '',
-    data.author || '',
-    data.edition || '',
-    data.isbn || ''
+    safeSheetText_(country, 80),
+    safeSheetText_(bookTitle, 300),
+    safeSheetText_(data.author, 200),
+    safeSheetText_(data.edition, 100),
+    safeSheetText_(data.isbn, 20)
   ]);
   return jsonResponse({ ok: true });
 }
 
 function getInquirySheet_() {
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const ss = getSpreadsheet_();
   let sheet = ss.getSheetByName(INQUIRY_SHEET_NAME);
   if (!sheet) sheet = ss.insertSheet(INQUIRY_SHEET_NAME);
   if (sheet.getLastRow() === 0) {
@@ -153,60 +256,63 @@ function getInquirySheet_() {
 // direct redirect to the product page with real price data, sometimes a
 // results page that loads everything via client-side JavaScript we have
 // no way to run server-side) -- not reliable enough to keep active.
+function handleGoogleBooksSearch(data) {
+  const query = cleanInputText_(data.query, 400);
+  const country = cleanInputText_(data.country, 2).toUpperCase();
+  const maxResults = Math.min(8, Math.max(1, parseInt(data.maxResults, 10) || 8));
+  if (!query || (country && !/^[A-Z]{2}$/.test(country))) {
+    return jsonResponse({ ok: false, status: 400 });
+  }
+
+  const keysRaw = getRequiredScriptProperty_(GOOGLE_BOOKS_API_KEYS_PROPERTY);
+  const keys = keysRaw.split(/[\s,]+/).map(function(key){ return key.trim(); }).filter(Boolean);
+  if (!keys.length) return jsonResponse({ ok: false, status: 503 });
+
+  const cache = CacheService.getScriptCache();
+  const cacheInput = query + '|' + country + '|' + maxResults;
+  const digest = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, cacheInput);
+  const cacheKey = 'books:' + Utilities.base64EncodeWebSafe(digest).replace(/=+$/, '');
+  const cached = cache.get(cacheKey);
+  if (cached) {
+    try { return jsonResponse({ ok: true, data: JSON.parse(cached), cached: true }); }
+    catch (ignored) { cache.remove(cacheKey); }
+  }
+
+  let url = 'https://www.googleapis.com/books/v1/volumes?q=' + encodeURIComponent(query) +
+    '&maxResults=' + maxResults;
+  if (country) url += '&country=' + encodeURIComponent(country);
+
+  for (let i = 0; i < keys.length; i++) {
+    const response = UrlFetchApp.fetch(url, {
+      muteHttpExceptions: true,
+      headers: { 'X-Goog-Api-Key': keys[i] }
+    });
+    const status = response.getResponseCode();
+    if (status === 429) continue;
+    if (status !== 200) return jsonResponse({ ok: false, status: status });
+
+    const result = JSON.parse(response.getContentText());
+    const serialized = JSON.stringify(result);
+    if (serialized.length < 90000) cache.put(cacheKey, serialized, 600);
+    return jsonResponse({ ok: true, data: result });
+  }
+
+  return jsonResponse({ ok: false, status: 429 });
+}
+
 function handleCheckRetailerPrice(data) {
-  const isbn = data.isbn || '';
+  const isbn = normalizeIsbn_(data.isbn);
+  if (!isValidIsbn_(isbn)) return jsonResponse({ ok: false, error: 'A valid ISBN is required' });
+
+  // Avoid repeated upstream retailer fetches for the same ISBN in a short window.
+  const cache = CacheService.getScriptCache();
+  const throttleKey = 'retailer:' + isbn;
+  if (cache.get(throttleKey)) return jsonResponse({ ok: false, error: 'Please retry shortly' });
+  cache.put(throttleKey, '1', 15);
+
   const hit = tryTextbookX_(isbn);
   if (!hit) return jsonResponse({ ok: false });
   return jsonResponse(Object.assign({ ok: true }, hit));
-}
-
-// TEMPORARY — diagnostic only, not called by the site. Shows exactly what
-// the backend actually saw for a given ISBN, so a failure can be diagnosed
-// instead of guessed at. Safe to delete once TextbookX is confirmed working.
-function handleDebugRetailerPrice(data) {
-  const isbn = (data && data.isbn) || '9780573705144';
-  const url = 'https://www.textbookx.com/fastsearch2.php?s=' + encodeURIComponent(isbn) + '&product=book&act=new';
-  const hops = [];
-  let current = url;
-  let final = null;
-  for (let i = 0; i < 5; i++) {
-    let res;
-    try {
-      res = UrlFetchApp.fetch(current, {
-        muteHttpExceptions: true,
-        followRedirects: false,
-        headers: { 'User-Agent': RETAILER_USER_AGENT }
-      });
-    } catch (e) {
-      hops.push({ url: current, error: String(e) });
-      break;
-    }
-    const code = res.getResponseCode();
-    const headers = res.getHeaders();
-    hops.push({ url: current, code: code, location: headers['Location'] || headers['location'] || null });
-    if (code >= 300 && code < 400) {
-      const location = headers['Location'] || headers['location'];
-      if (!location) break;
-      current = resolveUrl_(current, location);
-      continue;
-    }
-    if (code === 200) final = { url: current, html: res.getContentText() };
-    break;
-  }
-  if (!final) return jsonResponse({ ok: false, stage: 'fetch failed or no redirect resolved', hops: hops });
-  const prices = extractPrices_(final.html);
-  const dollarIndex = final.html.indexOf('7.74');
-  return jsonResponse({
-    ok: true,
-    hops: hops,
-    finalUrl: final.url,
-    htmlLength: final.html.length,
-    matchedProductPage: final.url.indexOf('/book/') !== -1,
-    extractedPrices: prices,
-    knownPriceFound: dollarIndex !== -1,
-    knownPriceContext: dollarIndex !== -1 ? final.html.slice(Math.max(0, dollarIndex - 60), dollarIndex + 20) : null,
-    htmlSnippet: final.html.slice(0, 500)
-  });
 }
 
 // UrlFetchApp can follow redirects itself, but never tells you the URL it
@@ -325,6 +431,13 @@ function cacheKey_(isbn, country, format) {
 }
 
 function handleGetCachedPrice(data) {
+  const isbn = normalizeIsbn_(data.isbn);
+  const country = cleanInputText_(data.country, 2).toUpperCase();
+  const format = cleanInputText_(data.format, 80);
+  if (!isValidIsbn_(isbn) || !/^[A-Z]{2}$/.test(country)) {
+    return jsonResponse({ ok: true, hit: false });
+  }
+
   const sheet = getCacheSheet_();
   const values = sheet.getDataRange().getValues();
   const isbnCol = CACHE_COLUMNS.indexOf('ISBN');
@@ -336,7 +449,7 @@ function handleGetCachedPrice(data) {
   const linkCol = CACHE_COLUMNS.indexOf('Reference Link');
   const tsCol = CACHE_COLUMNS.indexOf('Timestamp');
 
-  const wantKey = cacheKey_(data.isbn, data.country, data.format);
+  const wantKey = cacheKey_(isbn, country, format);
   const cutoff = Date.now() - CACHE_TTL_HOURS * 60 * 60 * 1000;
 
   for (let i = 1; i < values.length; i++) {
@@ -361,18 +474,26 @@ function handleGetCachedPrice(data) {
 }
 
 function handleCachePrice(data) {
+  const isbn = normalizeIsbn_(data.isbn);
+  const country = cleanInputText_(data.country, 2).toUpperCase();
+  const format = cleanInputText_(data.format, 80);
+  const price = safeNonNegativeNumber_(data.retailPrice);
+  if (!isValidIsbn_(isbn) || !/^[A-Z]{2}$/.test(country) || price === '') {
+    return jsonResponse({ ok: false, error: 'Invalid cache entry' });
+  }
+
   const sheet = getCacheSheet_();
   const values = sheet.getDataRange().getValues();
   const isbnCol = CACHE_COLUMNS.indexOf('ISBN');
   const countryCol = CACHE_COLUMNS.indexOf('Country');
   const formatCol = CACHE_COLUMNS.indexOf('Format');
-  const wantKey = cacheKey_(data.isbn, data.country, data.format);
+  const wantKey = cacheKey_(isbn, country, format);
   const now = new Date();
 
   const row = [
-    data.isbn || '', data.country || '', data.format || '', data.title || '',
-    data.currency || '', data.retailPrice || '', data.priceSource || '',
-    data.referenceLink || '', now.toISOString()
+    isbn, country, format, safeSheetText_(data.title, 300),
+    safeSheetText_(data.currency, 8), price, safeSheetText_(data.priceSource, 120),
+    safeSheetText_(data.referenceLink, 1000), now.toISOString()
   ];
 
   for (let i = 1; i < values.length; i++) {
@@ -388,7 +509,7 @@ function handleCachePrice(data) {
 }
 
 function getCacheSheet_() {
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const ss = getSpreadsheet_();
   let sheet = ss.getSheetByName(CACHE_SHEET_NAME);
   if (!sheet) sheet = ss.insertSheet(CACHE_SHEET_NAME);
   if (sheet.getLastRow() === 0) {
@@ -399,7 +520,7 @@ function getCacheSheet_() {
 }
 
 function getSheet_() {
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const ss = getSpreadsheet_();
   let sheet = ss.getSheetByName(SHEET_NAME);
   if (!sheet) {
     sheet = ss.insertSheet(SHEET_NAME);
@@ -412,7 +533,8 @@ function getSheet_() {
 }
 
 function sendNotificationEmail_(data) {
-  if (!NOTIFY_EMAIL) return;
+  const notifyEmail = PropertiesService.getScriptProperties().getProperty(NOTIFY_EMAIL_PROPERTY);
+  if (!notifyEmail || !String(notifyEmail).trim()) return;
 
   const subject = 'New KG Quote ' + (data.country || '');
   const body = [
@@ -434,7 +556,7 @@ function sendNotificationEmail_(data) {
     'Date/Time: ' + new Date().toString()
   ].join('\n');
 
-  MailApp.sendEmail(NOTIFY_EMAIL, subject, body);
+  MailApp.sendEmail(String(notifyEmail).trim(), subject, body);
 }
 
 function jsonResponse(obj) {

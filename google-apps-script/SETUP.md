@@ -1,106 +1,98 @@
-# Book Price Calculator — backend setup
+# Kitab Guru — Book Price Calculator backend
 
-The calculator on the website talks to a small Google Apps Script "web app"
-that saves each quote into a Google Sheet, emails a notification, and
-serves as a shared price cache. Nothing you enter here is ever visible in
-the website's HTML/JavaScript.
+This Apps Script web app stores quotes and inquiries in Google Sheets, sends quote
+notifications, caches successful prices, and proxies Google Books lookups so API
+keys are not shipped to the visitor's browser.
 
-**Do all of the steps below while logged into `eBooksWorld3622@gmail.com`**
-— Apps Script ties "execute as: me" and Sheet ownership to whichever
-Google account creates and deploys it.
+## 1. Create or select the Google Sheet
 
-## 1. Create the Google Sheet
-
-1. While logged into `eBooksWorld3622@gmail.com`, go to
-   [sheets.google.com](https://sheets.google.com) and create a new, blank
-   spreadsheet. Name it something like "Kitab Guru Quotes".
-2. Leave it empty — the script creates the header rows and three tabs
-   ("Quotes", "PriceCache", and "Inquiries") automatically the first time
-   it runs.
-3. Copy the Sheet ID from its URL:
-   `https://docs.google.com/spreadsheets/d/`**`THIS_PART_IS_THE_ID`**`/edit`
+1. Sign in to the Google account that should own the spreadsheet and notification
+   workflow.
+2. Create a spreadsheet named something like **Kitab Guru Quotes**.
+3. Copy its spreadsheet ID from the URL. The script creates the `Quotes`,
+   `PriceCache`, and `Inquiries` tabs automatically.
 
 ## 2. Create the Apps Script project
 
-1. In that same spreadsheet, click **Extensions → Apps Script**.
-2. Delete the placeholder code in `Code.gs` and paste in the entire contents
-   of [`Code.gs`](./Code.gs) from this folder.
-3. Near the top of the file, fill in:
-   - `SPREADSHEET_ID` — the ID you copied in step 1.
-   - `NOTIFY_EMAIL` is already set to `eBooksWorld3622@gmail.com` — change
-     it only if you want notifications to go somewhere else.
-4. Save the project (File → Save, or Ctrl/Cmd+S). Give it a name like
-   "Kitab Guru Quotes Backend".
+1. Open the spreadsheet and choose **Extensions → Apps Script**.
+2. Replace the editor's `Code.gs` with the complete contents of this repository's
+   `google-apps-script/Code.gs`.
+3. Save the project.
 
-## 3. Deploy it as a web app
+> Updating the GitHub copy does not automatically update the Apps Script project.
+> Paste the updated file into the deployed Apps Script project before deploying
+> a new version.
 
-1. Click **Deploy → New deployment**.
-2. Click the gear icon next to "Select type" and choose **Web app**.
-3. Set:
-   - **Execute as:** Me (`eBooksWorld3622@gmail.com`)
-   - **Who has access:** Anyone
-4. Click **Deploy**. The first time, Google will ask you to authorize the
-   script — this is expected, since it needs permission to write to your
-   Sheet and send email on your behalf. Review and allow it.
-5. Copy the **Web app URL** it gives you (ends in `/exec`).
+## 3. Store configuration privately
 
-## 4. Connect it to the website
+In Apps Script, open **Project Settings → Script Properties → Add script property**.
+Add these properties. Their values must stay in Script Properties and must not be
+committed to GitHub.
 
-Open `index.html` and find this line (search for `QUOTE_API_URL`):
+| Property | Value |
+|---|---|
+| `SPREADSHEET_ID` | The ID copied from your Google Sheet URL |
+| `NOTIFY_EMAIL` | The inbox that should receive new quote notifications |
+| `GOOGLE_BOOKS_API_KEYS` | One or more newly created Google Books API keys, comma-separated |
 
-```js
-const QUOTE_API_URL = 'PASTE_YOUR_APPS_SCRIPT_WEB_APP_URL_HERE';
-```
+Create a **new** Google Books API key in Google Cloud Console. Enable the Books API
+and restrict the key to that API. Since requests are made server-side by Apps
+Script, website HTTP-referrer restrictions are not appropriate for this proxy.
+Keep the key out of HTML, JavaScript, GitHub, screenshots, and chat messages.
+For stronger application-level restrictions, move this proxy to a server with a
+stable outbound IP and apply an IP restriction as well.
 
-Replace the placeholder with the URL you copied in step 3. That's it — the
-calculator will now save every quote, use the shared price cache, and email
-`eBooksWorld3622@gmail.com` when a new quote comes in.
+The keys previously present in the public HTML should be considered exposed.
+Rotate or delete them in Google Cloud Console; removing them from the latest
+commit does not remove them from earlier Git history.
 
-Until you do this, the calculator still works end-to-end for browsing and
-testing — it just skips the cache lookup and save-to-Sheet steps and shows
-a quiet console note instead of failing.
+## 4. Deploy as a web app
 
-## About the Inquiries tab
+1. Choose **Deploy → New deployment** (or edit the existing deployment).
+2. Select **Web app**.
+3. Set **Execute as** to the account that owns the Sheet and Apps Script.
+4. Set **Who has access** to **Anyone** because the public calculator needs to
+   submit quote and search requests.
+5. Authorize the requested Sheet, email, and external-request permissions.
+6. Deploy and copy the web app URL ending in `/exec`.
 
-Whenever a customer picks a book (or a specific edition) and none of the
-price sources can confirm a current price, the calculator still offers
-them a way to message the team directly — and logs a row to the
-`Inquiries` tab (country, title, author, edition, ISBN) so that interest
-isn't lost even when the automatic price check comes up empty.
+The deployment URL is a public endpoint, not a password. Do not rely on hiding it
+as a security control. Keep the script's input validation and monitor usage. For
+stronger abuse protection, add a server-verified CAPTCHA/Turnstile challenge or
+move public actions behind a rate-limited backend.
 
-## About the price cache
+## 5. Connect it to the website
 
-The `PriceCache` tab stores one row per (ISBN + country + format) the
-calculator has successfully priced, along with when it was priced. Before
-trying any external pricing API, the calculator asks this Sheet for a
-recent match first — if found within `CACHE_TTL_HOURS` (24 hours by
-default, changeable in `Code.gs`), it's used directly, saving an external
-API call. This helps under repeated traffic for the same popular titles,
-but it's a protection layer only — a book nobody has looked up before still
-goes through the live fallback chain in `index.html`.
+In `index.html`, find `QUOTE_API_URL` and set it to the deployed web app URL.
+This URL is required by the browser and is not a secret. The Google Books API key
+is now read only by Apps Script from Script Properties.
 
-## About the price sources
+After changing `Code.gs`, deploy a **new version** of the existing web app
+deployment so the URL stays the same. Then publish the website changes from the
+security branch after reviewing and testing them.
 
-`index.html` tries sources in this order for every fresh (non-cached)
-lookup: Amazon → local retailer → Google Books (customer's own country) →
-Google Books (US reference price). Only the two Google Books tiers are
-live today — Amazon and the local-retailer registry are documented,
-ready-to-fill placeholders (see the comments above `AMAZON_MARKETPLACES`
-and `LOCAL_RETAILER_SOURCES` in `index.html`) pending credentials you don't
-yet have. Nothing needs to change in this Apps Script file when you add
-those later — they plug into the same fallback chain.
+## Backend actions
 
-## Updating later
+- `saveQuote`: validates and stores quote information; repeated quote IDs are
+  treated as duplicates.
+- `updateContactMethod`: updates the chosen contact channel for a known quote.
+- `getCachedPrice` / `cachePrice`: reads and writes the 24-hour shared price cache.
+- `logInquiry`: records books whose price could not be confirmed.
+- `checkRetailerPrice`: looks up a valid ISBN through the TextbookX fallback.
+- `googleBooksSearch`: proxies Google Books requests using server-side keys and
+  caches identical lookups briefly.
 
-If you ever need to redeploy after editing `Code.gs`, use **Deploy → Manage
-deployments → edit (pencil icon) → New version → Deploy**. Redeploying as a
-brand-new deployment instead of a new version will change the URL, which
-means you'd need to update `QUOTE_API_URL` again.
+Customer-provided text is length-limited and escaped before being written to
+Sheets, reducing spreadsheet formula-injection risk. This is input hardening,
+not a substitute for a CAPTCHA or edge-level rate limiting.
 
 ## Notes
 
-- No password, API key, or credential from this setup ever needs to be
-  pasted into the website's code — only the Web App URL, which is not a
-  secret (it's a write-only endpoint scoped to this one script).
-- The Sheet ID and notification email live only inside the Apps Script
-  project, which only `eBooksWorld3622@gmail.com` can see and edit.
+- The website's public contact email, WhatsApp number, social profile links,
+  Google Analytics measurement ID, and AdSense publisher ID are intentionally
+  public-facing identifiers. Remove them only if you do not want customers to
+  see or use those public channels.
+- The Sheet ID and notification address are configuration values, not passwords,
+  but they are moved to Script Properties to avoid unnecessary disclosure.
+- Do not put private API keys, access tokens, passwords, service-account JSON,
+  or recovery codes in this repository.
