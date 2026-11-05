@@ -541,8 +541,8 @@ function handleCachePrice(data) {
 
   const row = [
     isbn, country, format, safeSheetText_(data.title, 300),
-    cleanInputText_(data.currency, 8), price, safeSheetText_(data.priceSource, 120),
-    cleanInputText_(data.referenceLink, 1000), now.toISOString()
+    safeSheetText_(data.currency, 8), price, safeSheetText_(data.priceSource, 120),
+    safeSheetText_(data.referenceLink, 1000), now.toISOString()
   ];
 
   for (let i = 1; i < values.length; i++) {
