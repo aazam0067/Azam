@@ -33,7 +33,7 @@ function getSpreadsheet_() {
 
 function cleanInputText_(value, maxLength) {
   return String(value == null ? '' : value)
-    .replace(/[\\u0000-\\u001F\\u007F]/g, ' ')
+    .replace(/[\x00-\x1F\x7F]/g, ' ')
     .trim()
     .slice(0, maxLength || 500);
 }
@@ -42,7 +42,7 @@ function cleanInputText_(value, maxLength) {
 // Prefix an apostrophe so customer-controlled text is stored as plain text.
 function safeSheetText_(value, maxLength) {
   const text = cleanInputText_(value, maxLength);
-  return /^[=+\\-@\\t\\r]/.test(text) ? "'" + text : text;
+  return /^[=+\-@\t\r]/.test(text) ? "'" + text : text;
 }
 
 function safeNonNegativeNumber_(value) {
@@ -52,17 +52,17 @@ function safeNonNegativeNumber_(value) {
 }
 
 function normalizeIsbn_(value) {
-  return String(value || '').replace(/[\\s-]/g, '').toUpperCase();
+  return String(value || '').replace(/[\s-]/g, '').toUpperCase();
 }
 
 function isValidIsbn_(value) {
   const isbn = normalizeIsbn_(value);
-  if (/^\\d{13}$/.test(isbn)) {
+  if (/^\d{13}$/.test(isbn)) {
     let sum = 0;
     for (let i = 0; i < 12; i++) sum += Number(isbn[i]) * (i % 2 ? 3 : 1);
     return (10 - (sum % 10)) % 10 === Number(isbn[12]);
   }
-  if (/^\\d{9}[\\dX]$/.test(isbn)) {
+  if (/^\d{9}[\dX]$/.test(isbn)) {
     let sum = 0;
     for (let i = 0; i < 10; i++) sum += (isbn[i] === 'X' ? 10 : Number(isbn[i])) * (10 - i);
     return sum % 11 === 0;
@@ -265,7 +265,7 @@ function handleGoogleBooksSearch(data) {
   }
 
   const keysRaw = getRequiredScriptProperty_(GOOGLE_BOOKS_API_KEYS_PROPERTY);
-  const keys = keysRaw.split(/[\\s,]+/).map(function(key){ return key.trim(); }).filter(Boolean);
+  const keys = keysRaw.split(/[\s,]+/).map(function(key){ return key.trim(); }).filter(Boolean);
   if (!keys.length) return jsonResponse({ ok: false, status: 503 });
 
   const cache = CacheService.getScriptCache();
