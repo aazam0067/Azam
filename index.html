@@ -5755,9 +5755,6 @@ function toggleFaq(el){
   // *project*, not per key — so several keys from several separate
   // projects each get their own 1000/day bucket. List every key here
   // (each from its own project); once one project's quota is exhausted
-  // for the day, requests automatically move on to the next key instead
-  // of failing. Keys from the SAME project would not add anything, since
-  // they'd share that one project's quota.
   // Google Books requests are proxied through Apps Script.
   // The API key is stored in Apps Script Script Properties, never in browser code.
   async function googleBooksFetch(baseUrl, timeoutMs){
