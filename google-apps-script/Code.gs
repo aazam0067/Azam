@@ -10,9 +10,8 @@
  * "PriceCache", and "Inquiries".
  *
  * SETUP: see SETUP.md in this same folder for step-by-step instructions.
- * This Sheet and Apps Script project should be created while logged into
- * eBooksWorld3622@gmail.com. You only need to edit SPREADSHEET_ID below —
- * NOTIFY_EMAIL is already set.
+ * Configure the spreadsheet ID, notification email, and Google Books API
+ * keys through Apps Script Script Properties; no values belong in this file.
  */
 
 // Sensitive configuration is stored in Apps Script > Project Settings >
@@ -120,7 +119,8 @@ function doPost(e) {
 
     return jsonResponse({ ok: false, error: 'Unknown action' });
   } catch (err) {
-    return jsonResponse({ ok: false, error: String(err) });
+    console.error(err);
+    return jsonResponse({ ok: false, error: 'Request could not be processed' });
   }
 }
 
@@ -480,6 +480,13 @@ function cacheKey_(isbn, country, format) {
 }
 
 function handleGetCachedPrice(data) {
+  const isbn = normalizeIsbn_(data.isbn);
+  const country = cleanInputText_(data.country, 2).toUpperCase();
+  const format = cleanInputText_(data.format, 80);
+  if (!isValidIsbn_(isbn) || !/^[A-Z]{2}$/.test(country)) {
+    return jsonResponse({ ok: true, hit: false });
+  }
+
   const sheet = getCacheSheet_();
   const values = sheet.getDataRange().getValues();
   const isbnCol = CACHE_COLUMNS.indexOf('ISBN');
@@ -491,7 +498,7 @@ function handleGetCachedPrice(data) {
   const linkCol = CACHE_COLUMNS.indexOf('Reference Link');
   const tsCol = CACHE_COLUMNS.indexOf('Timestamp');
 
-  const wantKey = cacheKey_(data.isbn, data.country, data.format);
+  const wantKey = cacheKey_(isbn, country, format);
   const cutoff = Date.now() - CACHE_TTL_HOURS * 60 * 60 * 1000;
 
   for (let i = 1; i < values.length; i++) {
@@ -516,18 +523,26 @@ function handleGetCachedPrice(data) {
 }
 
 function handleCachePrice(data) {
+  const isbn = normalizeIsbn_(data.isbn);
+  const country = cleanInputText_(data.country, 2).toUpperCase();
+  const format = cleanInputText_(data.format, 80);
+  const price = safeNonNegativeNumber_(data.retailPrice);
+  if (!isValidIsbn_(isbn) || !/^[A-Z]{2}$/.test(country) || price === '') {
+    return jsonResponse({ ok: false, error: 'Invalid cache entry' });
+  }
+
   const sheet = getCacheSheet_();
   const values = sheet.getDataRange().getValues();
   const isbnCol = CACHE_COLUMNS.indexOf('ISBN');
   const countryCol = CACHE_COLUMNS.indexOf('Country');
   const formatCol = CACHE_COLUMNS.indexOf('Format');
-  const wantKey = cacheKey_(data.isbn, data.country, data.format);
+  const wantKey = cacheKey_(isbn, country, format);
   const now = new Date();
 
   const row = [
-    data.isbn || '', data.country || '', data.format || '', data.title || '',
-    data.currency || '', data.retailPrice || '', data.priceSource || '',
-    data.referenceLink || '', now.toISOString()
+    isbn, country, format, safeSheetText_(data.title, 300),
+    cleanInputText_(data.currency, 8), price, safeSheetText_(data.priceSource, 120),
+    cleanInputText_(data.referenceLink, 1000), now.toISOString()
   ];
 
   for (let i = 1; i < values.length; i++) {
